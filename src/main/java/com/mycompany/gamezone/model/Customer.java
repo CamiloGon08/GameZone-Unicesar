@@ -29,7 +29,7 @@ public class Customer extends Person{
     * @param eMail the email of each customer
     */ 
     
-    public Customer(String eMail, String name, long iD, long contactNumber) {
+    public Customer(String eMail, String name, String iD, long contactNumber) {
         super(name, iD, contactNumber);
         this.eMail = eMail;
     }
