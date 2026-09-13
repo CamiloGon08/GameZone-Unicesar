@@ -10,7 +10,7 @@ package com.mycompany.gamezone.model;
  */
 
 public class Seller extends Person{
-    private long employeeCode;
+    private String employeeCode;
     private String shift;
     //private ArrayList<Sale> sales;
     //Relación de Composición 1:n entre Seller y Sale. 
@@ -30,7 +30,7 @@ public class Seller extends Person{
     * @param shift the specific shift of each seller
     */ 
 
-    public Seller(long employeeCode, String shift, String name, long iD, long contactNumber) {
+    public Seller(String employeeCode, String shift, String name, String iD, long contactNumber) {
         super(name, iD, contactNumber);
         this.employeeCode = employeeCode;
         this.shift = shift;
@@ -41,7 +41,7 @@ public class Seller extends Person{
     * @return the employee code 
     */
     
-    public long getEmployeeCode() {
+    public String getEmployeeCode() {
         return employeeCode;
     }
 
@@ -50,7 +50,7 @@ public class Seller extends Person{
     * @param employeeCode sets the unique employee code of each seller
     */
     
-    public void setEmployeeCode(long employeeCode) {
+    public void setEmployeeCode(String employeeCode) {
         this.employeeCode = employeeCode;
     }
 
