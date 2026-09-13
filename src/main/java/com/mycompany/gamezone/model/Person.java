@@ -9,7 +9,7 @@ package com.mycompany.gamezone.model;
 
 public abstract class Person {
     private String name;
-    private long iD;
+    private String iD;
     private long contactNumber;
 
     public Person() {
@@ -23,7 +23,7 @@ public abstract class Person {
     * @param contactNumber the contact number of the person
     */ 
     
-    public Person(String name, long iD, long contactNumber) {
+    public Person(String name, String iD, long contactNumber) {
         this.name = name;
         this.iD = iD;
         this.contactNumber = contactNumber;
@@ -52,7 +52,7 @@ public abstract class Person {
     * @return the person's iD
     */
     
-    public long getiD() {
+    public String getiD() {
         return iD;
     }
 
@@ -61,7 +61,7 @@ public abstract class Person {
     * @param iD sets the person's ID
     */
     
-    public void setiD(long iD) {
+    public void setiD(String iD) {
         this.iD = iD;
     }
 
