@@ -1,5 +1,11 @@
 package com.mycompany.gamezone.model;
 
+/**
+ * Base Abstract Class for every person in GameZone Unicesar
+ * Holds common atributes and methods shared by every subclass
+ * 
+ * @author EstefaniaMarquez
+ */
 
 public abstract class Person {
     private String name;
@@ -76,5 +82,13 @@ public abstract class Person {
     public void setContactNumber(long contactNumber) {
         this.contactNumber = contactNumber;
     }
-    
+
+    /**
+     * Returns the object's information formatted as a tab-separated string for
+     * file persistence.
+     *
+     * @return a tab-separated string containing the object's information
+     */
+    public abstract String textFormat();
+
 }
