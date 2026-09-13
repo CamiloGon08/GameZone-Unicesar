@@ -2,6 +2,13 @@ package com.mycompany.gamezone.model;
 
 //import java.util.ArrayList;
 
+/**
+ * Concret class for every Customer in GameZone Unicesar
+ * It extends from Person and contains specific Customer information
+ * 
+ * @author EstefaniaMarquez
+ */
+
 public class Customer extends Person{
     
     private String eMail;
