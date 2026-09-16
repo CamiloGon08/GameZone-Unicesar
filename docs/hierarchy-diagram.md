@@ -1,8 +1,10 @@
-        <<abstract>> Product
-	<<abstract>> Accesory
-	<<abstract>> Promotion
-	<<abstract>> Warranty
-	<<abstract>> Person
+# Hierarchy  Diagram
+
+<<abstract>> Product
+<<abstract>> Accesory
+<<abstract>> Promotion
+<<abstract>> Warranty
+<<abstract>> Person
 
     Person <|-- Customer
     Person <|-- Seller
