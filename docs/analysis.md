@@ -4,11 +4,11 @@
 
 ### Q1: What attributes are common to all people who interact with the store, and which are specific to each type of person? How is this distinction reflected in a class hierarchy?
 
-We noticed that everyone has a name, an ID number, and a phone. Those three fields go in the `Person` class. A client also has an email, so we put that in `Client`. A seller has an employee code and a shift, so those go in `Seller`. The hierarchy is simple: `Person` is the parent, and `Client` and `Seller` are the children. This way we don't repeat the common fields in both subclasses.
+We noticed that everyone has a name, an ID number, and a contact number. Those three fields go in the `Person` class. A customer also has an email, so we put that in `Customer`. A seller has an employee code and a shift, so those go in `Seller`. The hierarchy is simple: `Person` is the parent, and `Customer` and `Seller` are the children. This way we don't repeat the common fields in both subclasses.
 
 ### Q2: Should there be a class representing a "generic person" without specifying a role? Why or why not? What implication does this decision have on the possibility of instantiating this class?
 
-We made `Person` abstract. That means you can't create a plain `Person` object — you have to create either a `Client` or a `Seller`. This makes sense because in the store, nobody is just a "person"; everyone is either buying something or working there. Making it abstract also prevents mistakes where someone might try to use a generic person when they really need a specific role.
+We made `Person` abstract. That means you can't create a plain `Person` object — you have to create either a `Customer` or a `Seller`. This makes sense because in the store, nobody is just a "person"; everyone is either buying something or working there. Making it abstract also prevents mistakes where someone might try to use a generic person when they really need a specific role.
 
 ---
 
@@ -28,7 +28,7 @@ We declared `getDescription()` as abstract in `Product`. That forces `VideoGame`
 
 ### Q5: A sale involves a customer, a seller, and one or more products. What kinds of relationships exist between the class representing the sale and the other classes of the system? Are these relationships of inheritance, association, composition, or another type? Justify.
 
-A `Sale` links to a `Client` and a `Seller` through references — that's a simple association. The client and seller exist independently of the sale. With products, it's aggregation: a sale has a list of products, but those products are also in the inventory and don't get deleted when the sale ends. None of this is inheritance because a sale is not a type of client, seller, or product.
+A `Sale` links to a `Customer` and a `Seller` through references — that's a simple association. The customer and seller exist independently of the sale. With products, it's aggregation: a sale has a list of products, but those products are also in the inventory and don't get deleted when the sale ends. None of this is inheritance because a sale is not a type of customer, seller, or product.
 
 ### Q6: Should the sale be responsible for calculating its own total, or should this responsibility fall on another class? Justify your decision.
 
@@ -52,7 +52,7 @@ In `SaleService.registerSale()`, after validating stock, we call `adjustStock(-1
 
 ### Q9: The system must be organized into four layers: model, persistence, services, and user interface. What type of classes belong in each layer? What criterion allows one to decide in which layer a class should be placed?
 
-- **Model**: the domain classes — `Person`, `Client`, `Seller`, `Product`, `VideoGame`, `Console`, `Sale`. They just hold data and behavior.
+- **Model**: the domain classes — `Person`, `Customer`, `Seller`, `Product`, `VideoGame`, `Console`, `Sale`. They just hold data and behavior.
 - **Persistence**: the repository classes — `PersonRepository`, `ProductRepository`, `SaleRepository`. They know how to read and write files.
 - **Services**: the business logic classes — `PersonService`, `ProductService`, `SaleService`. They apply rules and use repositories.
 - **UI**: the console menu — `ConsoleMenu` and `Main`. They just handle user interaction.
