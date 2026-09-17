@@ -83,5 +83,17 @@ public class Sale {
         ",Products : "+ products.size()+ 
         ", Total : $"+ String.format("%.2f",total);
     }
+    /**
+ * Dev 1(dominguez)
+ * Checks whether this sale is still within the 30 calendar day window
+ * during which a return can be registered, counted from the sale date.
+ *
+ * @return true if today's date is within 30 days of the sale date, false otherwise
+ */
+    public boolean canBeReturned() {
+    LocalDate deadline = getDate().plusDays(30);
+    LocalDate today = LocalDate.now();
+    return !today.isAfter(deadline);
+}
 
 }
