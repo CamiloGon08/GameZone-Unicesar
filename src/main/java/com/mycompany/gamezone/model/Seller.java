@@ -81,6 +81,6 @@ public class Seller extends Person{
     
     @Override
     public String textFormat(){
-        return getiD() + "|" + getName() + "|" + getContactNumber() + "|" + employeeCode + "|" + shift;
+        return "SELLER|" + getiD() + "|" + getName() + "|" + getContactNumber() + "|" + employeeCode + "|" + shift;
     }
 }
