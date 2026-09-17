@@ -1,6 +1,6 @@
 package com.gamezone.model;
 
-import com.mycompany.gamezone.model.Accesory;
+import com.mycompany.gamezone.model.Accessory;
 
 public class Controller extends Accessory {
 
