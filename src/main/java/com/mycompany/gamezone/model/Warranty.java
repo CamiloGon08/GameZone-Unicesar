@@ -74,7 +74,7 @@ public abstract class Warranty {
     
     public String generateWarrantyCertificate() {
         return String.format(
-                "Certificado de garantia%nTipo: %s%nProducto: %s%nInicio: %s%nVencimiento: %s%nCosto adicional: %.2f",
+                "\"Warranty Certificate%nType: %s%nProduct: %s%nStart Date: %s%nExpiration Date: %s%nAdditional Cost: $%.2f\"",
                 getWarrantyType(), product.getTitle(), startDate, endDate, getAdditionalCost());
     }
 }
