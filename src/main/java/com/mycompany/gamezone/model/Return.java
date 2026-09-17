@@ -1,4 +1,4 @@
-package com.gamezone.model;
+package com.mycompany.gamezone.model;
 
 import java.time.LocalDate;
 import java.util.List;
