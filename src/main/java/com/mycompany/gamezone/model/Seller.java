@@ -1,6 +1,6 @@
 package com.mycompany.gamezone.model;
 
-//import java.util.ArrayList;
+import java.util.ArrayList;
 
 /**
  * Concret Class for every Seller in GameZone Unicesar
@@ -12,10 +12,7 @@ package com.mycompany.gamezone.model;
 public class Seller extends Person{
     private String employeeCode;
     private String shift;
-    //private ArrayList<Sale> sales;
-    //Relación de Composición 1:n entre Seller y Sale. 
-    //Sale NO puede existir si no está ligada a un vendedor
-    //Seller puede tener varias Sales (ventas) asignados, incluso si es 0
+    private ArrayList<Sale> sales;
     
     public Seller() {
     }
