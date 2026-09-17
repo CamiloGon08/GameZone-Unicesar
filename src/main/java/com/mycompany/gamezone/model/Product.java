@@ -1,4 +1,4 @@
-package com.gamezone.model;
+package com.mycompany.gamezone.model;
 
 /**
  * Abstract base class representing a product commercialized by GameZone Unicesar.
