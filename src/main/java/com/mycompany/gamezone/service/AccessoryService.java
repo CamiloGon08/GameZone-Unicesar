@@ -1,9 +1,9 @@
 package com.mycompany.gamezone.service;
 
-import com.gamezone.model.Accessory;
-import com.gamezone.model.Cable;
-import com.gamezone.model.Controller;
-import com.gamezone.model.Memory;
+import com.mycompany.gamezone.model.Accessory;
+import com.mycompany.gamezone.model.Cable;
+import com.mycompany.gamezone.model.Controller;
+import com.mycompany.gamezone.model.Memory;
 import com.mycompany.gamezone.persistence.AccessoryRepository;
 import java.util.ArrayList;
 import java.util.List;
