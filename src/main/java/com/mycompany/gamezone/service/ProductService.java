@@ -1,4 +1,4 @@
-package com.gamezone.service;
+package com.mycompany.gamezone.service;
 
 import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Product;
@@ -9,98 +9,107 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Contains the business rules for managing products: registration, listing,
- * and inventory stock updates. This is the only class of the product module
- * authorized to invoke {@link ProductRepository}; the UI layer must go
- * through this service and never access persistence directly.
+ * Business rules and validation filter for products before persistence.
  */
 public class ProductService {
 
     private final ProductRepository productRepository;
     private final List<Product> products;
 
-    /**
-     * Creates the service and loads any products already stored in the
-     * .txt file managed by the given repository.
-     *
-     * @param productRepository repository used to persist and load products
-     */
     public ProductService(ProductRepository productRepository) {
+        if (productRepository == null) {
+            throw new IllegalArgumentException("ProductRepository cannot be null.");
+        }
         this.productRepository = productRepository;
         this.products = new ArrayList<>(productRepository.loadAll());
     }
 
-    /**
-     * Registers a new video game and saves the updated catalog to disk.
-     *
-     * @param id        unique identifier of the product
-     * @param title     display title of the product
-     * @param price     unit price of the product
-     * @param stock     initial quantity available in inventory
-     * @param platform  platform the game was developed for
-     * @param genre     genre of the game
-     * @param ageRating recommended age rating of the game
-     */
     public void registerVideoGame(String id, String title, double price, int stock,
                                    String platform, String genre, String ageRating) {
+        // Validations directly inside Register
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("Product ID cannot be empty.");
+        }
+        if (findById(id) != null) {
+            throw new IllegalArgumentException("Product ID already exists.");
+        }
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Video game title cannot be empty.");
+        }
+        if (price <= 0) {
+            throw new IllegalArgumentException("Price must be greater than zero.");
+        }
+        if (stock < 0) {
+            throw new IllegalArgumentException("Stock cannot be negative.");
+        }
+        if (platform == null || platform.trim().isEmpty()) {
+            throw new IllegalArgumentException("Platform cannot be empty.");
+        }
+        if (genre == null || genre.trim().isEmpty()) {
+            throw new IllegalArgumentException("Genre cannot be empty.");
+        }
+        if (ageRating == null || ageRating.trim().isEmpty()) {
+            throw new IllegalArgumentException("Age rating cannot be empty.");
+        }
+
         VideoGame videoGame = new VideoGame(id, title, price, stock, platform, genre, ageRating);
         products.add(videoGame);
         productRepository.saveAll(products);
     }
 
-    /**
-     * Registers a new console and saves the updated catalog to disk.
-     *
-     * @param id         unique identifier of the product
-     * @param title      display title of the product
-     * @param price      unit price of the product
-     * @param stock      initial quantity available in inventory
-     * @param brand      manufacturer brand of the console
-     * @param model      specific model name of the console
-     * @param generation hardware generation of the console
-     */
     public void registerConsole(String id, String title, double price, int stock,
                                  String brand, String model, String generation) {
+        // Validations directly inside Register
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("Product ID cannot be empty.");
+        }
+        if (findById(id) != null) {
+            throw new IllegalArgumentException("Product ID already exists.");
+        }
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Console title cannot be empty.");
+        }
+        if (price <= 0) {
+            throw new IllegalArgumentException("Price must be greater than zero.");
+        }
+        if (stock < 0) {
+            throw new IllegalArgumentException("Stock cannot be negative.");
+        }
+        if (brand == null || brand.trim().isEmpty()) {
+            throw new IllegalArgumentException("Brand cannot be empty.");
+        }
+        if (model == null || model.trim().isEmpty()) {
+            throw new IllegalArgumentException("Model cannot be empty.");
+        }
+        if (generation == null || generation.trim().isEmpty()) {
+            throw new IllegalArgumentException("Generation cannot be empty.");
+        }
+
         Console console = new Console(id, title, price, stock, brand, model, generation);
         products.add(console);
         productRepository.saveAll(products);
     }
 
-    /**
-     * Lists every product currently in the inventory.
-     *
-     * @return a copy of the list of registered products
-     */
     public List<Product> listProducts() {
         return new ArrayList<>(products);
     }
 
-    /**
-     * Looks for a product by its unique identifier.
-     *
-     * @param id the identifier to search for
-     * @return the matching product, or {@code null} if no product with that
-     *         id is registered
-     */
     public Product findById(String id) {
-        for (int i = 0; i < products.size(); i++) {
-            Product product = products.get(i);
-            if (product.getId().equals(id)) {
+        if (id == null || id.trim().isEmpty()) {
+            return null;
+        }
+        for (Product product : products) {
+            if (product.getId().equalsIgnoreCase(id.trim())) {
                 return product;
             }
         }
         return null;
     }
 
-    /**
-     * Checks whether there is enough stock of a product to cover a
-     * requested quantity.
-     *
-     * @param id       the identifier of the product
-     * @param quantity the quantity being requested
-     * @return true if the product exists and has enough stock, false otherwise
-     */
     public boolean hasSufficientStock(String id, int quantity) {
+        if (quantity <= 0) {
+            return false;
+        }
         Product product = findById(id);
         if (product == null) {
             return false;
@@ -108,24 +117,18 @@ public class ProductService {
         return product.getStock() >= quantity;
     }
 
-    /**
-     * Adjusts the stock of a product and saves the change to disk. Intended
-     * to be called with a negative amount by the sales module when a sale
-     * is registered, or with a positive amount to restock inventory. The
-     * actual change to the stock value is delegated to
-     * {@link Product#adjustStock(int)} so the product stays in charge of
-     * its own state.
-     *
-     * @param id     the identifier of the product
-     * @param amount the quantity to add to the current stock; negative
-     *               values decrease it
-     * @throws IllegalArgumentException if no product with that id exists
-     */
     public void updateStock(String id, int amount) {
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("Product ID cannot be empty.");
+        }
         Product product = findById(id);
         if (product == null) {
-            throw new IllegalArgumentException("Product not found: " + id);
+            throw new IllegalArgumentException("Product not found with ID: " + id);
         }
+        if (product.getStock() + amount < 0) {
+            throw new IllegalArgumentException("Insufficient stock for requested change.");
+        }
+
         product.adjustStock(amount);
         productRepository.saveAll(products);
     }
