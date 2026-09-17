@@ -134,13 +134,12 @@ public class PersonRepository {
     /**
      * Searches for a Person by ID.
      *
+     * @param persons
      * @param id the ID to search for
      * @return the Person with the specified ID,
      * or null if it is not found
      */
-    public Person searchPerson(String id) {
-
-        ArrayList<Person> persons = listPersons();
+    public Person searchPerson(ArrayList<Person> persons, String id) {
 
         for (Person currentPerson : persons) {
 
@@ -153,23 +152,48 @@ public class PersonRepository {
     }
 
     /**
+     * Searches for a Customer by ID.
+     *
+     * @param persons
+     * @param iD the ID to search for
+     * @return the Customer with the specified ID code, or null if it is not
+     * found
+     */
+    
+    public Customer searchCustomer(
+            ArrayList<Person> persons,
+            String iD) {
+
+        for (Person currentPerson : persons) {
+
+            if (currentPerson instanceof Customer customer) {
+
+                if (customer.getiD().equals(iD)) {
+                    return customer;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Searches for a Seller by employee code.
      *
+     * @param persons
      * @param employeeCode the employee code to search for
-     * @return the Seller with the specified employee code,
-     * or null if it is not found
+     * @return the Seller with the specified employee code, or null if it is not
+     * found
      */
-    public Seller searchSeller(String employeeCode) {
-
-        ArrayList<Person> persons = listPersons();
+    public Seller searchSeller(
+            ArrayList<Person> persons,
+            String employeeCode) {
 
         for (Person currentPerson : persons) {
 
             if (currentPerson instanceof Seller seller) {
 
-                if (seller.getEmployeeCode()
-                        .equals(employeeCode)) {
-
+                if (seller.getEmployeeCode().equals(employeeCode)) {
                     return seller;
                 }
             }
