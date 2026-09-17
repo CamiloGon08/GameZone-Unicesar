@@ -8,10 +8,6 @@ import com.mycompany.gamezone.model.VideoGame;
 import com.mycompany.gamezone.model.Console;
 
 
-
-
-
-
 public class CategoryDiscount extends Promotion {
 
     private double percentage;
