@@ -61,7 +61,7 @@ public class Customer extends Person{
     @Override
     
     public String textFormat() {
-        return getiD() + "|" + getName() + "|" + eMail + "|" + getContactNumber();
+        return "CUSTOMER|" + getiD() + "|" + getName() + "|" + eMail + "|" + getContactNumber();
     }
 }
 
