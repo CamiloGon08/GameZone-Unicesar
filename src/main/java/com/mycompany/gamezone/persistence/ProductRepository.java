@@ -1,4 +1,4 @@
-package com.gamezone.persistence;
+package com.mycompany.gamezone.persistence;
 
 import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Product;
