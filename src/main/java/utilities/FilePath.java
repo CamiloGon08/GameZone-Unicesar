@@ -1,10 +1,10 @@
 package utilities;
 
 public class FilePath {
-    private static final String PERSONS = "persons.txt";
-    private static final String SALES = "sales.txt";
-    private static final String PRODUCTS = "products.txt";
-    private static final String RETURNS = "returns.txt";
-    private static final String WARRANTIES = "warranties.txt";
-    private static final String PROMOTIONS = "promotions.txt";
+    public static final String PERSONS = "persons.txt";
+    public static final String SALES = "sales.txt";
+    public static final String PRODUCTS = "products.txt";
+    public static final String RETURNS = "returns.txt";
+    public static final String WARRANTIES = "warranties.txt";
+    public static final String PROMOTIONS = "promotions.txt";
 }
