@@ -73,25 +73,3 @@ The dependency flow is inward:
 - `model` depends on nothing.
 
 We forbid dependencies going the other way. For example, `model` cannot depend on `persistence` or `ui`. This keeps the domain classes independent and reusable. It also prevents circular dependencies, which would make the system hard to understand and modify. Each layer only knows about the layers below it, which is the whole point of layered architecture.
-
-## Q12: A return is a new system entity that refers to an existing sale. What type of relationship exists between the `Return` class and the `Sale` class? Is this relationship one of inheritance, association, aggregation, or composition? Justify your answer.
-
-It is an association relationship, as the two depend on each other; specifically, when a return is processed, the returned products are reintegrated into the sale's inventory.
-
-## Q13: A return may contain only some of the products from the original sale, not necessarily all of them. How is this situation represented in the attributes of the `Return` class? What is stored in the `returned products` attribute?
-
-It must contain a many-to-many relationship, allowing it to store all the attributes previously recorded at the time of the sale.
-
-## Q14:The business rule states that returns can only be registered within 30 days of the sale. In which system layer is this validation located, and why? What Java mechanism is used to calculate the difference between two dates?
-
-It is located in the service layer, because that is where the business logic is applied.
-
-`LocalDate` allows us to represent a date without a specific time. On the other hand, we have `Period`, which allows us to calculate differences in years, months, and days.
-
-## Q15: Returning products increases stock levels. Which existing method in the Workshop 1 system is reused for this operation, and in which class is it invoked from the returns module? Why is it important to reuse existing methods rather than duplicating the stock update logic?
-
-The `updateStock` method found in `productService` can be used.
-
-Reusing methods allows us to adhere to clean code standards, fostering better coding practices and resulting in a simple, easy-to-understand structure.
-
-## Q15:The monthly balance report requires consolidating information from two distinct modules (sales and returns). In which type of service is this report located, and why is this placement consistent with the layered architecture? What dependencies does this class require to generate it?
