@@ -31,6 +31,7 @@ public class Seller extends Person{
         super(name, iD, contactNumber);
         this.employeeCode = employeeCode;
         this.shift = shift;
+        this.sales = new ArrayList<>();
     }
 
     /**
@@ -55,27 +56,45 @@ public class Seller extends Person{
     * Gets the specific work shift of each seller
     * @return the shift of each seller
     */
-    
     public String getShift() {
         return shift;
     }
 
     /**
-    * Sets the shift of the seller 
-    * @param shift sets the shift of each seller
-    */
-    
+     * Sets the shift of the seller
+     *
+     * @param shift sets the shift of each seller
+     */
     public void setShift(String shift) {
         this.shift = shift;
     }
-    
+
+    /**
+     * * Adds a sale to the seller's sales history. * * @param sale the sale to
+     * be added
+     * @param sale
+     */
+    public void addSale(Sale sale) {
+        if (sale != null) {
+            sales.add(sale);
+        }
+    }
+
+    /**
+     * * Gets the seller's sales history. * * @return a copy of the seller's
+     * sales
+     * @return 
+     */
+    public ArrayList<Sale> getSales() {
+        return new ArrayList<>(sales);
+    }
+
     /**
      * Returns a String containing the object's data in the order and format
      * required for persistence.
      *
      * @return a String with the object's data formatted for persistence.
      */
-    
     @Override
     public String textFormat(){
         return "SELLER|" + getiD() + "|" + getName() + "|" + getContactNumber() + "|" + employeeCode + "|" + shift;
