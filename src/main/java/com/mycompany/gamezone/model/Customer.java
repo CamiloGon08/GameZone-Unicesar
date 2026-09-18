@@ -29,6 +29,7 @@ public class Customer extends Person{
     public Customer(String eMail, String name, String iD, long contactNumber) {
         super(name, iD, contactNumber);
         this.eMail = eMail;
+        this.purchases = new ArrayList<>();
     }
     
     /**
