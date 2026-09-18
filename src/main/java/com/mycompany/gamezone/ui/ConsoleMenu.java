@@ -13,6 +13,13 @@ import com.mycompany.gamezone.service.PersonService;
 import com.mycompany.gamezone.service.ProductService;
 import com.mycompany.gamezone.service.SaleService;
 
+/**
+ * Console-based user interface for GameZone Unicesar.
+ * Displays the main menu, reads the user's selections and dispatches
+ * each option to the corresponding service operation. All the messages
+ * shown to the user are written in Spanish, while identifiers and
+ * documentation follow the English convention required by the project.
+ */
 public class ConsoleMenu {
 
     private final Scanner scanner;
@@ -21,6 +28,14 @@ public class ConsoleMenu {
     private final SaleService saleService;
     private final ArrayList<Person> persons;
 
+    /**
+     * Creates a console menu with the services required to perform the
+     * user operations.
+     *
+     * @param productService service that handles product-related operations
+     * @param personService  service that handles person-related operations
+     * @param saleService    service that handles sale-related operations
+     */
     public ConsoleMenu(ProductService productService, PersonService personService, SaleService saleService) {
         this.scanner = new Scanner(System.in);
         this.productService = productService;
@@ -29,6 +44,11 @@ public class ConsoleMenu {
         this.persons = personService.listPersons();
     }
 
+    /**
+     * Starts the main interaction loop of the console menu. Displays the
+     * main menu repeatedly and dispatches each user selection to the
+     * corresponding operation until the user chooses to exit.
+     */
     public void start() {
         boolean running = true;
         while (running) {
