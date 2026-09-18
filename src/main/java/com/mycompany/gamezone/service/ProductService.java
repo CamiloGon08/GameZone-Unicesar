@@ -132,4 +132,31 @@ public class ProductService {
         product.adjustStock(amount);
         productRepository.saveAll(products);
     }
+
+    /**
+     * Restores stock for a product after a successful return.
+     *
+     * @param id identification number of the product
+     * @param quantity quantity of stock to restore
+     */
+    public void restoreStock(String id, int quantity) {
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("Product ID cannot be empty.");
+        }
+
+        if (quantity <= 0) {
+            throw new IllegalArgumentException(
+                    "Quantity to restore must be greater than zero.");
+        }
+
+        Product product = findById(id);
+
+        if (product == null) {
+            throw new IllegalArgumentException(
+                    "Product not found with ID: " + id);
+        }
+
+        product.adjustStock(quantity);
+        productRepository.saveAll(products);
+    }
 }
