@@ -1,23 +1,47 @@
 package com.mycompany.gamezone;
 
+import com.mycompany.gamezone.persistence.AccessoryRepository;
 import com.mycompany.gamezone.persistence.ProductRepository;
+import com.mycompany.gamezone.persistence.PromotionRepository;
+import com.mycompany.gamezone.persistence.ReturnRepository;
 import com.mycompany.gamezone.persistence.SaleRepository;
+import com.mycompany.gamezone.service.AccessoryService;
 import com.mycompany.gamezone.service.PersonService;
 import com.mycompany.gamezone.service.ProductService;
+import com.mycompany.gamezone.service.PromotionService;
+import com.mycompany.gamezone.service.ReturnService;
 import com.mycompany.gamezone.service.SaleService;
 import com.mycompany.gamezone.ui.ConsoleMenu;
 
+/**
+ * Main entry point of the GameZone Unicesar application.
+ * Creates the repositories and services required by the system and starts
+ * the console-based user interface.
+ */
 public class Main {
+
+    /**
+     * Starts the GameZone Unicesar application.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         ProductRepository productRepository = new ProductRepository("data/products.txt");
-        ProductService productService = new ProductService(productRepository);
-
-        PersonService personService = new PersonService(); // ⚠️ confirmar constructor real
-
         SaleRepository saleRepository = new SaleRepository();
-        SaleService saleService = new SaleService(saleRepository);
+        AccessoryRepository accessoryRepository = new AccessoryRepository();
+        PromotionRepository promotionRepository = new PromotionRepository();
 
-        ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService);
+        ProductService productService = new ProductService(productRepository);
+        AccessoryService accessoryService = new AccessoryService(accessoryRepository);
+        PersonService personService = new PersonService();
+        PromotionService promotionService = new PromotionService(promotionRepository);
+        SaleService saleService = new SaleService(saleRepository, productService, accessoryService, promotionService);
+
+        ReturnRepository returnRepository = new ReturnRepository("data/returns.txt", saleService, productService);
+        ReturnService returnService = new ReturnService(returnRepository, saleService, productService);
+
+        ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService,
+                                           accessoryService, promotionService, returnService);
         menu.start();
     }
 }
