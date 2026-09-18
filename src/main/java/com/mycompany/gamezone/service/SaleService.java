@@ -7,6 +7,7 @@ import java.util.List;
 import com.mycompany.gamezone.model.Accessory;
 import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Product;
+import com.mycompany.gamezone.model.Promotion;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.Seller;
 import com.mycompany.gamezone.persistence.SaleRepository;
@@ -14,8 +15,8 @@ import com.mycompany.gamezone.persistence.SaleRepository;
 /**
  * Service that handles the business rules related to sales.
  * Coordinates the creation of new sales, the validation of stock,
- * the update of the inventory after a sale, and the queries over
- * the sales registered in the system.
+ * the update of the inventory after a sale, the application of the
+ * best promotion, and the queries over the sales registered in the system.
  */
 public class SaleService {
 
@@ -23,32 +24,37 @@ public class SaleService {
     private List<Sale> sales;
     private ProductService productService;
     private AccessoryService accessoryService;
+    private PromotionService promotionService;
 
     /**
      * Creates a SaleService with the repositories and services required
-     * to register sales and to update the inventory of products and
-     * accessories after each sale.
+     * to register sales, to update the inventory, and to apply the best
+     * promotion available for each sale.
      *
      * @param repository       repository used to save and load sales
      * @param productService   service used to update product stock
      * @param accessoryService service used to update accessory stock
+     * @param promotionService service used to find the best promotion for a sale
      */
     public SaleService(SaleRepository repository,
                        ProductService productService,
-                       AccessoryService accessoryService) {
+                       AccessoryService accessoryService,
+                       PromotionService promotionService) {
         this.repository = repository;
         this.sales = repository.load();
         this.productService = productService;
         this.accessoryService = accessoryService;
+        this.promotionService = promotionService;
     }
 
     /**
      * Registers a new sale for the given customer and seller with the
      * list of items provided. The list may contain both products and
      * accessories. Validates that the sale contains at least one item,
-     * that every item has enough stock, creates the sale, delegates the
-     * stock update to the appropriate service (product or accessory),
-     * and persists the updated list of sales.
+     * that every item has enough stock, creates the sale, applies the
+     * best active promotion, delegates the stock update to the
+     * appropriate service (product or accessory), and persists the
+     * updated list of sales.
      *
      * @param customer customer who makes the purchase
      * @param seller   seller who attends the sale
@@ -70,6 +76,16 @@ public class SaleService {
 
         String saleId = "SALE-" + (sales.size() + 1);
         Sale sale = new Sale(LocalDate.now(), saleId, products, seller, customer);
+
+        Promotion bestPromotion = promotionService.findBestPromotionFor(sale);
+        if (bestPromotion != null) {
+            double discount = bestPromotion.calculateDiscount(sale);
+            if (discount > 0) {
+                sale.setAppliedPromotionName(bestPromotion.getName());
+                sale.setDiscountAmount(discount);
+                sale.setTotal(sale.getTotal() - discount);
+            }
+        }
 
         List<Accessory> accessoriesToPersist = null;
         for (Product product : products) {
