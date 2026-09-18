@@ -1,1 +1,5 @@
-
+RET001,2026-09-04,SALE001,V001,Producto defectuoso,249900.0
+RET002,2026-09-07,SALE002,C001,El cliente solicitó devolución,2499900.0
+RET003,2026-09-09,SALE003,V003,Producto equivocado,119900.0
+RET004,2026-09-12,SALE004,A004,Cable incompatible con el equipo,89900.0
+RET005,2026-09-14,SALE005,A007,Producto con capacidad incorrecta,129900.0
