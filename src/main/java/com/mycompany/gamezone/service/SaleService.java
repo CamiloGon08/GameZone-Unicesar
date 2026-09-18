@@ -5,18 +5,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.mycompany.gamezone.model.Accessory;
+import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Promotion;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.Seller;
+import com.mycompany.gamezone.model.Warranty;
 import com.mycompany.gamezone.persistence.SaleRepository;
 
 /**
  * Service that handles the business rules related to sales.
  * Coordinates the creation of new sales, the validation of stock,
- * the update of the inventory after a sale, the application of the
- * best promotion, and the queries over the sales registered in the system.
+ * the update of the inventory, the application of the best promotion,
+ * the automatic assignment of warranties, and the queries over the
+ * sales registered in the system.
  */
 public class SaleService {
 
@@ -25,11 +28,13 @@ public class SaleService {
     private ProductService productService;
     private AccessoryService accessoryService;
     private PromotionService promotionService;
+    private WarrantyService warrantyService;
 
     /**
      * Creates a SaleService with the repositories and services required
-     * to register sales, to update the inventory, and to apply the best
-     * promotion available for each sale.
+     * to register sales, update inventory and apply promotions. The
+     * warranty service is set later to break the circular dependency
+     * between SaleService and WarrantyRepository.
      *
      * @param repository       repository used to save and load sales
      * @param productService   service used to update product stock
@@ -48,22 +53,32 @@ public class SaleService {
     }
 
     /**
-     * Registers a new sale for the given customer and seller with the
-     * list of items provided. The list may contain both products and
-     * accessories. Validates that the sale contains at least one item,
-     * that every item has enough stock, creates the sale, applies the
-     * best active promotion, delegates the stock update to the
-     * appropriate service (product or accessory), and persists the
-     * updated list of sales.
+     * Sets the warranty service after construction to break the circular
+     * dependency between SaleService and WarrantyRepository.
      *
-     * @param customer customer who makes the purchase
-     * @param seller   seller who attends the sale
-     * @param products list of items (products and accessories) included in the sale
+     * @param warrantyService service used to assign warranties
+     */
+    public void setWarrantyService(WarrantyService warrantyService) {
+        this.warrantyService = warrantyService;
+    }
+
+    /**
+     * Registers a new sale for the given customer and seller with the
+     * list of items provided. Products that are consoles automatically
+     * receive a basic warranty, and products listed in the extended
+     * warranty list receive an extended warranty whose additional cost
+     * is added to the total of the sale.
+     *
+     * @param customer                       customer who makes the purchase
+     * @param seller                         seller who attends the sale
+     * @param products                       list of items included in the sale
+     * @param productIdsWithExtendedWarranty IDs of products that should receive extended warranty (may be null or empty)
      * @return the newly created sale
      * @throws IllegalArgumentException if the item list is null or empty,
      *         or if any item has insufficient stock
      */
-    public Sale registerSale(Customer customer, Seller seller, List<Product> products) {
+    public Sale registerSale(Customer customer, Seller seller, List<Product> products,
+                             List<String> productIdsWithExtendedWarranty) {
         if (products == null || products.isEmpty()) {
             throw new IllegalArgumentException("A sale must contain at least one product.");
         }
@@ -84,6 +99,21 @@ public class SaleService {
                 sale.setAppliedPromotionName(bestPromotion.getName());
                 sale.setDiscountAmount(discount);
                 sale.setTotal(sale.getTotal() - discount);
+            }
+        }
+
+        if (warrantyService != null) {
+            for (Product product : products) {
+                if (product instanceof Console) {
+                    warrantyService.assignBasicWarranty(product, sale);
+                }
+                if (productIdsWithExtendedWarranty != null
+                        && productIdsWithExtendedWarranty.contains(product.getId())) {
+                    Warranty extended = warrantyService.assignExtendedWarranty(product, sale);
+                    if (extended != null) {
+                        sale.setTotal(sale.getTotal() + extended.getAdditionalCost());
+                    }
+                }
             }
         }
 
