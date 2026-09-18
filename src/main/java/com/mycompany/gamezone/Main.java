@@ -14,6 +14,7 @@ import com.mycompany.gamezone.service.ReturnService;
 import com.mycompany.gamezone.service.SaleService;
 import com.mycompany.gamezone.service.WarrantyService;
 import com.mycompany.gamezone.ui.ConsoleMenu;
+import utilities.FilePath;
 
 /**
  * Main entry point of the GameZone Unicesar application.
@@ -28,7 +29,7 @@ public class Main {
      * @param args command-line arguments (not used)
      */
     public static void main(String[] args) {
-        ProductRepository productRepository = new ProductRepository("data/products.txt");
+        ProductRepository productRepository = new ProductRepository(FilePath.PRODUCTS);
         SaleRepository saleRepository = new SaleRepository();
         AccessoryRepository accessoryRepository = new AccessoryRepository();
         PromotionRepository promotionRepository = new PromotionRepository();
@@ -39,7 +40,7 @@ public class Main {
         PromotionService promotionService = new PromotionService(promotionRepository);
         SaleService saleService = new SaleService(saleRepository, productService, accessoryService, promotionService);
 
-        ReturnRepository returnRepository = new ReturnRepository("data/returns.txt", saleService, productService);
+        ReturnRepository returnRepository = new ReturnRepository(FilePath.RETURNS, saleService, productService);
         ReturnService returnService = new ReturnService(returnRepository, saleService, productService);
 
         WarrantyRepository warrantyRepository = new WarrantyRepository(saleService, productService);
