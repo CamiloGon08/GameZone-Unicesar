@@ -1,8 +1,6 @@
 package com.mycompany.gamezone.model;
 
 import java.time.LocalDate;
-import com.mycompany.gamezone.model.Sale;
-import com.mycompany.gamezone.model.Promotion;
 
 
 public class PercentageDiscount extends Promotion {
@@ -36,6 +34,6 @@ public class PercentageDiscount extends Promotion {
    
     @Override
     public double calculateDiscount(Sale sale) {
-        return sale.getTotalAmount() * percentage / 100;
+        return sale.getTotal() * percentage / 100;
     }
 }
