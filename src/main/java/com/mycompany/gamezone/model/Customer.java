@@ -29,6 +29,7 @@ public class Customer extends Person{
     public Customer(String eMail, String name, String iD, long contactNumber) {
         super(name, iD, contactNumber);
         this.eMail = eMail;
+        this.purchases = new ArrayList<>();
     }
     
     /**
@@ -39,14 +40,34 @@ public class Customer extends Person{
     public String geteMail() {
         return eMail;
     }
-    
+
     /**
-    * Sets the personal eMail of each customer
-    * @param eMail sets the customer eMail 
-    */
-    
+     * Sets the personal eMail of each customer
+     *
+     * @param eMail sets the customer eMail
+     */
     public void seteMail(String eMail) {
         this.eMail = eMail;
+    }
+
+    /**
+     * * Adds a purchase to the customer's purchase history. * * @param sale the
+     * sale to be added
+     * @param purchase
+     */
+    public void addPurchase(Sale purchase) {
+        if (purchase != null) {
+            purchases.add(purchase);
+        }
+    }
+
+    /**
+     * * Gets the customer's purchase history. * * @return a copy of the
+     * customer's purchases
+     * @return 
+     */
+    public ArrayList<Sale> getPurchases() {
+        return new ArrayList<>(purchases);
     }
 
     /**
@@ -56,9 +77,10 @@ public class Customer extends Person{
      * @return a String with the object's data formatted for persistence.
      */
     @Override
-    
+
     public String textFormat() {
         return "CUSTOMER|" + getiD() + "|" + getName() + "|" + eMail + "|" + getContactNumber();
     }
+
 }
 
