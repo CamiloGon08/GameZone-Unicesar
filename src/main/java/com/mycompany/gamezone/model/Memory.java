@@ -1,7 +1,5 @@
 package com.mycompany.gamezone.model;
 
-import com.mycompany.gamezone.model.Accessory;
-
 public class Memory extends Accessory {
 
     private int capacityInGb;

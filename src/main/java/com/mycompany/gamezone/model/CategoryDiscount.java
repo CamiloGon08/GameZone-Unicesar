@@ -1,12 +1,6 @@
 package com.mycompany.gamezone.model;
 
 import java.time.LocalDate;
-import com.mycompany.gamezone.model.Promotion;
-import com.mycompany.gamezone.model.Sale;
-import com.mycompany.gamezone.model.Product;
-import com.mycompany.gamezone.model.VideoGame;
-import com.mycompany.gamezone.model.Console;
-
 
 public class CategoryDiscount extends Promotion {
 

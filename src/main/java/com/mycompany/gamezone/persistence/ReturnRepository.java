@@ -5,7 +5,6 @@ import com.mycompany.gamezone.model.Return;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.service.ProductService;
 import com.mycompany.gamezone.service.SaleService;
-import com.mycompany.gamezone.service.SaleService;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
