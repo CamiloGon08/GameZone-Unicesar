@@ -1,0 +1,7 @@
+VIDEOGAME,001,Minecraft,125000.0,25,Microsoft,Aventura,0
+VIDEOGAME,V001,Elden Ring,249900,15,PC,Action RPG,M
+VIDEOGAME,V002,EA Sports FC 26,279900,20,PS5,Sports,E
+VIDEOGAME,V003,Minecraft,119900,30,XBOX,Adventure,E10+
+CONSOLE,C001,PlayStation 5 Slim,2499900,8,Sony,PS5 Slim,9
+CONSOLE,C002,Xbox Series X,2799900,6,Microsoft,Series X,9
+CONSOLE,C003,Nintendo Switch OLED,1899900,10,Nintendo,Switch OLED,8
