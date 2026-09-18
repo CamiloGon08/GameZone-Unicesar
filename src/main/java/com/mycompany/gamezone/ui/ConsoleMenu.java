@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Scanner;
 
 import com.mycompany.gamezone.model.Accessory;
+import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Person;
 import com.mycompany.gamezone.model.Product;
@@ -13,12 +14,14 @@ import com.mycompany.gamezone.model.Promotion;
 import com.mycompany.gamezone.model.Return;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.Seller;
+import com.mycompany.gamezone.model.Warranty;
 import com.mycompany.gamezone.service.AccessoryService;
 import com.mycompany.gamezone.service.PersonService;
 import com.mycompany.gamezone.service.ProductService;
 import com.mycompany.gamezone.service.PromotionService;
 import com.mycompany.gamezone.service.ReturnService;
 import com.mycompany.gamezone.service.SaleService;
+import com.mycompany.gamezone.service.WarrantyService;
 
 /**
  * Console-based user interface for GameZone Unicesar.
@@ -36,6 +39,7 @@ public class ConsoleMenu {
     private final AccessoryService accessoryService;
     private final PromotionService promotionService;
     private final ReturnService returnService;
+    private final WarrantyService warrantyService;
     private final ArrayList<Person> persons;
 
     /**
@@ -48,13 +52,15 @@ public class ConsoleMenu {
      * @param accessoryService service that handles accessory-related operations
      * @param promotionService service that handles promotion-related operations
      * @param returnService    service that handles return-related operations
+     * @param warrantyService  service that handles warranty-related operations
      */
     public ConsoleMenu(ProductService productService,
                        PersonService personService,
                        SaleService saleService,
                        AccessoryService accessoryService,
                        PromotionService promotionService,
-                       ReturnService returnService) {
+                       ReturnService returnService,
+                       WarrantyService warrantyService) {
         this.scanner = new Scanner(System.in);
         this.productService = productService;
         this.personService = personService;
@@ -62,6 +68,7 @@ public class ConsoleMenu {
         this.accessoryService = accessoryService;
         this.promotionService = promotionService;
         this.returnService = returnService;
+        this.warrantyService = warrantyService;
         this.persons = personService.listPersons();
     }
 
@@ -89,6 +96,7 @@ public class ConsoleMenu {
                 case 11 -> accessoryMenu();
                 case 12 -> promotionMenu();
                 case 13 -> returnMenu();
+                case 14 -> warrantyMenu();
                 case 0 -> running = false;
                 default -> System.out.println("Opción inválida. Intente de nuevo.");
             }
@@ -111,6 +119,7 @@ public class ConsoleMenu {
         System.out.println("11. Gestión de accesorios");
         System.out.println("12. Gestión de promociones");
         System.out.println("13. Gestión de devoluciones");
+        System.out.println("14. Gestión de garantías");
         System.out.println("0. Salir");
         System.out.print("Elija una opción: ");
     }
@@ -300,8 +309,21 @@ public class ConsoleMenu {
             return;
         }
 
+        List<String> productIdsWithExtendedWarranty = new ArrayList<>();
+        for (Product item : selectedItems) {
+            if (item instanceof Console) {
+                System.out.print("¿Desea agregar garantía extendida a "
+                        + item.getTitle() + "? (s/n): ");
+                String respuesta = scanner.nextLine();
+                if (respuesta.equalsIgnoreCase("s")) {
+                    productIdsWithExtendedWarranty.add(item.getId());
+                }
+            }
+        }
+
         try {
-            Sale sale = saleService.registerSale(selectedCustomer, selectedSeller, selectedItems);
+            Sale sale = saleService.registerSale(selectedCustomer, selectedSeller, selectedItems,
+                    productIdsWithExtendedWarranty);
             System.out.println("¡Venta registrada exitosamente!");
             System.out.println(sale.generateReceipt());
         } catch (IllegalArgumentException e) {
@@ -374,6 +396,10 @@ public class ConsoleMenu {
             }
         }
     }
+
+    // ---------------------------------------------------------------
+    // Accessory menu
+    // ---------------------------------------------------------------
 
     private void accessoryMenu() {
         boolean running = true;
@@ -818,6 +844,89 @@ public class ConsoleMenu {
             System.out.println("Balance neto: $" + String.format("%.2f", balance));
         } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Warranty menu
+    // ---------------------------------------------------------------
+
+    private void warrantyMenu() {
+        boolean running = true;
+        while (running) {
+            printWarrantyMenu();
+            int option = readInt();
+            switch (option) {
+                case 1 -> findWarrantyByProductAndSale();
+                case 2 -> viewAllWarranties();
+                case 3 -> viewActiveWarranties();
+                case 4 -> viewWarrantiesExpiringSoon();
+                case 0 -> running = false;
+                default -> System.out.println("Opción inválida. Intente de nuevo.");
+            }
+        }
+    }
+
+    private void printWarrantyMenu() {
+        System.out.println("\n===== Gestión de garantías =====");
+        System.out.println("1. Consultar garantía de un producto en una venta");
+        System.out.println("2. Listar todas las garantías");
+        System.out.println("3. Listar garantías vigentes");
+        System.out.println("4. Listar garantías próximas a vencer (30 días)");
+        System.out.println("0. Volver al menú principal");
+        System.out.print("Elija una opción: ");
+    }
+
+    private void findWarrantyByProductAndSale() {
+        System.out.print("ID de la venta: ");
+        String saleId = scanner.nextLine();
+        System.out.print("ID del producto: ");
+        String productId = scanner.nextLine();
+
+        Warranty warranty = warrantyService.findByProductAndSale(productId, saleId);
+        if (warranty == null) {
+            System.out.println("No se encontró una garantía para ese producto en esa venta.");
+            return;
+        }
+        System.out.println(warranty.generateWarrantyCertificate());
+    }
+
+    private void viewAllWarranties() {
+        List<Warranty> warranties = warrantyService.viewAllWarranties();
+        if (warranties.isEmpty()) {
+            System.out.println("No hay garantías registradas aún.");
+            return;
+        }
+        System.out.println("--- Todas las garantías ---");
+        for (Warranty warranty : warranties) {
+            System.out.println(warranty.generateWarrantyCertificate());
+            System.out.println("---------------------------");
+        }
+    }
+
+    private void viewActiveWarranties() {
+        List<Warranty> warranties = warrantyService.viewActiveWarranties();
+        if (warranties.isEmpty()) {
+            System.out.println("No hay garantías vigentes en la fecha actual.");
+            return;
+        }
+        System.out.println("--- Garantías vigentes ---");
+        for (Warranty warranty : warranties) {
+            System.out.println(warranty.generateWarrantyCertificate());
+            System.out.println("---------------------------");
+        }
+    }
+
+    private void viewWarrantiesExpiringSoon() {
+        List<Warranty> warranties = warrantyService.viewWarrantiesExpiringSoon();
+        if (warranties.isEmpty()) {
+            System.out.println("No hay garantías próximas a vencer en los próximos 30 días.");
+            return;
+        }
+        System.out.println("--- Garantías próximas a vencer (30 días) ---");
+        for (Warranty warranty : warranties) {
+            System.out.println(warranty.generateWarrantyCertificate());
+            System.out.println("---------------------------");
         }
     }
 
