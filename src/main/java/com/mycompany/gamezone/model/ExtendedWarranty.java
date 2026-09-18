@@ -1,8 +1,6 @@
 package com.mycompany.gamezone.model;
 
 import java.time.LocalDate;
-import com.mycompany.gamezone.model.Product;
-import com.mycompany.gamezone.model.Sale;
 
 public class ExtendedWarranty extends Warranty {
 

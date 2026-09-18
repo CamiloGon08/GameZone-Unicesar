@@ -58,6 +58,22 @@ public class SaleService {
         return result;
     }
 
+    /**
+     * Finds a sale using its identification number.
+     *
+     * @param id the identification number of the sale
+     * @return the Sale with the specified ID, or null if it does not exist
+     */
+    public Sale findById(String id) {
+        for (Sale sale : sales) {
+            if (sale.getId().equals(id)) {
+                return sale;
+            }
+        }
+
+        return null;
+    }
+    
     public List<Sale> viewSalesBySeller(Seller seller) {
         List<Sale> result = new ArrayList<>();
         for (Sale sale : sales) {
@@ -67,4 +83,6 @@ public class SaleService {
         }
         return result;
     }
+    
+    
 }
