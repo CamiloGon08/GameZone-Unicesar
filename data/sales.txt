@@ -1,1 +1,5 @@
-
+SALE001,2026-09-01,Laura Martínez,Andrés Gómez,Elden Ring,249900.0
+SALE002,2026-09-03,Daniel Rodríguez,Valentina Pérez,PlayStation 5 Slim;DualSense Wireless Controller,2849800.0
+SALE003,2026-09-05,Camila Torres,Sebastián Castro,Minecraft;MicroSDXC 256GB,249800.0
+SALE004,2026-09-08,Laura Martínez,Valentina Pérez,Xbox Series X;Xbox Wireless Controller;HDMI 2.1 Ultra High Speed,3189700.0
+SALE005,2026-09-10,Daniel Rodríguez,Andrés Gómez,Nintendo Switch OLED;Switch Pro Controller;MicroSDXC 256GB,2359700.0
