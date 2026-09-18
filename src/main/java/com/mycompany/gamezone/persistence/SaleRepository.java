@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Sale;
+import utilities.FilePath;
 
 /**
  * Repository responsible for persisting sales to a plain text file and
@@ -18,7 +19,7 @@ import com.mycompany.gamezone.model.Sale;
  */
 public class SaleRepository {
 
-    private static final String FILE_PATH = "data/sales.txt";
+    private static final String FILE_PATH = FilePath.SALES;
 
     private String toLine(Sale sale) {
         StringBuilder productNames = new StringBuilder();
