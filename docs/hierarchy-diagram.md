@@ -1,21 +1,39 @@
-# Hierarchy  Diagram
+```mermaid
+classDiagram
+    class Product {
+        <<abstract>>
+    }
 
-<<abstract>> Product
-<<abstract>> Accesory
-<<abstract>> Promotion
-<<abstract>> Warranty
-<<abstract>> Person
+    class Accesory {
+        <<abstract>>
+    }
+
+    class Promotion {
+        <<abstract>>
+    }
+
+    class Warranty {
+        <<abstract>>
+    }
+
+    class Person {
+        <<abstract>>
+    }
 
     Person <|-- Customer
     Person <|-- Seller
+
     Product <|-- Console
     Product <|-- VideoGame
     Product <|-- Accesory
+
     Accesory <|-- Controller
     Accesory <|-- Cable
     Accesory <|-- Memory
+
     Promotion <|-- PercentagePromotion
     Promotion <|-- CategoryPromotion
     Promotion <|-- VolumePromotion
+
     Warranty <|-- BasicWarranty
-    Warranty <|-- ExtendedWarranty
+```

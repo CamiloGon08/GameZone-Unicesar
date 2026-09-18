@@ -1,1 +1,6 @@
-
+CUSTOMER|C001|Laura Martínez|laura.martinez@gmail.com|3001234567
+CUSTOMER|C002|Daniel Rodríguez|daniel.rodriguez@gmail.com|3012345678
+CUSTOMER|C003|Camila Torres|camila.torres@gmail.com|3023456789
+SELLER|S001|Andrés Gómez|3104567890|EMP001|MORNING
+SELLER|S002|Valentina Pérez|3115678901|EMP002|AFTERNOON
+SELLER|S003|Sebastián Castro|3126789012|EMP003|NIGHT
