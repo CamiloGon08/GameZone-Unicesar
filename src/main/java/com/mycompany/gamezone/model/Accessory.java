@@ -1,7 +1,5 @@
 package com.mycompany.gamezone.model;
 
-
-import com.mycompany.gamezone.model.Product;
 import java.util.ArrayList;
 import java.util.List;
 

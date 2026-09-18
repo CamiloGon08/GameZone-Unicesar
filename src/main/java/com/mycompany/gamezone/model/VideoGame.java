@@ -1,6 +1,5 @@
 package com.mycompany.gamezone.model;
 
-import com.mycompany.gamezone.model.Product;
 /**
  * Represents a video game product. In addition to the attributes common to
  * every product, a video game is characterized by the platform it was

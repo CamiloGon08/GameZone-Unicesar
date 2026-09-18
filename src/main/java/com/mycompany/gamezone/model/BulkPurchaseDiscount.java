@@ -1,10 +1,6 @@
 package com.mycompany.gamezone.model;
 
 import java.time.LocalDate;
-import com.mycompany.gamezone.model.Promotion;
-import com.mycompany.gamezone.model.Sale;
-
-
 
 public class BulkPurchaseDiscount extends Promotion {
 
@@ -52,7 +48,7 @@ public class BulkPurchaseDiscount extends Promotion {
     @Override
     public double calculateDiscount(Sale sale) {
         if (sale.getProducts().size() >= minimumQuantity) {
-            return sale.getTotalAmount() * percentage / 100;
+            return sale.getTotal() * percentage / 100;
         }
         return 0.0;
     }

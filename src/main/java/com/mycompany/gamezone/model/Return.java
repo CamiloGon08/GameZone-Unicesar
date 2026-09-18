@@ -3,9 +3,6 @@ package com.mycompany.gamezone.model;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.mycompany.gamezone.model.Product;
-import com.mycompany.gamezone.model.Sale;
-
 public class Return {
 
     private String id;
