@@ -5,12 +5,14 @@ import com.mycompany.gamezone.persistence.ProductRepository;
 import com.mycompany.gamezone.persistence.PromotionRepository;
 import com.mycompany.gamezone.persistence.ReturnRepository;
 import com.mycompany.gamezone.persistence.SaleRepository;
+import com.mycompany.gamezone.persistence.WarrantyRepository;
 import com.mycompany.gamezone.service.AccessoryService;
 import com.mycompany.gamezone.service.PersonService;
 import com.mycompany.gamezone.service.ProductService;
 import com.mycompany.gamezone.service.PromotionService;
 import com.mycompany.gamezone.service.ReturnService;
 import com.mycompany.gamezone.service.SaleService;
+import com.mycompany.gamezone.service.WarrantyService;
 import com.mycompany.gamezone.ui.ConsoleMenu;
 
 /**
@@ -40,8 +42,12 @@ public class Main {
         ReturnRepository returnRepository = new ReturnRepository("data/returns.txt", saleService, productService);
         ReturnService returnService = new ReturnService(returnRepository, saleService, productService);
 
+        WarrantyRepository warrantyRepository = new WarrantyRepository(saleService, productService);
+        WarrantyService warrantyService = new WarrantyService(warrantyRepository);
+        saleService.setWarrantyService(warrantyService);
+
         ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService,
-                                           accessoryService, promotionService, returnService);
+                accessoryService, promotionService, returnService, warrantyService);
         menu.start();
     }
 }
