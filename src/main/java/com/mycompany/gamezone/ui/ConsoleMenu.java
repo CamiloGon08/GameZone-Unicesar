@@ -4,11 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import com.mycompany.gamezone.model.Accessory;
 import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Person;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.Seller;
+import com.mycompany.gamezone.service.AccessoryService;
 import com.mycompany.gamezone.service.PersonService;
 import com.mycompany.gamezone.service.ProductService;
 import com.mycompany.gamezone.service.SaleService;
@@ -26,21 +28,27 @@ public class ConsoleMenu {
     private final ProductService productService;
     private final PersonService personService;
     private final SaleService saleService;
+    private final AccessoryService accessoryService;
     private final ArrayList<Person> persons;
 
     /**
      * Creates a console menu with the services required to perform the
      * user operations.
      *
-     * @param productService service that handles product-related operations
-     * @param personService  service that handles person-related operations
-     * @param saleService    service that handles sale-related operations
+     * @param productService   service that handles product-related operations
+     * @param personService    service that handles person-related operations
+     * @param saleService      service that handles sale-related operations
+     * @param accessoryService service that handles accessory-related operations
      */
-    public ConsoleMenu(ProductService productService, PersonService personService, SaleService saleService) {
+    public ConsoleMenu(ProductService productService,
+                       PersonService personService,
+                       SaleService saleService,
+                       AccessoryService accessoryService) {
         this.scanner = new Scanner(System.in);
         this.productService = productService;
         this.personService = personService;
         this.saleService = saleService;
+        this.accessoryService = accessoryService;
         this.persons = personService.listPersons();
     }
 
@@ -65,12 +73,17 @@ public class ConsoleMenu {
                 case 8 -> viewAllSales();
                 case 9 -> viewSalesByCustomer();
                 case 10 -> viewSalesBySeller();
+                case 11 -> accessoryMenu();
                 case 0 -> running = false;
                 default -> System.out.println("Opción inválida. Intente de nuevo.");
             }
         }
         System.out.println("¡Hasta luego!");
     }
+
+    // ---------------------------------------------------------------
+    // Main menu
+    // ---------------------------------------------------------------
 
     private void printMainMenu() {
         System.out.println("\n===== GameZone Unicesar =====");
@@ -84,9 +97,14 @@ public class ConsoleMenu {
         System.out.println("8. Ver todas las ventas");
         System.out.println("9. Ver ventas por cliente");
         System.out.println("10. Ver ventas por vendedor");
+        System.out.println("11. Gestión de accesorios");
         System.out.println("0. Salir");
         System.out.print("Elija una opción: ");
     }
+
+    // ---------------------------------------------------------------
+    // Product operations
+    // ---------------------------------------------------------------
 
     private void registerVideoGame() {
         System.out.print("ID: ");
@@ -148,6 +166,10 @@ public class ConsoleMenu {
         }
     }
 
+    // ---------------------------------------------------------------
+    // Person operations
+    // ---------------------------------------------------------------
+
     private void registerCustomer() {
         System.out.print("Nombre: ");
         String name = scanner.nextLine();
@@ -181,8 +203,10 @@ public class ConsoleMenu {
         }
         System.out.println("--- Clientes registrados ---");
         for (Customer customer : customers) {
-            System.out.println("Nombre: " + customer.getName() + " | ID: " + customer.getiD() +
-                    " | Teléfono: " + customer.getContactNumber() + " | Correo: " + customer.geteMail());
+            System.out.println("Nombre: " + customer.getName()
+                    + " | ID: " + customer.getiD()
+                    + " | Teléfono: " + customer.getContactNumber()
+                    + " | Correo: " + customer.geteMail());
         }
     }
 
@@ -194,10 +218,16 @@ public class ConsoleMenu {
         }
         System.out.println("--- Vendedores registrados ---");
         for (Seller seller : sellers) {
-            System.out.println("Nombre: " + seller.getName() + " | ID: " + seller.getiD() +
-                    " | Código de empleado: " + seller.getEmployeeCode() + " | Turno: " + seller.getShift());
+            System.out.println("Nombre: " + seller.getName()
+                    + " | ID: " + seller.getiD()
+                    + " | Código de empleado: " + seller.getEmployeeCode()
+                    + " | Turno: " + seller.getShift());
         }
     }
+
+    // ---------------------------------------------------------------
+    // Sale operations
+    // ---------------------------------------------------------------
 
     private void registerSale() {
         List<Customer> customers = getCustomers();
@@ -207,7 +237,8 @@ public class ConsoleMenu {
         }
         System.out.println("Seleccione un cliente:");
         for (int i = 0; i < customers.size(); i++) {
-            System.out.println((i + 1) + ". " + customers.get(i).getName() + " (ID: " + customers.get(i).getiD() + ")");
+            System.out.println((i + 1) + ". " + customers.get(i).getName()
+                    + " (ID: " + customers.get(i).getiD() + ")");
         }
         int customerIndex = readInt() - 1;
         if (customerIndex < 0 || customerIndex >= customers.size()) {
@@ -223,7 +254,8 @@ public class ConsoleMenu {
         }
         System.out.println("Seleccione un vendedor:");
         for (int i = 0; i < sellers.size(); i++) {
-            System.out.println((i + 1) + ". " + sellers.get(i).getName() + " (Código: " + sellers.get(i).getEmployeeCode() + ")");
+            System.out.println((i + 1) + ". " + sellers.get(i).getName()
+                    + " (Código: " + sellers.get(i).getEmployeeCode() + ")");
         }
         int sellerIndex = readInt() - 1;
         if (sellerIndex < 0 || sellerIndex >= sellers.size()) {
@@ -232,39 +264,47 @@ public class ConsoleMenu {
         }
         Seller selectedSeller = sellers.get(sellerIndex);
 
-        List<Product> allProducts = productService.listProducts();
-        if (allProducts.isEmpty()) {
-            System.out.println("No hay productos disponibles. Registre un producto primero.");
+        // Combine products and accessories into a single selectable list
+        List<Product> selectableItems = new ArrayList<>();
+        selectableItems.addAll(productService.listProducts());
+        selectableItems.addAll(accessoryService.listAllAccessories());
+
+        if (selectableItems.isEmpty()) {
+            System.out.println("No hay productos ni accesorios disponibles. Registre uno primero.");
             return;
         }
-        List<Product> selectedProducts = new ArrayList<>();
+
+        List<Product> selectedItems = new ArrayList<>();
         boolean adding = true;
         while (adding) {
-            System.out.println("Seleccione un producto para agregar (o 0 para terminar):");
-            for (int i = 0; i < allProducts.size(); i++) {
-                System.out.println((i + 1) + ". " + allProducts.get(i).getTitle() +
-                        " (Stock: " + allProducts.get(i).getStock() + ", Precio: $" + allProducts.get(i).getPrice() + ")");
+            System.out.println("Seleccione un producto o accesorio para agregar (o 0 para terminar):");
+            for (int i = 0; i < selectableItems.size(); i++) {
+                Product item = selectableItems.get(i);
+                System.out.println((i + 1) + ". " + item.getTitle()
+                        + " (Stock: " + item.getStock()
+                        + ", Precio: $" + item.getPrice() + ")");
             }
-            int productIndex = readInt() - 1;
-            if (productIndex == -1) {
+            int itemIndex = readInt() - 1;
+            if (itemIndex == -1) {
                 adding = false;
-            } else if (productIndex >= 0 && productIndex < allProducts.size()) {
-                selectedProducts.add(allProducts.get(productIndex));
-                System.out.println("Se agregó " + allProducts.get(productIndex).getTitle() + " a la venta.");
+            } else if (itemIndex >= 0 && itemIndex < selectableItems.size()) {
+                selectedItems.add(selectableItems.get(itemIndex));
+                System.out.println("Se agregó " + selectableItems.get(itemIndex).getTitle() + " a la venta.");
             } else {
-                System.out.println("Selección de producto inválida.");
+                System.out.println("Selección inválida.");
             }
         }
 
-        if (selectedProducts.isEmpty()) {
-            System.out.println("No se seleccionó ningún producto. Venta cancelada.");
+        if (selectedItems.isEmpty()) {
+            System.out.println("No se seleccionó ningún ítem. Venta cancelada.");
             return;
         }
 
         try {
-            Sale sale = saleService.registerSale(selectedCustomer, selectedSeller, selectedProducts);
+            Sale sale = saleService.registerSale(selectedCustomer, selectedSeller, selectedItems);
             System.out.println("¡Venta registrada exitosamente!");
-            System.out.println("ID de venta: " + sale.getId() + " | Total: $" + String.format("%.2f", sale.getTotal()));
+            System.out.println("ID de venta: " + sale.getId()
+                    + " | Total: $" + String.format("%.2f", sale.getTotal()));
         } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -335,6 +375,179 @@ public class ConsoleMenu {
             }
         }
     }
+
+    // ---------------------------------------------------------------
+    // Accessory menu
+    // ---------------------------------------------------------------
+
+    private void accessoryMenu() {
+        boolean running = true;
+        while (running) {
+            printAccessoryMenu();
+            int option = readInt();
+            switch (option) {
+                case 1 -> registerController();
+                case 2 -> registerCable();
+                case 3 -> registerMemory();
+                case 4 -> listAllAccessories();
+                case 5 -> listAccessoriesByType();
+                case 6 -> findAccessoriesCompatibleWith();
+                case 0 -> running = false;
+                default -> System.out.println("Opción inválida. Intente de nuevo.");
+            }
+        }
+    }
+
+    private void printAccessoryMenu() {
+        System.out.println("\n===== Gestión de accesorios =====");
+        System.out.println("1. Registrar un nuevo control");
+        System.out.println("2. Registrar un nuevo cable");
+        System.out.println("3. Registrar una nueva memoria");
+        System.out.println("4. Listar todos los accesorios");
+        System.out.println("5. Listar accesorios por tipo");
+        System.out.println("6. Consultar accesorios compatibles con una consola");
+        System.out.println("0. Volver al menú principal");
+        System.out.print("Elija una opción: ");
+    }
+
+    private void registerController() {
+        System.out.print("ID: ");
+        String id = scanner.nextLine();
+        System.out.print("Título: ");
+        String title = scanner.nextLine();
+        System.out.print("Precio: ");
+        double price = Double.parseDouble(scanner.nextLine());
+        System.out.print("Stock: ");
+        int stock = Integer.parseInt(scanner.nextLine());
+        System.out.print("Tipo de conexión (WIRELESS/WIRED): ");
+        String connectionType = scanner.nextLine();
+        System.out.print("IDs de consolas compatibles (separados por coma, o vacío): ");
+        String consoleIdsRaw = scanner.nextLine();
+
+        List<String> compatibleConsoleIds = parseCommaSeparated(consoleIdsRaw);
+
+        try {
+            List<Accessory> accessories = accessoryService.listAllAccessories();
+            accessoryService.registerController(accessories, id, title, price, stock,
+                    connectionType, compatibleConsoleIds);
+            accessoryService.saveAll(accessories);
+            System.out.println("Control registrado exitosamente.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void registerCable() {
+        System.out.print("ID: ");
+        String id = scanner.nextLine();
+        System.out.print("Título: ");
+        String title = scanner.nextLine();
+        System.out.print("Precio: ");
+        double price = Double.parseDouble(scanner.nextLine());
+        System.out.print("Stock: ");
+        int stock = Integer.parseInt(scanner.nextLine());
+        System.out.print("Longitud en metros: ");
+        double length = Double.parseDouble(scanner.nextLine());
+        System.out.print("Tipo de conector: ");
+        String connectorType = scanner.nextLine();
+
+        try {
+            List<Accessory> accessories = accessoryService.listAllAccessories();
+            accessoryService.registerCable(accessories, id, title, price, stock,
+                    length, connectorType);
+            accessoryService.saveAll(accessories);
+            System.out.println("Cable registrado exitosamente.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void registerMemory() {
+        System.out.print("ID: ");
+        String id = scanner.nextLine();
+        System.out.print("Título: ");
+        String title = scanner.nextLine();
+        System.out.print("Precio: ");
+        double price = Double.parseDouble(scanner.nextLine());
+        System.out.print("Stock: ");
+        int stock = Integer.parseInt(scanner.nextLine());
+        System.out.print("Capacidad en GB: ");
+        int capacity = Integer.parseInt(scanner.nextLine());
+        System.out.print("Tipo de memoria: ");
+        String memoryType = scanner.nextLine();
+        System.out.print("IDs de consolas compatibles (separados por coma, o vacío): ");
+        String consoleIdsRaw = scanner.nextLine();
+
+        List<String> compatibleConsoleIds = parseCommaSeparated(consoleIdsRaw);
+
+        try {
+            List<Accessory> accessories = accessoryService.listAllAccessories();
+            accessoryService.registerMemory(accessories, id, title, price, stock,
+                    capacity, memoryType, compatibleConsoleIds);
+            accessoryService.saveAll(accessories);
+            System.out.println("Memoria registrada exitosamente.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void listAllAccessories() {
+        List<Accessory> accessories = accessoryService.listAllAccessories();
+        if (accessories.isEmpty()) {
+            System.out.println("No hay accesorios registrados aún.");
+            return;
+        }
+        System.out.println("--- Inventario de accesorios ---");
+        for (Accessory accessory : accessories) {
+            System.out.println(accessory.getDescription());
+        }
+    }
+
+    private void listAccessoriesByType() {
+        System.out.print("Tipo (Controller/Cable/Memory): ");
+        String type = scanner.nextLine();
+        List<Accessory> accessories = accessoryService.listAccessoriesByType(type);
+        if (accessories.isEmpty()) {
+            System.out.println("No hay accesorios de ese tipo.");
+            return;
+        }
+        System.out.println("--- Accesorios tipo " + type + " ---");
+        for (Accessory accessory : accessories) {
+            System.out.println(accessory.getDescription());
+        }
+    }
+
+    private void findAccessoriesCompatibleWith() {
+        System.out.print("ID de la consola: ");
+        String consoleId = scanner.nextLine();
+        List<Accessory> compatible = accessoryService.findAccessoriesCompatibleWith(consoleId);
+        if (compatible.isEmpty()) {
+            System.out.println("No hay accesorios compatibles con esa consola.");
+            return;
+        }
+        System.out.println("--- Accesorios compatibles con " + consoleId + " ---");
+        for (Accessory accessory : compatible) {
+            System.out.println(accessory.getDescription());
+        }
+    }
+
+    private List<String> parseCommaSeparated(String raw) {
+        List<String> result = new ArrayList<>();
+        if (raw == null || raw.trim().isEmpty()) {
+            return result;
+        }
+        for (String part : raw.split(",")) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                result.add(trimmed);
+            }
+        }
+        return result;
+    }
+
+    // ---------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------
 
     private List<Customer> getCustomers() {
         List<Customer> customers = new ArrayList<>();
