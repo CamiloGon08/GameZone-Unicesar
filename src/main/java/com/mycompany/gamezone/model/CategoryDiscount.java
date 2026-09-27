@@ -2,6 +2,7 @@ package com.mycompany.gamezone.model;
 
 import java.time.LocalDate;
 
+
 public class CategoryDiscount extends Promotion {
 
     private double percentage;
