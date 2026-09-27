@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/Main.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/Sale.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/persistence/SaleRepository.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/Cable.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/Memory.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/Customer.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/Controller.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/Product.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/Person.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/PercentageDiscount.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/CategoryDiscount.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/Console.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/BulkPurchaseDiscount.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/BasicWarranty.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/Accessory.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/Promotion.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/Return.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/Seller.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/VideoGame.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/Warranty.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/model/ExtendedWarranty.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/service/ProductService.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/service/PersonService.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/service/AccessoryService.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/persistence/ProductRepository.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/persistence/PersonRepository.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/src/main/java/com/mycompany/gamezone/persistence/AccessoryRepository.java</file>
+            <file>file:/C:/Users/jxsxs/Documents/NetBeansProjects/GameZone-Unicesar/docs/class-diagram.md</file>
+        </group>
+    </open-files>
+</project-private>
