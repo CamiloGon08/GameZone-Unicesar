@@ -1,6 +1,7 @@
 package com.mycompany.gamezone.service;
 
 import com.mycompany.gamezone.model.Accessory;
+import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Return;
@@ -14,11 +15,11 @@ import java.util.List;
 /**
  * Service responsible for managing item returns.
  *
- * This class contains the business rules related to returns, including
- * the 30-day return period, validation of items (products and accessories)
- * against the original sale, stock restoration through ProductService or
- * AccessoryService depending on the item type, and monthly balance
- * calculation.
+ * This class contains the business rules related to returns, including the
+ * 30-day return period, validation of items (products and accessories) against
+ * the original sale, stock restoration through ProductService or
+ * AccessoryService depending on the item type, cancellation of the warranties
+ * of returned consoles, and monthly balance calculation.
  *
  * @author EstefaniaMarquez
  */
@@ -28,6 +29,7 @@ public class ReturnService {
     private final SaleService saleService;
     private final ProductService productService;
     private final AccessoryService accessoryService;
+    private final WarrantyService warrantyService;
     private final List<Return> returns;
 
     /**
@@ -37,18 +39,22 @@ public class ReturnService {
      * @param saleService service used to find original sales
      * @param productService service used to find products and restore stock
      * @param accessoryService service used to find accessories and restore
-     *        stock
+     * stock
+     * @param warrantyService service used to cancel the warranties of returned
+     * consoles
      */
     public ReturnService(
             ReturnRepository repository,
             SaleService saleService,
             ProductService productService,
-            AccessoryService accessoryService) {
+            AccessoryService accessoryService,
+            WarrantyService warrantyService) {
 
         this.repository = repository;
         this.saleService = saleService;
         this.productService = productService;
         this.accessoryService = accessoryService;
+        this.warrantyService = warrantyService;
         this.returns = repository.loadAll();
     }
 
@@ -59,7 +65,9 @@ public class ReturnService {
      * sale date. Every returned item, either a product or an accessory,
      * must belong to the original sale. When the return is successful, the
      * stock of each item is restored through ProductService or
-     * AccessoryService according to its type, and the return is persisted.
+     * AccessoryService according to its type. For every returned console,
+     * its warranties in the original sale are cancelled and the refundable
+     * warranty cost is included in the refund amount.
      *
      * @param saleId identification number of the original sale
      * @param productIds identification numbers of the items to return
@@ -140,6 +148,19 @@ public class ReturnService {
             returnedProducts.add(product);
         }
 
+        double warrantyRefundAmount = 0.0;
+
+        for (Product product : returnedProducts) {
+
+            restoreItemStock(product);
+
+            if (product instanceof Console) {
+                warrantyRefundAmount += warrantyService.cancelWarranties(
+                        product.getId(),
+                        saleId);
+            }
+        }
+
         String returnId = generateReturnId();
 
         Return returnRecord = new Return(
@@ -147,11 +168,8 @@ public class ReturnService {
                 currentDate,
                 sale,
                 returnedProducts,
-                reason);
-
-        for (Product product : returnedProducts) {
-            restoreItemStock(product);
-        }
+                reason,
+                warrantyRefundAmount);
 
         returns.add(returnRecord);
         repository.saveAll(returns);
@@ -160,12 +178,11 @@ public class ReturnService {
     }
 
     /**
-     * Finds a sellable item by its identifier, looking first among the
-     * products and then among the accessories.
+     * Finds a sellable item by its identifier, looking first among the products
+     * and then among the accessories.
      *
      * @param id identification number of the item
-     * @return the matching product or accessory, or null if it does not
-     *         exist
+     * @return the matching product or accessory, or null if it does not exist
      */
     private Product findItemById(String id) {
 
@@ -179,9 +196,8 @@ public class ReturnService {
     }
 
     /**
-     * Restores the stock of a returned item, delegating to
-     * AccessoryService for accessories and to ProductService for any other
-     * product.
+     * Restores the stock of a returned item, delegating to AccessoryService for
+     * accessories and to ProductService for any other product.
      *
      * @param item returned item whose stock will be restored
      */
@@ -285,25 +301,22 @@ public class ReturnService {
     }
 
     /**
-     * Calculates the monthly balance for the specified month and year.
+     * Calculates the total amount of sales made during the specified month and
+     * year.
      *
-     * The balance is calculated as the total amount of sales made during
-     * the month minus the total refund amount of returns registered
-     * during the same month.
+     * The final total of each sale is used, which already includes the applied
+     * discount and the cost of extended warranties.
      *
      * @param month month to calculate, from 1 to 12
      * @param year year to calculate
-     * @return monthly balance
+     * @return total amount of sales for the period
+     * @throws IllegalArgumentException if the month is not between 1 and 12
      */
-    public double generateMonthlyBalance(int month, int year) {
+    public double calculateMonthlySales(int month, int year) {
 
-        if (month < 1 || month > 12) {
-            throw new IllegalArgumentException(
-                    "The month must be between 1 and 12.");
-        }
+        validateMonth(month);
 
         double totalSales = 0.0;
-        double totalReturns = 0.0;
 
         for (Sale sale : saleService.viewAllSales()) {
 
@@ -316,6 +329,24 @@ public class ReturnService {
             }
         }
 
+        return totalSales;
+    }
+
+    /**
+     * Calculates the total refund amount of the returns registered during the
+     * specified month and year.
+     *
+     * @param month month to calculate, from 1 to 12
+     * @param year year to calculate
+     * @return total refunded amount for the period
+     * @throws IllegalArgumentException if the month is not between 1 and 12
+     */
+    public double calculateMonthlyReturns(int month, int year) {
+
+        validateMonth(month);
+
+        double totalReturns = 0.0;
+
         for (Return returnRecord : returns) {
 
             LocalDate returnDate = returnRecord.getDate();
@@ -327,6 +358,37 @@ public class ReturnService {
             }
         }
 
-        return totalSales - totalReturns;
+        return totalReturns;
+    }
+
+    /**
+     * Calculates the monthly balance for the specified month and year.
+     *
+     * The balance is the difference between the total amount of sales and the
+     * total refund amount of returns registered during the same month.
+     *
+     * @param month month to calculate, from 1 to 12
+     * @param year year to calculate
+     * @return monthly balance
+     * @throws IllegalArgumentException if the month is not between 1 and 12
+     */
+    public double generateMonthlyBalance(int month, int year) {
+
+        return calculateMonthlySales(month, year)
+                - calculateMonthlyReturns(month, year);
+    }
+
+    /**
+     * Validates that a month number is between 1 and 12.
+     *
+     * @param month month number to validate
+     * @throws IllegalArgumentException if the month is out of range
+     */
+    private void validateMonth(int month) {
+
+        if (month < 1 || month > 12) {
+            throw new IllegalArgumentException(
+                    "The month must be between 1 and 12.");
+        }
     }
 }

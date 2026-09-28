@@ -11,6 +11,7 @@ import com.mycompany.gamezone.persistence.WarrantyRepository.WarrantyData;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -127,28 +128,16 @@ public class WarrantyService {
      * @return created basic warranty
      */
     public Warranty assignBasicWarranty(Product product, Sale sale) {
-
         validateWarrantyData(product, sale);
 
-        Warranty existingWarranty = findByProductAndSale(
-                product.getId(),
-                sale.getId());
-
-        if (existingWarranty != null) {
-            return existingWarranty;
+        if (hasWarrantyOfType(product.getId(), sale.getId(), BasicWarranty.class)) {
+            return findByProductAndSale(product.getId(), sale.getId());
         }
 
         String warrantyId = generateWarrantyId();
-
-        Warranty warranty = new BasicWarranty(
-                warrantyId,
-                product,
-                sale,
-                LocalDate.now());
-
+        Warranty warranty = new BasicWarranty(warrantyId, product, sale, LocalDate.now());
         warranties.add(warranty);
         saveAll();
-
         return warranty;
     }
 
@@ -157,38 +146,36 @@ public class WarrantyService {
      *
      * @param product product covered by the warranty
      * @param sale sale associated with the warranty
-     * @return created extended warranty, or null if the product already
-     *         has a warranty for the sale
+     * @return created extended warranty, or null if the product already has a
+     * warranty for the sale
      */
     public Warranty assignExtendedWarranty(Product product, Sale sale) {
-
         validateWarrantyData(product, sale);
 
-        Warranty existingWarranty = findByProductAndSale(
-                product.getId(),
-                sale.getId());
-
-        if (existingWarranty != null) {
-            return existingWarranty;
+        if (hasWarrantyOfType(product.getId(), sale.getId(), ExtendedWarranty.class)) {
+            return null;
         }
 
         String warrantyId = generateWarrantyId();
-
-        Warranty warranty = new ExtendedWarranty(
-                warrantyId,
-                product,
-                sale,
-                LocalDate.now());
-
+        Warranty warranty = new ExtendedWarranty(warrantyId, product, sale, LocalDate.now());
         warranties.add(warranty);
         saveAll();
-
         return warranty;
     }
 
+    private boolean hasWarrantyOfType(String productId, String saleId, Class<? extends Warranty> type) {
+        for (Warranty warranty : warranties) {
+            if (type.isInstance(warranty)
+                    && warranty.getProduct().getId().equalsIgnoreCase(productId)
+                    && warranty.getSale().getId().equalsIgnoreCase(saleId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
-     * Validates the product and sale references required to create
-     * a warranty.
+     * Validates the product and sale references required to create a warranty.
      *
      * @param product product associated with the warranty
      * @param sale sale associated with the warranty
@@ -246,6 +233,56 @@ public class WarrantyService {
         }
 
         return null;
+    }
+
+    /**
+     * Cancels every warranty of a product within a sale.
+     *
+     * The matching warranties are removed and the change is persisted. The
+     * returned value is the refundable cost: zero for a basic warranty and the
+     * additional cost for an extended warranty.
+     *
+     * @param productId identifier of the returned product
+     * @param saleId identifier of the sale that generated the warranties
+     * @return total refundable cost of the cancelled warranties, or zero if
+     * none existed
+     * @throws IllegalArgumentException if the product ID or sale ID is empty
+     */
+    public double cancelWarranties(String productId, String saleId) {
+
+        if (productId == null || productId.trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Product ID cannot be empty.");
+        }
+
+        if (saleId == null || saleId.trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Sale ID cannot be empty.");
+        }
+
+        double refundableCost = 0.0;
+        boolean removed = false;
+
+        Iterator<Warranty> iterator = warranties.iterator();
+
+        while (iterator.hasNext()) {
+
+            Warranty warranty = iterator.next();
+
+            if (warranty.getProduct().getId().equals(productId)
+                    && warranty.getSale().getId().equals(saleId)) {
+
+                refundableCost += warranty.getAdditionalCost();
+                iterator.remove();
+                removed = true;
+            }
+        }
+
+        if (removed) {
+            saveAll();
+        }
+
+        return refundableCost;
     }
 
     /**

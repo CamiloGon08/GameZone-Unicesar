@@ -839,8 +839,12 @@ public class ConsoleMenu {
         }
 
         try {
+            double totalSales = returnService.calculateMonthlySales(month, year);
+            double totalReturns = returnService.calculateMonthlyReturns(month, year);
             double balance = returnService.generateMonthlyBalance(month, year);
             System.out.println("--- Balance mensual " + month + "/" + year + " ---");
+            System.out.println("Total de ventas: $" + String.format("%.2f", totalSales));
+            System.out.println("Total de devoluciones: $" + String.format("%.2f", totalReturns));
             System.out.println("Balance neto: $" + String.format("%.2f", balance));
         } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
