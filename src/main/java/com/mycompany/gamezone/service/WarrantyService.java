@@ -127,28 +127,16 @@ public class WarrantyService {
      * @return created basic warranty
      */
     public Warranty assignBasicWarranty(Product product, Sale sale) {
-
         validateWarrantyData(product, sale);
 
-        Warranty existingWarranty = findByProductAndSale(
-                product.getId(),
-                sale.getId());
-
-        if (existingWarranty != null) {
-            return existingWarranty;
+        if (hasWarrantyOfType(product.getId(), sale.getId(), BasicWarranty.class)) {
+            return findByProductAndSale(product.getId(), sale.getId());
         }
 
         String warrantyId = generateWarrantyId();
-
-        Warranty warranty = new BasicWarranty(
-                warrantyId,
-                product,
-                sale,
-                LocalDate.now());
-
+        Warranty warranty = new BasicWarranty(warrantyId, product, sale, LocalDate.now());
         warranties.add(warranty);
         saveAll();
-
         return warranty;
     }
 
@@ -157,38 +145,36 @@ public class WarrantyService {
      *
      * @param product product covered by the warranty
      * @param sale sale associated with the warranty
-     * @return created extended warranty, or null if the product already
-     *         has a warranty for the sale
+     * @return created extended warranty, or null if the product already has a
+     * warranty for the sale
      */
     public Warranty assignExtendedWarranty(Product product, Sale sale) {
-
         validateWarrantyData(product, sale);
 
-        Warranty existingWarranty = findByProductAndSale(
-                product.getId(),
-                sale.getId());
-
-        if (existingWarranty != null) {
-            return existingWarranty;
+        if (hasWarrantyOfType(product.getId(), sale.getId(), ExtendedWarranty.class)) {
+            return null;
         }
 
         String warrantyId = generateWarrantyId();
-
-        Warranty warranty = new ExtendedWarranty(
-                warrantyId,
-                product,
-                sale,
-                LocalDate.now());
-
+        Warranty warranty = new ExtendedWarranty(warrantyId, product, sale, LocalDate.now());
         warranties.add(warranty);
         saveAll();
-
         return warranty;
     }
 
+    private boolean hasWarrantyOfType(String productId, String saleId, Class<? extends Warranty> type) {
+        for (Warranty warranty : warranties) {
+            if (type.isInstance(warranty)
+                    && warranty.getProduct().getId().equalsIgnoreCase(productId)
+                    && warranty.getSale().getId().equalsIgnoreCase(saleId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
-     * Validates the product and sale references required to create
-     * a warranty.
+     * Validates the product and sale references required to create a warranty.
      *
      * @param product product associated with the warranty
      * @param sale sale associated with the warranty
