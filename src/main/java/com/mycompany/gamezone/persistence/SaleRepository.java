@@ -3,11 +3,15 @@ package com.mycompany.gamezone.persistence;
 import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Person;
 import java.io.BufferedWriter;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mycompany.gamezone.model.Customer;
+import com.mycompany.gamezone.model.Person;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.Seller;
@@ -26,15 +30,32 @@ import utilities.FilePath;
 public class SaleRepository {
 
     private static final String FILE_PATH = FilePath.SALES;
+    private static final String SEPARATOR = "\\|";
+
+    private final ProductService productService;
+    private final PersonService personService;
+
+    /**
+     * Creates a SaleRepository with the services required to resolve
+     * references to products, customers and sellers when loading sales.
+     *
+     * @param productService service used to look up products by ID
+     * @param personService  service used to look up people by ID
+     */
+    public SaleRepository(ProductService productService,
+                          PersonService personService) {
+        this.productService = productService;
+        this.personService = personService;
+    }
 
     private String toLine(Sale sale) {
-        StringBuilder productNames = new StringBuilder();
+        StringBuilder productIds = new StringBuilder();
         List<Product> products = sale.getProducts();
         for (int i = 0; i < products.size(); i++) {
             if (i > 0) {
-                productNames.append(";");
+                productIds.append(";");
             }
-            productNames.append(products.get(i).getTitle());
+            productIds.append(products.get(i).getId());
         }
         return sale.getId() + "," + sale.getDate() + ","
                 + sale.getCustomer().getName() + "," + sale.getSeller().getName()

@@ -14,6 +14,7 @@ import com.mycompany.gamezone.service.ReturnService;
 import com.mycompany.gamezone.service.SaleService;
 import com.mycompany.gamezone.service.WarrantyService;
 import com.mycompany.gamezone.ui.ConsoleMenu;
+
 import utilities.FilePath;
 
 /**
@@ -30,7 +31,6 @@ public class Main {
      */
     public static void main(String[] args) {
         ProductRepository productRepository = new ProductRepository(FilePath.PRODUCTS);
-        SaleRepository saleRepository = new SaleRepository();
         AccessoryRepository accessoryRepository = new AccessoryRepository();
         PromotionRepository promotionRepository = new PromotionRepository();
 
@@ -38,6 +38,8 @@ public class Main {
         AccessoryService accessoryService = new AccessoryService(accessoryRepository);
         PersonService personService = new PersonService();
         PromotionService promotionService = new PromotionService(promotionRepository);
+
+        SaleRepository saleRepository = new SaleRepository(productService, personService);
         SaleService saleService = new SaleService(saleRepository, productService, accessoryService, promotionService);
 
         ReturnRepository returnRepository = new ReturnRepository(FilePath.RETURNS, saleService, productService);
