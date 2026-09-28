@@ -1,8 +1,8 @@
 package com.mycompany.gamezone.persistence;
 
-import com.mycompany.gamezone.model.Customer;
-import com.mycompany.gamezone.model.Person;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,12 +15,10 @@ import com.mycompany.gamezone.model.Person;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.Seller;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.time.LocalDate;
-import utilities.FilePath;
+import com.mycompany.gamezone.service.PersonService;
+import com.mycompany.gamezone.service.ProductService;
 
+import utilities.FilePath;
 /**
  * Repository responsible for persisting sales to a plain text file and for
  * loading them back into the system. Each sale is stored in a single line using
@@ -59,7 +57,7 @@ public class SaleRepository {
         }
         return sale.getId() + "," + sale.getDate() + ","
                 + sale.getCustomer().getName() + "," + sale.getSeller().getName()
-                + "," + productNames + "," + sale.getTotal();
+                 + ", " + productIds.toString() + "," + sale.getTotal();
     }
 
     /**
