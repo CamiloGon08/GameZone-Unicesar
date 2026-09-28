@@ -42,16 +42,12 @@ public class Main {
         SaleRepository saleRepository = new SaleRepository(productService, personService);
         SaleService saleService = new SaleService(saleRepository, productService, accessoryService, promotionService);
 
-        WarrantyRepository warrantyRepository = new WarrantyRepository();
+        ReturnRepository returnRepository = new ReturnRepository(FilePath.RETURNS, saleService, productService);
+        ReturnService returnService = new ReturnService(returnRepository, saleService, productService);
 
-        WarrantyService warrantyService = new WarrantyService(warrantyRepository,
-                                                            saleRepository,
-                                                            productService);
+        WarrantyRepository warrantyRepository = new WarrantyRepository(saleService, productService);
+        WarrantyService warrantyService = new WarrantyService(warrantyRepository);
         saleService.setWarrantyService(warrantyService);
-
-        ReturnRepository returnRepository = new ReturnRepository(FilePath.RETURNS, saleService, productService, accessoryService);
-        ReturnService returnService = new ReturnService(returnRepository, saleService, productService, accessoryService, warrantyService);
-        
 
         ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService,
                 accessoryService, promotionService, returnService, warrantyService);

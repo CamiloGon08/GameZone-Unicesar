@@ -1,185 +1,128 @@
 package com.mycompany.gamezone.service;
 
-import com.mycompany.gamezone.model.BasicWarranty;
-import com.mycompany.gamezone.model.ExtendedWarranty;
+import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.Warranty;
-import com.mycompany.gamezone.persistence.SaleRepository;
+import com.mycompany.gamezone.model.BasicWarranty;
+import com.mycompany.gamezone.model.ExtendedWarranty;
 import com.mycompany.gamezone.persistence.WarrantyRepository;
-import com.mycompany.gamezone.persistence.WarrantyRepository.WarrantyData;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
- * Service responsible for managing warranties.
+ * Business rules and validation for warranties.
  *
- * This service handles warranty creation, validation, searching, viewing,
- * persistence and loading. Product and Sale references stored by
- * WarrantyRepository are resolved here through ProductService and
- * SaleRepository.
+ * This service manages the creation and consultation of product warranties.
+ * Basic warranties are automatically assigned to consoles, while extended
+ * warranties can be assigned optionally to eligible products.
  *
  * @author EstefaniaMarquez
  */
 public class WarrantyService {
 
     private final WarrantyRepository repository;
-    private final SaleRepository saleRepository;
-    private final ProductService productService;
     private final List<Warranty> warranties;
 
     /**
-     * Creates a WarrantyService with the repositories and services required
-     * to manage and resolve warranty references.
+     * Creates a WarrantyService with the required repository.
      *
-     * @param repository repository responsible for warranty persistence
-     * @param saleRepository repository used to resolve Sale references
-     * @param productService service used to resolve Product references
-     * @throws IllegalArgumentException if any dependency is null
+     * @param repository repository used to persist warranties
      */
-    public WarrantyService(
-            WarrantyRepository repository,
-            SaleRepository saleRepository,
-            ProductService productService) {
+    public WarrantyService(WarrantyRepository repository) {
 
         if (repository == null) {
             throw new IllegalArgumentException(
                     "WarrantyRepository cannot be null.");
         }
 
-        if (saleRepository == null) {
-            throw new IllegalArgumentException(
-                    "SaleRepository cannot be null.");
-        }
-
-        if (productService == null) {
-            throw new IllegalArgumentException(
-                    "ProductService cannot be null.");
-        }
-
         this.repository = repository;
-        this.saleRepository = saleRepository;
-        this.productService = productService;
-        this.warranties = loadWarranties();
+        this.warranties = new ArrayList<>(repository.loadAll());
     }
 
     /**
-     * Loads warranties from the persistence file and resolves their
-     * Product and Sale references.
+     * Automatically creates a basic warranty for a console included
+     * in a sale.
      *
-     * WarrantyRepository only provides the identifiers stored in the file.
-     * This service uses those identifiers to reconstruct the complete
-     * Warranty objects.
-     *
-     * @return list of reconstructed warranties
-     */
-    private List<Warranty> loadWarranties() {
-
-        List<Warranty> loadedWarranties = new ArrayList<>();
-
-        for (WarrantyData data : repository.loadAll()) {
-
-            Product product = productService.findById(
-                    data.getProductId());
-
-            Sale sale = saleRepository.findById(
-                    data.getSaleId());
-
-            if (product == null || sale == null) {
-                continue;
-            }
-
-            Warranty warranty;
-
-            if ("BASIC".equals(data.getType())) {
-
-                warranty = new BasicWarranty(
-                        data.getId(),
-                        product,
-                        sale,
-                        data.getStartDate());
-
-            } else if ("EXTENDED".equals(data.getType())) {
-
-                warranty = new ExtendedWarranty(
-                        data.getId(),
-                        product,
-                        sale,
-                        data.getStartDate());
-
-            } else {
-                continue;
-            }
-
-            loadedWarranties.add(warranty);
-        }
-
-        return loadedWarranties;
-    }
-
-    /**
-     * Assigns a basic warranty to a product associated with a sale.
+     * Basic warranties are free and last six months from the sale date.
      *
      * @param product product covered by the warranty
-     * @param sale sale associated with the warranty
-     * @return created basic warranty
+     * @param sale sale in which the product was purchased
+     * @return the newly created basic warranty
      */
     public Warranty assignBasicWarranty(Product product, Sale sale) {
+
         validateWarrantyData(product, sale);
 
-        if (hasWarrantyOfType(product.getId(), sale.getId(), BasicWarranty.class)) {
-            return findByProductAndSale(product.getId(), sale.getId());
+        if (!(product instanceof Console)) {
+            throw new IllegalArgumentException(
+                    "Basic warranties are only available for consoles.");
+        }
+
+        if (findByProductAndSale(product.getId(), sale.getId()) != null) {
+            throw new IllegalArgumentException(
+                    "The product already has a warranty for this sale.");
         }
 
         String warrantyId = generateWarrantyId();
-        Warranty warranty = new BasicWarranty(warrantyId, product, sale, LocalDate.now());
+
+        Warranty warranty = new BasicWarranty(
+                warrantyId,
+                product,
+                sale,
+                sale.getDate());
+
         warranties.add(warranty);
-        saveAll();
+        repository.saveAll(warranties);
+
         return warranty;
     }
 
     /**
-     * Assigns an extended warranty to a product associated with a sale.
+     * Creates an extended warranty for a console included in a sale.
+     *
+     * Extended warranties last twelve months and have an additional cost
+     * equivalent to ten percent of the product price.
+     *
+     * @param product product covered by the warranty
+     * @param sale sale in which the product was purchased
+     * @return the newly created extended warranty
+     */
+    public Warranty assignExtendedWarranty(Product product, Sale sale) {
+
+        validateWarrantyData(product, sale);
+
+        if (!(product instanceof Console)) {
+            throw new IllegalArgumentException(
+                    "Extended warranties are only available for consoles.");
+        }
+
+        if (findByProductAndSale(product.getId(), sale.getId()) != null) {
+            throw new IllegalArgumentException(
+                    "The product already has a warranty for this sale.");
+        }
+
+        String warrantyId = generateWarrantyId();
+
+        Warranty warranty = new ExtendedWarranty(
+                warrantyId,
+                product,
+                sale,
+                sale.getDate());
+
+        warranties.add(warranty);
+        repository.saveAll(warranties);
+
+        return warranty;
+    }
+
+    /**
+     * Validates the common data required to create a warranty.
      *
      * @param product product covered by the warranty
      * @param sale sale associated with the warranty
-     * @return created extended warranty, or null if the product already has a
-     * warranty for the sale
-     */
-    public Warranty assignExtendedWarranty(Product product, Sale sale) {
-        validateWarrantyData(product, sale);
-
-        if (hasWarrantyOfType(product.getId(), sale.getId(), ExtendedWarranty.class)) {
-            return null;
-        }
-
-        String warrantyId = generateWarrantyId();
-        Warranty warranty = new ExtendedWarranty(warrantyId, product, sale, LocalDate.now());
-        warranties.add(warranty);
-        saveAll();
-        return warranty;
-    }
-
-    private boolean hasWarrantyOfType(String productId, String saleId, Class<? extends Warranty> type) {
-        for (Warranty warranty : warranties) {
-            if (type.isInstance(warranty)
-                    && warranty.getProduct().getId().equalsIgnoreCase(productId)
-                    && warranty.getSale().getId().equalsIgnoreCase(saleId)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Validates the product and sale references required to create a warranty.
-     *
-     * @param product product associated with the warranty
-     * @param sale sale associated with the warranty
-     * @throws IllegalArgumentException if the product or sale is null
      */
     private void validateWarrantyData(Product product, Sale sale) {
 
@@ -192,19 +135,43 @@ public class WarrantyService {
             throw new IllegalArgumentException(
                     "Sale cannot be null.");
         }
+
+        boolean productBelongsToSale = false;
+
+        for (Product saleProduct : sale.getProducts()) {
+
+            if (saleProduct.getId().equals(product.getId())) {
+                productBelongsToSale = true;
+                break;
+            }
+        }
+
+        if (!productBelongsToSale) {
+            throw new IllegalArgumentException(
+                    "The product does not belong to the specified sale.");
+        }
+
+        if (sale.getDate() == null) {
+            throw new IllegalArgumentException(
+                    "Sale date cannot be null.");
+        }
     }
 
     /**
-     * Finds a warranty using its identifier.
+     * Finds a warranty using its identification number.
      *
-     * @param id warranty identifier
-     * @return matching warranty, or null if it does not exist
+     * @param id warranty identification number
+     * @return the warranty with the specified ID, or null if it does not exist
      */
     public Warranty findById(String id) {
 
+        if (id == null || id.trim().isEmpty()) {
+            return null;
+        }
+
         for (Warranty warranty : warranties) {
 
-            if (warranty.getId().equals(id)) {
+            if (warranty.getId().equalsIgnoreCase(id.trim())) {
                 return warranty;
             }
         }
@@ -213,76 +180,38 @@ public class WarrantyService {
     }
 
     /**
-     * Finds a warranty associated with a specific product and sale.
+     * Finds the warranty associated with a specific product within a
+     * specific sale.
      *
-     * @param productId product identifier
-     * @param saleId sale identifier
-     * @return matching warranty, or null if none exists
+     * @param productId product identification number
+     * @param saleId sale identification number
+     * @return the associated warranty, or null if none exists
      */
     public Warranty findByProductAndSale(
             String productId,
             String saleId) {
 
+        if (productId == null || productId.trim().isEmpty()
+                || saleId == null || saleId.trim().isEmpty()) {
+            return null;
+        }
+
         for (Warranty warranty : warranties) {
 
-            if (warranty.getProduct().getId().equals(productId)
-                    && warranty.getSale().getId().equals(saleId)) {
+            boolean sameProduct = warranty.getProduct()
+                    .getId()
+                    .equalsIgnoreCase(productId.trim());
 
+            boolean sameSale = warranty.getSale()
+                    .getId()
+                    .equalsIgnoreCase(saleId.trim());
+
+            if (sameProduct && sameSale) {
                 return warranty;
             }
         }
 
         return null;
-    }
-
-    /**
-     * Cancels every warranty of a product within a sale.
-     *
-     * The matching warranties are removed and the change is persisted. The
-     * returned value is the refundable cost: zero for a basic warranty and the
-     * additional cost for an extended warranty.
-     *
-     * @param productId identifier of the returned product
-     * @param saleId identifier of the sale that generated the warranties
-     * @return total refundable cost of the cancelled warranties, or zero if
-     * none existed
-     * @throws IllegalArgumentException if the product ID or sale ID is empty
-     */
-    public double cancelWarranties(String productId, String saleId) {
-
-        if (productId == null || productId.trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Product ID cannot be empty.");
-        }
-
-        if (saleId == null || saleId.trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Sale ID cannot be empty.");
-        }
-
-        double refundableCost = 0.0;
-        boolean removed = false;
-
-        Iterator<Warranty> iterator = warranties.iterator();
-
-        while (iterator.hasNext()) {
-
-            Warranty warranty = iterator.next();
-
-            if (warranty.getProduct().getId().equals(productId)
-                    && warranty.getSale().getId().equals(saleId)) {
-
-                refundableCost += warranty.getAdditionalCost();
-                iterator.remove();
-                removed = true;
-            }
-        }
-
-        if (removed) {
-            saveAll();
-        }
-
-        return refundableCost;
     }
 
     /**
@@ -295,75 +224,76 @@ public class WarrantyService {
     }
 
     /**
-     * Returns all warranties that are active on the specified date.
+     * Returns all warranties that are active on the current date.
      *
-     * @param date date used to determine whether a warranty is active
-     * @return list of active warranties
+     * @return list of currently active warranties
      */
-    public List<Warranty> viewActiveWarranties(LocalDate date) {
+    public List<Warranty> viewActiveWarranties() {
 
-        List<Warranty> activeWarranties = new ArrayList<>();
+        LocalDate currentDate = LocalDate.now();
+        List<Warranty> result = new ArrayList<>();
 
         for (Warranty warranty : warranties) {
 
-            if (warranty.isActive(date)) {
-                activeWarranties.add(warranty);
+            if (warranty.isActive(currentDate)) {
+                result.add(warranty);
             }
         }
 
-        return activeWarranties;
+        return result;
     }
 
     /**
-     * Returns warranties that expire within the specified number of days.
+     * Returns warranties that will expire within the next 30 days.
      *
-     * @param days number of days used as the expiration window
-     * @return list of warranties expiring within the specified period
+     * Only warranties that are still active and whose expiration date is
+     * between today and thirty days from today are included.
+     *
+     * @return list of warranties expiring within the next 30 days
      */
-    public List<Warranty> viewWarrantiesExpiringSoon(int days) {
+    public List<Warranty> viewWarrantiesExpiringSoon() {
 
-        LocalDate today = LocalDate.now();
-        LocalDate limitDate = today.plusDays(days);
+        LocalDate currentDate = LocalDate.now();
+        LocalDate limitDate = currentDate.plusDays(30);
 
-        List<Warranty> expiringWarranties = new ArrayList<>();
+        List<Warranty> result = new ArrayList<>();
 
         for (Warranty warranty : warranties) {
 
-            LocalDate expirationDate = warranty.getEndDate();
+            LocalDate endDate = warranty.getEndDate();
 
-            if (!expirationDate.isBefore(today)
-                    && !expirationDate.isAfter(limitDate)) {
+            if (warranty.isActive(currentDate)
+                    && !endDate.isAfter(limitDate)) {
 
-                expiringWarranties.add(warranty);
+                result.add(warranty);
             }
         }
 
-        return expiringWarranties;
+        return result;
     }
 
     /**
-     * Generates a unique warranty identifier.
+     * Generates a unique identification number for a new warranty.
      *
-     * @return new warranty identifier
+     * @return unique warranty identification number
      */
     private String generateWarrantyId() {
 
         int nextNumber = warranties.size() + 1;
-
-        String warrantyId = "WAR-" + nextNumber;
+        String warrantyId = "WARRANTY-" + nextNumber;
 
         while (findById(warrantyId) != null) {
             nextNumber++;
-            warrantyId = "WAR-" + nextNumber;
+            warrantyId = "WARRANTY-" + nextNumber;
         }
 
         return warrantyId;
     }
 
     /**
-     * Saves all current warranties using the persistence repository.
+     * Persists the current list of warranties.
      */
-    private void saveAll() {
+    public void saveAll() {
         repository.saveAll(warranties);
     }
 }

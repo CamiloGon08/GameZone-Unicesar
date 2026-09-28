@@ -285,45 +285,6 @@ public class AccessoryService {
         throw new IllegalArgumentException(
                 "Accessory with ID " + accessoryId + " was not found.");
     }
-    
-        /**
-     * Restores the stock of an accessory after a successful return.
-     *
-     * The quantity must be greater than zero. The updated accessory list is
-     * persisted immediately, equivalent to ProductService.restoreStock.
-     *
-     * @param accessoryId identifier of the accessory
-     * @param quantity quantity of stock to restore
-     * @throws IllegalArgumentException if the accessory ID is empty, the
-     *         quantity is not greater than zero, or the accessory does not
-     *         exist
-     */
-    public void restoreStock(String accessoryId, int quantity) {
-
-        if (accessoryId == null || accessoryId.trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Accessory ID cannot be empty.");
-        }
-
-        if (quantity <= 0) {
-            throw new IllegalArgumentException(
-                    "Quantity to restore must be greater than zero.");
-        }
-
-        List<Accessory> accessories = listAllAccessories();
-
-        for (Accessory accessory : accessories) {
-
-            if (accessory.getId().equals(accessoryId)) {
-                accessory.adjustStock(quantity);
-                saveAll(accessories);
-                return;
-            }
-        }
-
-        throw new IllegalArgumentException(
-                "Accessory with ID " + accessoryId + " was not found.");
-    }
 
     /**
      * Saves the complete accessory list using the repository.

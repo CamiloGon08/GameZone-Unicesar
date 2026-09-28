@@ -3,7 +3,6 @@ package com.mycompany.gamezone.persistence;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Return;
 import com.mycompany.gamezone.model.Sale;
-import com.mycompany.gamezone.service.AccessoryService;
 import com.mycompany.gamezone.service.ProductService;
 import com.mycompany.gamezone.service.SaleService;
 
@@ -19,10 +18,10 @@ import java.util.List;
 /**
  * Repository responsible for the persistence of Return objects.
  *
- * Returns are stored in the data/returns.txt file. Since a Return contains
- * references to a Sale and to the items being returned, this repository uses
- * SaleService, ProductService and AccessoryService to resolve those references
- * when loading the records. Returned items may be products or accessories.
+ * Returns are stored in the data/returns.csv file. Since a Return contains
+ * references to a Sale and to the Products being returned, this repository
+ * uses SaleService and ProductService to resolve those references when
+ * loading the records.
  *
  * @author EstefaniaMarquez
  */
@@ -31,34 +30,30 @@ public class ReturnRepository {
     private final String filePath;
     private final SaleService saleService;
     private final ProductService productService;
-    private final AccessoryService accessoryService;
 
     /**
      * Creates a ReturnRepository with the services required to resolve
-     * references to sales, products and accessories.
+     * references to sales and products.
      *
      * @param filePath path of the file used to persist returns
      * @param saleService service used to find the original sales
      * @param productService service used to find the returned products
-     * @param accessoryService service used to find the returned accessories
      */
     public ReturnRepository(
             String filePath,
             SaleService saleService,
-            ProductService productService,
-            AccessoryService accessoryService) {
+            ProductService productService) {
 
         this.filePath = filePath;
         this.saleService = saleService;
         this.productService = productService;
-        this.accessoryService = accessoryService;
     }
 
     /**
      * Saves the complete list of returns to the persistence file.
      *
-     * Existing content is replaced by the records contained in the provided
-     * list.
+     * Existing content is replaced by the records contained in the
+     * provided list.
      *
      * Each record stores the return identifier, date, original sale ID,
      * returned product IDs, reason and refund amount.
@@ -88,7 +83,7 @@ public class ReturnRepository {
      * their identifiers through SaleService and ProductService.
      *
      * @return list of stored returns, or an empty list if the file does not
-     * exist
+     *         exist
      */
     public List<Return> loadAll() {
 
@@ -123,12 +118,12 @@ public class ReturnRepository {
      * Converts a Return object into the CSV representation used for
      * persistence.
      *
-     * The product identifiers are stored as a semicolon-separated list inside
-     * one field.
+     * The product identifiers are stored as a semicolon-separated list
+     * inside one field.
      *
      * Format:
      *
-     * returnId,date,saleId,productId1;productId2,reason,refundAmount,warrantyRefundAmount
+     * returnId,date,saleId,productId1;productId2,reason,refundAmount
      *
      * @param returnRecord return to convert
      * @return CSV representation of the return
@@ -155,21 +150,17 @@ public class ReturnRepository {
                 + returnRecord.getOriginalSale().getId() + ","
                 + productIds + ","
                 + returnRecord.getReason() + ","
-                + returnRecord.getRefundAmount() + ","
-                + returnRecord.getWarrantyRefundAmount();
+                + returnRecord.getRefundAmount();
     }
 
     /**
      * Converts a persisted CSV record into a Return object.
      *
-     * The original Sale is resolved through SaleService and each returned item
-     * is resolved through ProductService or AccessoryService. Records written
-     * before the warranty refund field existed are still accepted and load with
-     * a warranty refund of zero.
+     * The original Sale is resolved through SaleService and each returned
+     * Product is resolved through ProductService.
      *
      * @param line CSV record representing a return
-     * @return reconstructed Return object, or null if the original sale cannot
-     * be resolved
+     * @return reconstructed Return object
      */
     private Return toReturn(String line) {
 
@@ -185,11 +176,6 @@ public class ReturnRepository {
         String productIdsField = fields[3];
         String reason = fields[4];
         double refundAmount = Double.parseDouble(fields[5]);
-        double warrantyRefundAmount = 0.0;
-
-        if (fields.length > 6 && !fields[6].isEmpty()) {
-            warrantyRefundAmount = Double.parseDouble(fields[6]);
-        }
 
         Sale originalSale = saleService.findById(saleId);
 
@@ -207,10 +193,6 @@ public class ReturnRepository {
 
                 Product product = productService.findById(productId);
 
-                if (product == null) {
-                    product = accessoryService.findById(productId);
-                }
-
                 if (product != null) {
                     returnedProducts.add(product);
                 }
@@ -222,8 +204,7 @@ public class ReturnRepository {
                 date,
                 originalSale,
                 returnedProducts,
-                reason,
-                warrantyRefundAmount);
+                reason);
 
         returnRecord.setRefundAmount(refundAmount);
 

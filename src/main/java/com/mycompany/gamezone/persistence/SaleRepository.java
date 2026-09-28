@@ -2,7 +2,6 @@ package com.mycompany.gamezone.persistence;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -19,11 +18,18 @@ import com.mycompany.gamezone.service.PersonService;
 import com.mycompany.gamezone.service.ProductService;
 
 import utilities.FilePath;
+
 /**
- * Repository responsible for persisting sales to a plain text file and for
- * loading them back into the system. Each sale is stored in a single line using
- * a comma-separated format that includes the sale identifier, the date, the
- * customer name, the seller name, the product titles and the total amount.
+ * Repository responsible for persisting sales to a plain text file and
+ * for loading them back into the system. Each sale is stored in a single
+ * line using a pipe-separated format that includes the sale identifier,
+ * the date, the customer ID, the seller ID, the product IDs, the total
+ * amount, the applied promotion name and the discount amount.
+ *
+ * To reconstruct a Sale from disk, this repository depends on
+ * ProductService and PersonService so it can resolve the references to
+ * products, customers and sellers by their identifiers. This is a
+ * documented layering exception.
  */
 public class SaleRepository {
 
@@ -55,16 +61,21 @@ public class SaleRepository {
             }
             productIds.append(products.get(i).getId());
         }
-        return sale.getId() + "," + sale.getDate() + ","
-                + sale.getCustomer().getName() + "," + sale.getSeller().getName()
-                 + ", " + productIds.toString() + "," + sale.getTotal();
+
+        String promotionName = sale.getAppliedPromotionName() == null
+                ? "" : sale.getAppliedPromotionName();
+
+        return sale.getId() + "|" + sale.getDate() + "|"
+                + sale.getCustomer().getiD() + "|"
+                + sale.getSeller().getiD() + "|"
+                + productIds + "|" + sale.getTotal() + "|"
+                + promotionName + "|" + sale.getDiscountAmount();
     }
 
     /**
-     * Saves the given list of sales to the sales file. Each sale is written on
-     * its own line using the format produced by {@link #toLine(Sale)}. If an
-     * input/output error occurs, the error message is printed to the standard
-     * output.
+     * Saves the given list of sales to the sales file. Each sale is
+     * written on its own line using the format produced by
+     * {@link #toLine(Sale)}.
      *
      * @param sales list of sales to persist
      */
@@ -80,125 +91,99 @@ public class SaleRepository {
     }
 
     /**
+     * Loads the sales stored in the sales file and reconstructs each sale
+     * by resolving the references to products, customers and sellers.
      *
-     * Loads the sales stored in the sales file.
-     *
-     * Customer and seller references are resolved using PersonRepository.
-     * Product references are resolved using ProductRepository and
-     * AccessoryRepository because a sale may contain regular products or
-     * accessories.
-     *
-     * @return list of sales recovered from the file, or an empty list if the
-     * file does not exist
+     * @return list of sales recovered from the file, or an empty list
+     *         if the file does not exist or contains no data
      */
     public List<Sale> load() {
         List<Sale> sales = new ArrayList<>();
-        PersonRepository personRepository = new PersonRepository();
-        ProductRepository productRepository = new ProductRepository(FilePath.PRODUCTS);
-        AccessoryRepository accessoryRepository = new AccessoryRepository();
         try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.trim().isEmpty()) {
                     continue;
                 }
-                Sale sale = toSale(line, personRepository, productRepository, accessoryRepository);
+                String[] data = line.split(SEPARATOR, -1);
+                Sale sale = createSale(data);
                 if (sale != null) {
                     sales.add(sale);
                 }
             }
-        } catch (FileNotFoundException e) {
-            return sales;
         } catch (IOException e) {
-            throw new RuntimeException("Could not load sales from " + FILE_PATH, e);
+            return sales;
         }
         return sales;
     }
 
-    /**
-     * * Finds a sale by its identifier. * * @param id sale identifier * @return
-     * matching sale, or null if no sale with the given identifier * exists
-     */
-    public Sale findById(String id) {
-        for (Sale sale : load()) {
-            if (sale.getId().equals(id)) {
-                return sale;
+    private Sale createSale(String[] data) {
+        if (data.length < 6) {
+            return null;
+        }
+
+        String id = data[0];
+        LocalDate date = LocalDate.parse(data[1]);
+        String customerId = data[2];
+        String sellerId = data[3];
+        String productIdsRaw = data[4];
+
+        Customer customer = findCustomerById(customerId);
+        Seller seller = findSellerById(sellerId);
+        if (customer == null || seller == null) {
+            return null;
+        }
+
+        List<Product> products = new ArrayList<>();
+        if (!productIdsRaw.trim().isEmpty()) {
+            for (String productId : productIdsRaw.split(";")) {
+                Product product = productService.findById(productId);
+                if (product != null) {
+                    products.add(product);
+                }
+            }
+        }
+        if (products.isEmpty()) {
+            return null;
+        }
+
+        Sale sale = new Sale(date, id, products, seller, customer);
+
+        if (data.length >= 8) {
+            String promotionName = data[6];
+            String discountRaw = data[7];
+
+            if (promotionName != null && !promotionName.isEmpty()) {
+                sale.setAppliedPromotionName(promotionName);
+            }
+            try {
+                double discount = Double.parseDouble(discountRaw);
+                sale.setDiscountAmount(discount);
+            } catch (NumberFormatException ignored) {
+                // ignore malformed numeric value
+            }
+        }
+
+        return sale;
+    }
+
+    private Customer findCustomerById(String id) {
+        for (Person person : personService.listPersons()) {
+            if (person instanceof Customer customer
+                    && customer.getiD().equals(id)) {
+                return customer;
             }
         }
         return null;
     }
 
-    /**
-     * 
-     * Converts a persisted sale record into a Sale object. 
-     * 
-     * The method resolves customer and seller names through 
-     * PersonRepository and product titles through ProductRepository 
-     * and AccessoryRepository. 
-     * 
-     * @param line persisted sale record 
-     * @param personRepository repository used to resolve customers 
-     * and sellers 
-     * @param productRepository repository used to resolve products 
-     * @param accessoryRepository repository used to resolve accessories 
-     * @return reconstructed Sale, or null if one of its
-     * references cannot be resolved
-     */
-    
-    private Sale toSale(String line, PersonRepository personRepository, ProductRepository productRepository, AccessoryRepository accessoryRepository) {
-        String[] fields = line.split(",", -1);
-        if (fields.length < 6) {
-            throw new IllegalArgumentException("Invalid sale record: " + line);
-        }
-        String saleId = fields[0].trim();
-        LocalDate date = LocalDate.parse(fields[1].trim());
-        String customerName = fields[2].trim();
-        String sellerName = fields[3].trim();
-        String productField = fields[4].trim();
-        double total = Double.parseDouble(fields[5].trim());
-        Customer customer = null;
-        Seller seller = null;
-        for (Person person : personRepository.listPersons()) {
-            if (person instanceof Customer && person.getName().equals(customerName)) {
-                customer = (Customer) person;
-            }
-            if (person instanceof Seller && person.getName().equals(sellerName)) {
-                seller = (Seller) person;
+    private Seller findSellerById(String id) {
+        for (Person person : personService.listPersons()) {
+            if (person instanceof Seller seller
+                    && seller.getiD().equals(id)) {
+                return seller;
             }
         }
-        if (customer == null || seller == null) {
-            return null;
-        }
-        List<Product> products = new ArrayList<>();
-        if (!productField.isEmpty()) {
-            String[] productTitles = productField.split(";");
-            List<Product> regularProducts = productRepository.loadAll();
-            List<com.mycompany.gamezone.model.Accessory> accessories = accessoryRepository.loadAll();
-            for (String productTitle : productTitles) {
-                String title = productTitle.trim();
-                Product foundProduct = null;
-                for (Product product : regularProducts) {
-                    if (product.getTitle().equals(title)) {
-                        foundProduct = product;
-                        break;
-                    }
-                }
-                if (foundProduct == null) {
-                    for (com.mycompany.gamezone.model.Accessory accessory : accessories) {
-                        if (accessory.getTitle().equals(title)) {
-                            foundProduct = accessory;
-                            break;
-                        }
-                    }
-                }
-                if (foundProduct == null) {
-                    return null;
-                }
-                products.add(foundProduct);
-            }
-        }
-        Sale sale = new Sale(date, saleId, products, seller, customer);
-        sale.setTotal(total);
-        return sale;
+        return null;
     }
 }

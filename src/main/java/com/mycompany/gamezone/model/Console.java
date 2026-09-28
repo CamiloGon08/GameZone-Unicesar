@@ -1,6 +1,5 @@
 package com.mycompany.gamezone.model;
 
-
 /**
  * Represents a console product. In addition to the attributes common to
  * every product, a console is characterized by its brand, model, and
