@@ -11,6 +11,7 @@ import com.mycompany.gamezone.persistence.WarrantyRepository.WarrantyData;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -232,6 +233,56 @@ public class WarrantyService {
         }
 
         return null;
+    }
+
+    /**
+     * Cancels every warranty of a product within a sale.
+     *
+     * The matching warranties are removed and the change is persisted. The
+     * returned value is the refundable cost: zero for a basic warranty and the
+     * additional cost for an extended warranty.
+     *
+     * @param productId identifier of the returned product
+     * @param saleId identifier of the sale that generated the warranties
+     * @return total refundable cost of the cancelled warranties, or zero if
+     * none existed
+     * @throws IllegalArgumentException if the product ID or sale ID is empty
+     */
+    public double cancelWarranties(String productId, String saleId) {
+
+        if (productId == null || productId.trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Product ID cannot be empty.");
+        }
+
+        if (saleId == null || saleId.trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Sale ID cannot be empty.");
+        }
+
+        double refundableCost = 0.0;
+        boolean removed = false;
+
+        Iterator<Warranty> iterator = warranties.iterator();
+
+        while (iterator.hasNext()) {
+
+            Warranty warranty = iterator.next();
+
+            if (warranty.getProduct().getId().equals(productId)
+                    && warranty.getSale().getId().equals(saleId)) {
+
+                refundableCost += warranty.getAdditionalCost();
+                iterator.remove();
+                removed = true;
+            }
+        }
+
+        if (removed) {
+            saveAll();
+        }
+
+        return refundableCost;
     }
 
     /**
