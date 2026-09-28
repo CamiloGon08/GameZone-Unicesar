@@ -350,6 +350,7 @@ direction TB
     ProductService --> ProductRepository
     AccessoryService --> AccessoryRepository
     PromotionService --> PromotionRepository
+    WarrantyService --> WarrantyRepository
     WarrantyService --> SaleRepository
     WarrantyService --> ProductService
 
