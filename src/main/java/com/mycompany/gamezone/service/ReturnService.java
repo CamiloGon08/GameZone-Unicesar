@@ -1,6 +1,7 @@
 package com.mycompany.gamezone.service;
 
 import com.mycompany.gamezone.model.Accessory;
+import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Return;
@@ -17,7 +18,8 @@ import java.util.List;
  * This class contains the business rules related to returns, including the
  * 30-day return period, validation of items (products and accessories) against
  * the original sale, stock restoration through ProductService or
- * AccessoryService depending on the item type, and monthly balance calculation.
+ * AccessoryService depending on the item type, cancellation of the warranties
+ * of returned consoles, and monthly balance calculation.
  *
  * @author EstefaniaMarquez
  */
@@ -27,6 +29,7 @@ public class ReturnService {
     private final SaleService saleService;
     private final ProductService productService;
     private final AccessoryService accessoryService;
+    private final WarrantyService warrantyService;
     private final List<Return> returns;
 
     /**
@@ -37,36 +40,42 @@ public class ReturnService {
      * @param productService service used to find products and restore stock
      * @param accessoryService service used to find accessories and restore
      * stock
+     * @param warrantyService service used to cancel the warranties of returned
+     * consoles
      */
     public ReturnService(
             ReturnRepository repository,
             SaleService saleService,
             ProductService productService,
-            AccessoryService accessoryService) {
+            AccessoryService accessoryService,
+            WarrantyService warrantyService) {
 
         this.repository = repository;
         this.saleService = saleService;
         this.productService = productService;
         this.accessoryService = accessoryService;
+        this.warrantyService = warrantyService;
         this.returns = repository.loadAll();
     }
 
-    /**
+        /**
      * Registers a return for one or more items from an original sale.
      *
-     * A return is only allowed within 30 calendar days from the original sale
-     * date. Every returned item, either a product or an accessory, must belong
-     * to the original sale. When the return is successful, the stock of each
-     * item is restored through ProductService or AccessoryService according to
-     * its type, and the return is persisted.
+     * A return is only allowed within 30 calendar days from the original
+     * sale date. Every returned item, either a product or an accessory,
+     * must belong to the original sale. When the return is successful, the
+     * stock of each item is restored through ProductService or
+     * AccessoryService according to its type. For every returned console,
+     * its warranties in the original sale are cancelled and the refundable
+     * warranty cost is included in the refund amount.
      *
      * @param saleId identification number of the original sale
      * @param productIds identification numbers of the items to return
      * @param reason reason for the return
      * @return the registered Return
-     * @throws IllegalArgumentException if the sale does not exist, the return
-     * period has expired, an item does not belong to the sale, or the provided
-     * data is invalid
+     * @throws IllegalArgumentException if the sale does not exist, the
+     *         return period has expired, an item does not belong to the
+     *         sale, or the provided data is invalid
      */
     public Return registerReturn(
             String saleId,
@@ -139,6 +148,19 @@ public class ReturnService {
             returnedProducts.add(product);
         }
 
+        double warrantyRefundAmount = 0.0;
+
+        for (Product product : returnedProducts) {
+
+            restoreItemStock(product);
+
+            if (product instanceof Console) {
+                warrantyRefundAmount += warrantyService.cancelWarranties(
+                        product.getId(),
+                        saleId);
+            }
+        }
+
         String returnId = generateReturnId();
 
         Return returnRecord = new Return(
@@ -146,11 +168,8 @@ public class ReturnService {
                 currentDate,
                 sale,
                 returnedProducts,
-                reason);
-
-        for (Product product : returnedProducts) {
-            restoreItemStock(product);
-        }
+                reason,
+                warrantyRefundAmount);
 
         returns.add(returnRecord);
         repository.saveAll(returns);
