@@ -839,8 +839,12 @@ public class ConsoleMenu {
         }
 
         try {
+            double totalSales = returnService.calculateMonthlySales(month, year);
+            double totalReturns = returnService.calculateMonthlyReturns(month, year);
             double balance = returnService.generateMonthlyBalance(month, year);
             System.out.println("--- Balance mensual " + month + "/" + year + " ---");
+            System.out.println("Total de ventas: $" + String.format("%.2f", totalSales));
+            System.out.println("Total de devoluciones: $" + String.format("%.2f", totalReturns));
             System.out.println("Balance neto: $" + String.format("%.2f", balance));
         } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
@@ -905,7 +909,7 @@ public class ConsoleMenu {
     }
 
     private void viewActiveWarranties() {
-        List<Warranty> warranties = warrantyService.viewActiveWarranties();
+        List<Warranty> warranties = warrantyService.viewActiveWarranties(LocalDate.now());
         if (warranties.isEmpty()) {
             System.out.println("No hay garantías vigentes en la fecha actual.");
             return;
@@ -918,7 +922,7 @@ public class ConsoleMenu {
     }
 
     private void viewWarrantiesExpiringSoon() {
-        List<Warranty> warranties = warrantyService.viewWarrantiesExpiringSoon();
+        List<Warranty> warranties = warrantyService.viewWarrantiesExpiringSoon(30);
         if (warranties.isEmpty()) {
             System.out.println("No hay garantías próximas a vencer en los próximos 30 días.");
             return;
