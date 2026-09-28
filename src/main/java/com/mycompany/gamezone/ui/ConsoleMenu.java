@@ -909,7 +909,7 @@ public class ConsoleMenu {
     }
 
     private void viewActiveWarranties() {
-        List<Warranty> warranties = warrantyService.viewActiveWarranties();
+        List<Warranty> warranties = warrantyService.viewActiveWarranties(LocalDate.now());
         if (warranties.isEmpty()) {
             System.out.println("No hay garantías vigentes en la fecha actual.");
             return;
@@ -922,7 +922,7 @@ public class ConsoleMenu {
     }
 
     private void viewWarrantiesExpiringSoon() {
-        List<Warranty> warranties = warrantyService.viewWarrantiesExpiringSoon();
+        List<Warranty> warranties = warrantyService.viewWarrantiesExpiringSoon(30);
         if (warranties.isEmpty()) {
             System.out.println("No hay garantías próximas a vencer en los próximos 30 días.");
             return;

@@ -12,21 +12,20 @@ The system started as the Taller 1 delivery — products, people and sales — a
 
 Every class in the project belongs to one of four layers, and dependencies only flow downwards:
 
-
 ```mermaid
 flowchart TD
     UI["ui"] --> SERVICE["service"]
     SERVICE --> PERSISTENCE["persistence"]
     SERVICE --> MODEL["model"]
     PERSISTENCE --> MODEL
+```
 
-    
-|     Layer     |               Contains                              |
-|-------|-------|-----------------------------------------------------|
-|     `ui`      | The console menu that reads input and shows output  |
-|   `service`   | The business rules and coordination between entities|
-| `persistence` | The code that writes to and reads from files        |
-|    `model`    | The domain entities (products, sales, people, etc.) |
+| Layer         | Contains                                              |
+|---------------|--------------------------------------------------------|
+| `ui`          | The console menu that reads input and shows output      |
+| `service`     | The business rules and coordination between entities     |
+| `persistence` | The code that writes to and reads from files             |
+| `model`       | The domain entities (products, sales, people, etc.)      |
 
 The rule is enforced strictly: the `model` layer never imports anything from the other layers, and the `ui` layer never touches files directly.
 
@@ -36,9 +35,8 @@ Requires **JDK 17** or newer and **Maven 3.8** or newer.
 
 To compile:
 
-```
 mvn clean compile
-```
+
 
 To run the application:
 
@@ -105,7 +103,6 @@ New menu option (14 — Warranty management):
 
 ## Project layout
 
-```
 GameZoneUnicesar/
 ├── README.md
 ├── TEAM.md
@@ -114,26 +111,27 @@ GameZoneUnicesar/
 ├── .gitignore
 ├── LICENSE
 ├── src/
-│   └── main/
-│       └── java/
-│           └── com/
-│               └── gamezone/
-│                   ├── model/
-│                   ├── persistence/
-│                   ├── service/
-│                   ├── ui/
-│                   └── Main.java
+│ └── main/
+│ └── java/
+│ └── com/
+│ └── mycompany/
+│ └── gamezone/
+│ ├── model/
+│ ├── persistence/
+│ ├── service/
+│ ├── ui/
+│ └── Main.java
 ├── data/
 └── docs/
-    ├── analysis.md
-    ├── hierarchy-diagram.md
-    ├── class-diagram.md
-    ├── layers-diagram.md
-    └── ai-usage/
-        ├── leader-ai-log.md
-        ├── developer1-ai-log.md
-        └── developer2-ai-log.md
-```
+├── analysis.md
+├── hierarchy-diagram.md
+├── class-diagram.md
+├── layers-diagram.md
+└── ai-usage/
+├── leader-ai-log.md
+├── developer1-ai-log.md
+└── developer2-ai-log.md
+
 
 ## Documentation
 
