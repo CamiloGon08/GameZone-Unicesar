@@ -3,6 +3,7 @@ package com.mycompany.gamezone.persistence;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Return;
 import com.mycompany.gamezone.model.Sale;
+import com.mycompany.gamezone.service.AccessoryService;
 import com.mycompany.gamezone.service.ProductService;
 import com.mycompany.gamezone.service.SaleService;
 
@@ -18,10 +19,11 @@ import java.util.List;
 /**
  * Repository responsible for the persistence of Return objects.
  *
- * Returns are stored in the data/returns.csv file. Since a Return contains
- * references to a Sale and to the Products being returned, this repository
- * uses SaleService and ProductService to resolve those references when
- * loading the records.
+ * Returns are stored in the data/returns.txt file. Since a Return contains
+ * references to a Sale and to the items being returned, this repository
+ * uses SaleService, ProductService and AccessoryService to resolve those
+ * references when loading the records. Returned items may be products or
+ * accessories.
  *
  * @author EstefaniaMarquez
  */
@@ -30,23 +32,27 @@ public class ReturnRepository {
     private final String filePath;
     private final SaleService saleService;
     private final ProductService productService;
+    private final AccessoryService accessoryService;
 
     /**
      * Creates a ReturnRepository with the services required to resolve
-     * references to sales and products.
+     * references to sales, products and accessories.
      *
      * @param filePath path of the file used to persist returns
      * @param saleService service used to find the original sales
      * @param productService service used to find the returned products
+     * @param accessoryService service used to find the returned accessories
      */
     public ReturnRepository(
             String filePath,
             SaleService saleService,
-            ProductService productService) {
+            ProductService productService,
+            AccessoryService accessoryService) {
 
         this.filePath = filePath;
         this.saleService = saleService;
         this.productService = productService;
+        this.accessoryService = accessoryService;
     }
 
     /**
@@ -183,7 +189,7 @@ public class ReturnRepository {
             return null;
         }
 
-        List<Product> returnedProducts = new ArrayList<>();
+                List<Product> returnedProducts = new ArrayList<>();
 
         if (!productIdsField.isEmpty()) {
 
@@ -192,6 +198,10 @@ public class ReturnRepository {
             for (String productId : productIds) {
 
                 Product product = productService.findById(productId);
+
+                if (product == null) {
+                    product = accessoryService.findById(productId);
+                }
 
                 if (product != null) {
                     returnedProducts.add(product);
