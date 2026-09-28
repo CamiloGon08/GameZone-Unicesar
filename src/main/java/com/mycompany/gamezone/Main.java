@@ -45,8 +45,11 @@ public class Main {
         ReturnRepository returnRepository = new ReturnRepository(FilePath.RETURNS, saleService, productService);
         ReturnService returnService = new ReturnService(returnRepository, saleService, productService);
 
-        WarrantyRepository warrantyRepository = new WarrantyRepository(saleService, productService);
-        WarrantyService warrantyService = new WarrantyService(warrantyRepository);
+        WarrantyRepository warrantyRepository = new WarrantyRepository();
+
+        WarrantyService warrantyService = new WarrantyService(warrantyRepository,
+                                                            saleRepository,
+                                                            productService);
         saleService.setWarrantyService(warrantyService);
 
         ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService,
