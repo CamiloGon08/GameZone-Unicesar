@@ -42,8 +42,8 @@ public class Main {
         SaleRepository saleRepository = new SaleRepository(productService, personService);
         SaleService saleService = new SaleService(saleRepository, productService, accessoryService, promotionService);
 
-        ReturnRepository returnRepository = new ReturnRepository(FilePath.RETURNS, saleService, productService);
-        ReturnService returnService = new ReturnService(returnRepository, saleService, productService);
+        ReturnRepository returnRepository = new ReturnRepository(FilePath.RETURNS, saleService, productService, accessoryService);
+        ReturnService returnService = new ReturnService(returnRepository, saleService, productService, accessoryService);
 
         WarrantyRepository warrantyRepository = new WarrantyRepository();
 
