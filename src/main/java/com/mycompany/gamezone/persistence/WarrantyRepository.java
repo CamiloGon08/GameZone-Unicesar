@@ -2,7 +2,11 @@ package com.mycompany.gamezone.persistence;
 
 import com.mycompany.gamezone.model.BasicWarranty;
 import com.mycompany.gamezone.model.ExtendedWarranty;
+import com.mycompany.gamezone.model.Product;
+import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.Warranty;
+import com.mycompany.gamezone.service.ProductService;
+import com.mycompany.gamezone.service.SaleService;
 import utilities.FilePath;
 
 import java.io.BufferedReader;
@@ -16,39 +20,45 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * * Repository responsible for the persistence of Warranty objects. 
- * 
+ * Repository responsible for the persistence of Warranty objects.
  *
- * Warranties are stored using the path defined in FilePath.WARRANTIES. 
- * This repository stores product and sale identifiers instead of resolving 
- * their references. The references are resolved later by WarrantyService. 
- * 
+ * Warranties are stored using the path defined in FilePath.WARRANTIES.
+ * Since a Warranty contains references to a Product and a Sale, this
+ * repository stores their identifiers and uses ProductService and
+ * SaleService to resolve those references when loading the records.
+ *
  * @author EstefaniaMarquez
  */
-
 public class WarrantyRepository {
 
     private final String filePath;
+    private final SaleService saleService;
+    private final ProductService productService;
 
     /**
-     * 
-     * Creates a WarrantyRepository for warranty persistence.
+     * Creates a WarrantyRepository with the services required to resolve
+     * product and sale references.
+     *
+     * @param saleService service used to find the original sale
+     * @param productService service used to find the covered product
      */
-    
-    public WarrantyRepository() {
+    public WarrantyRepository(
+            SaleService saleService,
+            ProductService productService) {
+
         this.filePath = FilePath.WARRANTIES;
+        this.saleService = saleService;
+        this.productService = productService;
     }
 
     /**
-     * 
-     * Saves all warranties to the persistence file. 
-     * 
-     * Existing content is replaced by the warranties contained in the 
-     * provided list. 
-     * 
+     * Saves all warranties to the persistence file.
+     *
+     * Existing content is replaced by the warranties contained in the
+     * provided list.
+     *
      * @param warranties list of warranties to persist
      */
-    
     public void saveAll(List<Warranty> warranties) {
 
         try (BufferedWriter writer = new BufferedWriter(
@@ -66,20 +76,14 @@ public class WarrantyRepository {
     }
 
     /**
-     * 
-     * Loads all warranty records stored in the persistence file. 
-     * 
-     * The repository only reads the stored identifiers and basic warranty 
-     * information. Product and Sale references are resolved later by 
-     * WarrantyService. 
-     * 
-     * @return list of stored warranty records, or an empty
-     * list if the file does not exist
+     * Loads all warranties stored in the persistence file.
+     *
+     * @return list of stored warranties, or an empty list if the file does
+     *         not exist
      */
-    
-    public List<WarrantyData> loadAll() {
+    public List<Warranty> loadAll() {
 
-        List<WarrantyData> warranties = new ArrayList<>();
+        List<Warranty> warranties = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(
                 new FileReader(filePath))) {
@@ -92,7 +96,7 @@ public class WarrantyRepository {
                     continue;
                 }
 
-                WarrantyData warranty = toWarranty(line);
+                Warranty warranty = toWarranty(line);
 
                 if (warranty != null) {
                     warranties.add(warranty);
@@ -111,16 +115,16 @@ public class WarrantyRepository {
     }
 
     /**
-     * 
-     * Converts a Warranty object into its persistence representation. 
+     * Converts a Warranty object into its persistence representation.
      *
-     * Format: BASIC,id,productId,saleId,startDate 
-     * EXTENDED,id,productId,saleId,startDate 
-     * 
-     * @param warranty warranty to convert 
+     * Format:
+     *
+     * BASIC,id,productId,saleId,startDate
+     * EXTENDED,id,productId,saleId,startDate
+     *
+     * @param warranty warranty to convert
      * @return text representation of the warranty
      */
-    
     private String toLine(Warranty warranty) {
 
         String type;
@@ -145,16 +149,13 @@ public class WarrantyRepository {
     }
 
     /**
-     * 
-     * Converts a persisted warranty record into a WarrantyData object.
-     * The method only extracts the stored warranty information and does not
-     * resolve the Product or Sale references. 
-     * 
-     * @param line persisted warranty record 
-     * @return extracted warranty data
+     * Converts a persisted record into a Warranty object.
+     *
+     * @param line persisted warranty record
+     * @return reconstructed Warranty, or null if its references cannot
+     *         be resolved
      */
-    
-    private WarrantyData toWarranty(String line) {
+    private Warranty toWarranty(String line) {
 
         String[] fields = line.split(",", -1);
 
@@ -173,50 +174,32 @@ public class WarrantyRepository {
         String saleId = fields[3];
         LocalDate startDate = LocalDate.parse(fields[4]);
 
-        return new WarrantyData(type, id, productId, saleId, startDate);
-    }
+        Product product = productService.findById(productId);
+        Sale sale = saleService.findById(saleId);
 
-    /**
-     * Represents the persistence data required to reconstruct a Warranty.
-     *
-     * Product and Sale objects are intentionally not stored here.
-     */
-    
-    public static class WarrantyData {
-
-        private final String type;
-        private final String id;
-        private final String productId;
-        private final String saleId;
-        private final LocalDate startDate;
-
-        public WarrantyData(String type, String id, String productId,
-                String saleId, LocalDate startDate) {
-            this.type = type;
-            this.id = id;
-            this.productId = productId;
-            this.saleId = saleId;
-            this.startDate = startDate;
+        if (product == null || sale == null) {
+            return null;
         }
 
-        public String getType() {
-            return type;
+        if (type.equals("BASIC")) {
+
+            return new BasicWarranty(
+                    id,
+                    product,
+                    sale,
+                    startDate);
         }
 
-        public String getId() {
-            return id;
+        if (type.equals("EXTENDED")) {
+
+            return new ExtendedWarranty(
+                    id,
+                    product,
+                    sale,
+                    startDate);
         }
 
-        public String getProductId() {
-            return productId;
-        }
-
-        public String getSaleId() {
-            return saleId;
-        }
-
-        public LocalDate getStartDate() {
-            return startDate;
-        }
+        throw new IllegalArgumentException(
+                "Unknown warranty type in file: " + type);
     }
 }

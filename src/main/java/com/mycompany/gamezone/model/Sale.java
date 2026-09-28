@@ -19,7 +19,6 @@ public class Sale {
     private double total;
     private String appliedPromotionName;
     private double discountAmount;
-    private double warrantyCost;
 
     /**
      * Creates a new sale with the given date, identifier, products,
@@ -189,25 +188,12 @@ public class Sale {
     }
 
     /**
-    * @param discountAmount the discount amount applied
-    */
+     * @param discountAmount the discount amount applied
+     */
     public void setDiscountAmount(double discountAmount) {
         this.discountAmount = discountAmount;
     }
 
-    /**
-     * @return the total cost of extended warranties applied to this sale
-     */
-    public double getWarrantyCost() {
-        return warrantyCost;
-    }
-
-    /**
-     * @param warrantyCost the total cost of extended warranties applied to this sale
-     */
-    public void setWarrantyCost(double warrantyCost) {
-        this.warrantyCost = warrantyCost;
-    }
     /**
      * Generates a formatted receipt for the sale including the subtotal,
      * the discount applied (with the promotion name) and the final total.
@@ -216,33 +202,19 @@ public class Sale {
      */
     public String generateReceipt() {
         StringBuilder sb = new StringBuilder();
-        appendHeader(sb);
-        appendProducts(sb);
-        appendTotals(sb);
-        return sb.toString();
-    }
-
-    private void appendHeader(StringBuilder sb) {
         sb.append("===== RECIBO DE VENTA =====\n");
         sb.append("ID: ").append(id).append("\n");
         sb.append("Fecha: ").append(date).append("\n");
         sb.append("Cliente: ").append(customer.getName()).append("\n");
         sb.append("Vendedor: ").append(seller.getName()).append("\n");
         sb.append("Productos:\n");
-    }
-
-    private void appendProducts(StringBuilder sb) {
         for (Product product : products) {
             sb.append("  - ").append(product.getTitle())
-            .append(": $").append(String.format("%.2f", product.getPrice()))
-            .append("\n");
+              .append(": $").append(String.format("%.2f", product.getPrice()))
+              .append("\n");
         }
         sb.append("---------------------------\n");
-    }
-
-    private void appendTotals(StringBuilder sb) {
-        sb.append("Subtotal:  $").append(String.format("%.2f", getSubtotal())).append("\n");
-
+        sb.append("Subtotal:  $").append(String.format("%.2f", calculateTotal())).append("\n");
         if (discountAmount > 0) {
             sb.append("Descuento: $").append(String.format("%.2f", discountAmount));
             if (appliedPromotionName != null) {
@@ -250,13 +222,9 @@ public class Sale {
             }
             sb.append("\n");
         }
-
-        if (warrantyCost > 0) {
-            sb.append("Garantía extendida: $").append(String.format("%.2f", warrantyCost)).append("\n");
-        }
-
         sb.append("TOTAL:     $").append(String.format("%.2f", total)).append("\n");
         sb.append("===========================");
+        return sb.toString();
     }
 
     @Override

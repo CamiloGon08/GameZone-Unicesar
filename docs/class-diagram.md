@@ -351,8 +351,6 @@ direction TB
     AccessoryService --> AccessoryRepository
     PromotionService --> PromotionRepository
     WarrantyService --> WarrantyRepository
-    WarrantyService --> SaleRepository
-    WarrantyService --> ProductService
 
     SaleService --> SaleRepository
     SaleService --> ProductService

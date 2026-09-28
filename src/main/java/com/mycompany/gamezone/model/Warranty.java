@@ -2,7 +2,6 @@ package com.mycompany.gamezone.model;
 
 import java.time.LocalDate;
 
-
 public abstract class Warranty {
 
     private String id;

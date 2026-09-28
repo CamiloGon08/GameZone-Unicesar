@@ -2,7 +2,6 @@ package com.mycompany.gamezone.model;
 
 import java.time.LocalDate;
 
-
 public class BulkPurchaseDiscount extends Promotion {
 
     private int minimumQuantity;

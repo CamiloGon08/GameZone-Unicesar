@@ -103,27 +103,3 @@ The original README only described the baseline system and used a package path t
 
 **Solution obtained and decision taken:**
 I rewrote the README with one section per module, the correct menu option numbers (11 through 14), the correct main class, and a project layout section that reflects the real structure. I committed it as a documentation-only change.
-
-### Entry 7
-
-**Date:** 2026-09-27
-**Tool used:** Claude (Claude Code)
-**Phase and branch:** Phase 3 (Warranties) — refactor/unified-sale-registration
-
-**Reason for use:**
-Reorganize SaleService.registerSale into the unified 8-step flow required by A3, and fix compilation errors introduced after merging fix/warranty-circular-dependency (A2) and fix/return-accessory-stock (A4) into the branch.
-
-**Problem faced:**
-registerSale mixed validation, promotion, warranty and inventory logic in one long method with no explicit step order, and Sale had no field to report the extended warranty cost separately on the receipt. After merging A2, three files broke: SaleRepository had duplicate imports and an undeclared variable, and ConsoleMenu called two WarrantyService methods with outdated signatures. Additionally, WarrantyService allowed a console to have only one warranty per sale, which silently blocked assigning an extended warranty to a console that already had the automatic basic one.
-
-**Prompt used:**
-"Ayúdame a reorganizar registerSale en los 8 pasos que pide el Requerimiento 5, revisando la firma real de SaleService, y a corregir los errores que aparecieron después de fusionar los cambios de mis compañeros."
-
-**Solution obtained and decision taken:**
-Split registerSale into five named private methods (validateItems, validateStock, applyBestPromotion, assignWarranties, updateInventory), added Sale.warrantyCost with its getter/setter, and rewrote generateReceipt to show subtotal, discount, warranty cost and final total. Fixed the duplicate imports and undefined variable in SaleRepository, and updated ConsoleMenu's calls to viewActiveWarranties(LocalDate) and viewWarrantiesExpiringSoon(int) to match the new signatures. Identified that WarrantyService's duplicate-warranty check did not distinguish warranty type, and reported it to Developer 2, who fixed it using a type-aware check (hasWarrantyOfType). All changes were accepted as proposed; no part was discarded.
-
-**Commit related:**
-refactor: split generateReceipt into header, products and totals in Sale
-refactor: split registerSale into named steps for the unified sale flow
-fix: remove duplicate imports and undefined variable in SaleRepository
-fix: update ConsoleMenu warranty calls to match new WarrantyService signatures
