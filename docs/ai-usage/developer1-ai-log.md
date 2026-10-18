@@ -1,24 +1,50 @@
-# Developer 1 AI Usage log:
+# Developer 1 AI Usage Log
 
 ## 2026-10-18 — Requirement 6
 
-- Tool: OpenAI Codex, used interactively in the existing NetBeans Maven workspace.
-- User request: inspect and update the repository, identify jdaviddominguez's previous contributions, and help implement the requirements within the Developer 1 role.
-- User constraints: the user creates every commit and push; review and upload one logical block at a time. Explicitly announce the transition before beginning requirement 7.
-- Assistance: read the local handouts, checked Git history and TEAM.md, fetched origin, updated develop and created local feature/exception-handling.
-- Generated contribution: abstract exception root, four concrete exceptions, three stateless validators, English JavaDoc, Spanish error details and 20 validation test cases.
-- Decisions proposed: preserve com.mycompany.gamezone, use the specified unchecked root, retain original causes, and keep validators independent of persistence.
-- Integration differences reviewed: actual Person.getiD(), long phone values, seller data, additional existing service checks and the person-uniqueness policy.
-- Supporting verification: the assistant prepared a disposable console scenario and corrected the Maven output ignore rule.
-- Results: the 20 validation cases passed. The console scenario exercised main operations 1-10 and read-only submenu paths; the differential check matched the saved baseline's output and seven files.
-- Scope: existing service, repository and menu code remains unchanged in this contribution. Developer 2 and the technical lead integrate their assigned parts.
-- Shared documents: exception-analysis.md and exception-class-diagram.md remain local team-review drafts; the user chose not to include them in this personal contribution.
-- Incremental review: the assistant explained each block and provided commands; the user reported completing them. Individual understanding must still be demonstrated by the user.
-- Version control: all commits and pushes below were executed by the user. The assistant checked that the branch's local and remote heads matched after each block.
-- Pending: user review/commit of this log, PR creation, another member's review, team integration and merge. Requirement 7 has not started in the user's incremental workflow.
-- The assistant has created no commits, pushes, PRs, approvals or merges.
+Developer: Jesus David Dominguez Theran. GitHub: `jdaviddominguez`.
+Role: Developer 1, as recorded in TEAM.md.
 
-### User-created commits verified on feature/exception-handling
+### Project background and assigned contribution
+
+This requirement extends an existing project that I have been working on in NetBeans.
+My previous commits cover the product module and domain classes for accessories,
+promotions, returns and warranties. Requirement 6 builds on that existing work.
+
+My assigned implementation consists of the GameZoneException hierarchy and the
+ProductValidator, PersonValidator and SaleValidator classes. Service/repository
+integration belongs to Developer 2; menu integration belongs to the technical lead.
+
+### How I used AI assistance
+
+I used OpenAI Codex as a programming and review assistant to interpret the requirements,
+check the existing repository against them, discuss the implementation and verify its behavior.
+The assistance included code and test drafts for the exceptions and validators,
+JavaDoc and error-message wording, explanations of design choices, and local build/test checks.
+It also included a disposable console verification script and a Maven output ignore correction.
+
+The implementation retains the existing com.mycompany.gamezone package structure,
+uses the required unchecked exception root, preserves persistence failure causes,
+and keeps validators independent of file access and repositories. Integration notes
+identify existing model differences such as Person.getiD(), numeric phone values,
+seller fields and the current uniqueness rules.
+
+### My decisions and repository work
+
+I requested that work remain within my Developer 1 responsibilities and continue in
+small, explainable blocks. I asked for the Git commands and personally executed each
+commit and push. I also clarified that shared analysis and diagram documents should
+remain drafts for the team rather than become part of my individual delivery.
+The assistant explained each block and checked that my local and remote commits matched.
+
+### Verification results
+
+The 20 validation test cases passed. The console scenario exercised the ten original
+main operations and read-only paths through the four extended submenus using temporary
+data. A differential check matched the saved baseline's console output and seven data files.
+The new validators still require the team's assigned service/repository/menu integration.
+
+### Commits I created and pushed on feature/exception-handling
 
 | Commit | Contribution |
 | --- | --- |
@@ -31,3 +57,10 @@
 | c750f74 | ValidatorTest |
 | 4fa7aed | Disposable console verification scenario |
 | 3fe65f5 | Maven output ignore rule |
+| 84e1797 | Initial personal AI usage entry |
+
+### Remaining steps
+
+Review this updated entry, create my requirement 6 Pull Request, obtain another member's
+review, and coordinate integration with the team. Requirement 7 has not started in my
+incremental delivery workflow.
