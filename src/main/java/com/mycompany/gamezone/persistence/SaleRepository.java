@@ -210,6 +210,22 @@ public class SaleRepository {
 
         return sale;
     }
+    
+    /**
+     * * Finds a sale by its identifier. * * @param id sale identifier * @return
+     * matching sale, or null if no sale with the given identifier * exists
+     * @param id
+     * @return 
+     */
+    
+    public Sale findById(String id) {
+        for (Sale sale : load()) {
+            if (sale.getId().equals(id)) {
+                return sale;
+            }
+        }
+        return null;
+    }
 
     private Customer findCustomerById(String id) {
         for (Person person : personService.listPersons()) {
