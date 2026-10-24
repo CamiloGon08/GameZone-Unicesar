@@ -1,5 +1,6 @@
 package com.mycompany.gamezone.persistence;
 
+import com.mycompany.gamezone.exceptions.PersistenceException;
 import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Person;
 import com.mycompany.gamezone.model.Seller;
@@ -8,6 +9,8 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import utilities.FilePath;
 
@@ -21,8 +24,13 @@ import utilities.FilePath;
  * CUSTOMER|ID|name|email|contactNumber
  * SELLER|ID|name|contactNumber|employeeCode|shift
  *
+ * Any {@link IOException} raised while accessing the file is caught here and
+ * rethrown as a {@link PersistenceException} that identifies the file and the
+ * operation that failed.
+ *
  * @author EstefaniaMarquez
  */
+
 public class PersonRepository {
 
     private static final String CUSTOMER_TYPE = "CUSTOMER";
@@ -32,6 +40,7 @@ public class PersonRepository {
      * Saves all Person records by overwriting the persistence file.
      *
      * @param persons the list of Person objects to be saved
+     * @throws PersistenceException if the file cannot be written
      */
     public void savePersons(ArrayList<Person> persons) {
 
@@ -44,26 +53,37 @@ public class PersonRepository {
             }
 
         } catch (IOException e) {
-            System.out.println(
-                    "Error: Failed to save the persons records.");
+            throw new PersistenceException(
+                    "Write error: could not save persons to file '"
+                    + FilePath.PERSONS + "'", e);
         }
     }
 
     /**
      * Retrieves all Person records from the persistence file.
      *
-     * @return an ArrayList containing all stored Person objects
+     * @return an ArrayList containing all stored Person objects; an empty list
+     * if the file does not exist yet (for example, on the first run)
+     * @throws PersistenceException if the file cannot be read or contains a
+     * malformed record
      */
     public ArrayList<Person> listPersons() {
 
         ArrayList<Person> persons = new ArrayList<>();
 
+        if (!Files.exists(Paths.get(FilePath.PERSONS))) {
+            return persons;
+        }
+
         try (BufferedReader br = new BufferedReader(
                 new FileReader(FilePath.PERSONS))) {
 
             String line;
+            int lineNumber = 0;
 
             while ((line = br.readLine()) != null) {
+
+                lineNumber++;
 
                 if (line.trim().isEmpty()) {
                     continue;
@@ -71,7 +91,7 @@ public class PersonRepository {
 
                 String[] infoPerson = line.split("\\|", -1);
 
-                Person person = createPerson(infoPerson);
+                Person person = parseRecord(infoPerson, lineNumber);
 
                 if (person != null) {
                     persons.add(person);
@@ -79,11 +99,33 @@ public class PersonRepository {
             }
 
         } catch (IOException e) {
-            System.out.println(
-                    "Error: Failed to list the persons records.");
+            throw new PersistenceException(
+                    "Read error: could not load persons from file '"
+                    + FilePath.PERSONS + "'", e);
         }
 
         return persons;
+    }
+
+    /**
+     * Converts one persistence record into a Person, translating any format
+     * problem into a {@link PersistenceException} that identifies the file and
+     * the offending line.
+     *
+     * @param infoPerson the fields of the persistence record
+     * @param lineNumber the 1-based number of the line in the file
+     * @return a Customer or Seller object, or null if the type is unknown
+     * @throws PersistenceException if the record is malformed
+     */
+    private Person parseRecord(String[] infoPerson, int lineNumber) {
+
+        try {
+            return createPerson(infoPerson);
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            throw new PersistenceException(
+                    "Read error: malformed person record at line "
+                    + lineNumber + " of file '" + FilePath.PERSONS + "'", e);
+        }
     }
 
     /**
