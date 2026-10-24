@@ -1,15 +1,22 @@
 package com.mycompany.gamezone.service;
 
+import com.mycompany.gamezone.exceptions.BusinessRuleException;
+import com.mycompany.gamezone.exceptions.InvalidDataException;
+import com.mycompany.gamezone.exceptions.ResourceNotFoundException;
 import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Person;
 import com.mycompany.gamezone.model.Seller;
 import com.mycompany.gamezone.persistence.PersonRepository;
+import com.mycompany.gamezone.validation.PersonValidator;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Service class responsible for managing Person operations.
- * It validates Customer and Seller information and manages
- * the list of Person objects.
+ * It validates Customer and Seller information, delegating the checks to
+ * {@link PersonValidator} where it applies, and manages the list of
+ * Person objects. Every failure is reported with a typed exception from
+ * the GameZone exception hierarchy.
  *
  * The service does not directly modify the persistence file
  * when a Person is registered, updated or deleted.
@@ -29,7 +36,7 @@ public class PersonService {
      * @param name the name of the customer.
      * @param iD the identification number of the customer.
      * @param contactNumber the contact number of the customer.
-     * @throws IllegalArgumentException if any of the provided information
+     * @throws InvalidDataException if any of the provided information
      * is invalid.
      */
     public void validateCustomer(
@@ -38,35 +45,14 @@ public class PersonService {
             String iD,
             long contactNumber) {
 
-        if (eMail == null || eMail.trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Email cannot be empty");
-        }
+        PersonValidator.validatePersonData(
+                iD,
+                name,
+                eMail,
+                String.valueOf(contactNumber));
 
-        if (!eMail.contains("@") || !eMail.contains(".")) {
-            throw new IllegalArgumentException(
-                    "Invalid email format");
-        }
-
-        if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Name cannot be empty");
-        }
-
-        if (name.matches(".*\\d.*")) {
-            throw new IllegalArgumentException(
-                    "Name cannot contain numbers");
-        }
-
-        if (iD == null || iD.trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "ID cannot be empty");
-        }
-
-        if (contactNumber <= 0) {
-            throw new IllegalArgumentException(
-                    "Contact number must be greater than zero");
-        }
+        requireNameWithoutDigits(name);
+        requirePositiveContactNumber(contactNumber);
     }
 
     /**
@@ -77,7 +63,7 @@ public class PersonService {
      * @param name the name of the seller.
      * @param iD the identification number of the seller.
      * @param contactNumber the contact number of the seller.
-     * @throws IllegalArgumentException if any of the provided information
+     * @throws InvalidDataException if any of the provided information
      * is invalid.
      */
     public void validateSeller(
@@ -87,35 +73,12 @@ public class PersonService {
             String iD,
             long contactNumber) {
 
-        if (employeeCode == null || employeeCode.trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Employee code cannot be empty");
-        }
-
-        if (shift == null || shift.trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Shift cannot be empty");
-        }
-
-        if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Name cannot be empty");
-        }
-
-        if (name.matches(".*\\d.*")) {
-            throw new IllegalArgumentException(
-                    "Name cannot contain numbers");
-        }
-
-        if (iD == null || iD.trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "ID cannot be empty");
-        }
-
-        if (contactNumber <= 0) {
-            throw new IllegalArgumentException(
-                    "Contact number must be greater than zero");
-        }
+        requireNotBlank("código de empleado", employeeCode);
+        requireNotBlank("turno", shift);
+        requireNotBlank("nombre", name);
+        requireNameWithoutDigits(name);
+        requireNotBlank("identificación", iD);
+        requirePositiveContactNumber(contactNumber);
     }
 
     /**
@@ -126,8 +89,9 @@ public class PersonService {
      * @param name the name of the customer.
      * @param iD the identification number of the customer.
      * @param contactNumber the contact number of the customer.
-     * @throws IllegalArgumentException if the information is invalid
-     * or if a customer with the given ID already exists.
+     * @throws InvalidDataException if the information is invalid.
+     * @throws BusinessRuleException if a customer with the given ID
+     * already exists.
      */
     public void registerCustomer(
             ArrayList<Person> persons,
@@ -138,10 +102,7 @@ public class PersonService {
 
         validateCustomer(eMail, name, iD, contactNumber);
 
-        if (searchCustomer(persons, iD) != null) {
-            throw new IllegalArgumentException(
-                    "A customer with this ID already exists");
-        }
+        PersonValidator.validateUniquePerson(customersOf(persons), iD);
 
         Customer customer = new Customer(
                 eMail,
@@ -162,8 +123,9 @@ public class PersonService {
      * @param name the name of the seller.
      * @param iD the identification number of the seller.
      * @param contactNumber the contact number of the seller.
-     * @throws IllegalArgumentException if the information is invalid
-     * or if a seller with the given employee code already exists.
+     * @throws InvalidDataException if the information is invalid.
+     * @throws BusinessRuleException if a seller with the given employee
+     * code already exists.
      */
     public void registerSeller(
             ArrayList<Person> persons,
@@ -182,8 +144,9 @@ public class PersonService {
         );
 
         if (searchSeller(persons, employeeCode) != null) {
-            throw new IllegalArgumentException(
-                    "A seller with this employee code already exists");
+            throw new BusinessRuleException(
+                    "Ya existe un vendedor con el código de empleado "
+                    + employeeCode.trim() + ".");
         }
 
         Seller seller = new Seller(
@@ -205,8 +168,8 @@ public class PersonService {
      * @param eMail the new email address of the customer.
      * @param name the new name of the customer.
      * @param contactNumber the new contact number of the customer.
-     * @throws IllegalArgumentException if the customer does not exist
-     * or if the provided information is invalid.
+     * @throws ResourceNotFoundException if the customer does not exist.
+     * @throws InvalidDataException if the provided information is invalid.
      */
     public void updateCustomer(
             ArrayList<Person> persons,
@@ -217,10 +180,7 @@ public class PersonService {
 
         Customer customer = searchCustomer(persons, iD);
 
-        if (customer == null) {
-            throw new IllegalArgumentException(
-                    "Customer not found");
-        }
+        PersonValidator.validatePersonExists(customer, iD);
 
         validateCustomer(
                 eMail,
@@ -243,8 +203,8 @@ public class PersonService {
      * @param name the new name of the seller.
      * @param iD the new identification number of the seller.
      * @param contactNumber the new contact number of the seller.
-     * @throws IllegalArgumentException if the seller does not exist
-     * or if the provided information is invalid.
+     * @throws ResourceNotFoundException if the seller does not exist.
+     * @throws InvalidDataException if the provided information is invalid.
      */
     public void updateSeller(
             ArrayList<Person> persons,
@@ -256,10 +216,7 @@ public class PersonService {
 
         Seller seller = searchSeller(persons, employeeCode);
 
-        if (seller == null) {
-            throw new IllegalArgumentException(
-                    "Seller not found");
-        }
+        PersonValidator.validatePersonExists(seller, employeeCode);
 
         validateSeller(
                 employeeCode,
@@ -280,7 +237,7 @@ public class PersonService {
      *
      * @param persons the list of Person objects.
      * @param iD the identification number of the customer to delete.
-     * @throws IllegalArgumentException if no customer with the given ID
+     * @throws ResourceNotFoundException if no customer with the given ID
      * exists.
      */
     public void deleteCustomer(
@@ -289,10 +246,7 @@ public class PersonService {
 
         Customer customer = searchCustomer(persons, iD);
 
-        if (customer == null) {
-            throw new IllegalArgumentException(
-                    "Customer not found");
-        }
+        PersonValidator.validatePersonExists(customer, iD);
 
         persons.remove(customer);
     }
@@ -302,7 +256,7 @@ public class PersonService {
      *
      * @param persons the list of Person objects.
      * @param employeeCode the employee code of the seller to delete.
-     * @throws IllegalArgumentException if no seller with the given
+     * @throws ResourceNotFoundException if no seller with the given
      * employee code exists.
      */
     public void deleteSeller(
@@ -311,10 +265,7 @@ public class PersonService {
 
         Seller seller = searchSeller(persons, employeeCode);
 
-        if (seller == null) {
-            throw new IllegalArgumentException(
-                    "Seller not found");
-        }
+        PersonValidator.validatePersonExists(seller, employeeCode);
 
         persons.remove(seller);
     }
@@ -323,6 +274,8 @@ public class PersonService {
      * Retrieves all Person objects from the persistence layer.
      *
      * @return an ArrayList containing all stored Person objects.
+     * @throws com.mycompany.gamezone.exceptions.PersistenceException if the
+     * persistence file cannot be read.
      */
     public ArrayList<Person> listPersons() {
         return personRepository.listPersons();
@@ -333,6 +286,8 @@ public class PersonService {
      * The existing file is overwritten.
      *
      * @param persons the list of Person objects to be saved.
+     * @throws com.mycompany.gamezone.exceptions.PersistenceException if the
+     * persistence file cannot be written.
      */
     public void savePersons(ArrayList<Person> persons) {
         personRepository.savePersons(persons);
@@ -387,5 +342,68 @@ public class PersonService {
 
     return personRepository.searchSeller(persons, employeeCode);
 }
-}
 
+    /**
+     * Returns only the customers contained in the given list, so the
+     * uniqueness rule is applied among customers as it always was.
+     *
+     * @param persons the list of Person objects.
+     * @return a new list containing only the Customer objects.
+     */
+    private List<Person> customersOf(ArrayList<Person> persons) {
+
+        List<Person> customers = new ArrayList<>();
+
+        for (Person currentPerson : persons) {
+
+            if (currentPerson instanceof Customer) {
+                customers.add(currentPerson);
+            }
+        }
+
+        return customers;
+    }
+
+    /**
+     * Ensures that a text field contains something other than whitespace.
+     * Used for the seller fields that PersonValidator does not cover.
+     *
+     * @param field the name of the field, used in the error message.
+     * @param value the value to check.
+     * @throws InvalidDataException if the value is null or blank.
+     */
+    private void requireNotBlank(String field, String value) {
+
+        if (value == null || value.trim().isEmpty()) {
+            throw new InvalidDataException(field, "no puede estar vacío.");
+        }
+    }
+
+    /**
+     * Ensures that a name does not contain digits.
+     *
+     * @param name the name to check.
+     * @throws InvalidDataException if the name contains a digit.
+     */
+    private void requireNameWithoutDigits(String name) {
+
+        if (name.matches(".*\\d.*")) {
+            throw new InvalidDataException(
+                    "nombre", "no puede contener números.");
+        }
+    }
+
+    /**
+     * Ensures that a contact number is greater than zero.
+     *
+     * @param contactNumber the contact number to check.
+     * @throws InvalidDataException if the number is zero or negative.
+     */
+    private void requirePositiveContactNumber(long contactNumber) {
+
+        if (contactNumber <= 0) {
+            throw new InvalidDataException(
+                    "número de contacto", "debe ser mayor que cero.");
+        }
+    }
+}
