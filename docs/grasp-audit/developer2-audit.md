@@ -418,3 +418,79 @@ if (daysSinceSale < 0 || daysSinceSale > 30) { throw ... }   // L114
 - **Other member's code:** None
 - **Verdict:** Violation
 
+# Audit 5/6 — Warranty Module (WarrantyRepository, WarrantyService)
+
+(`L###` = line number in the .java)
+**Strength:** `WarrantyData` insulates the repository from the services (L185).
+
+## Verdict per pattern
+| Pattern | Verdict | Violations |
+|---|---|---|
+| Information Expert | Violation | V-27 |
+| Creator | Correct | — |
+| Controller | N/A | — |
+| High Cohesion | Correct | — |
+| Low Coupling | Violation | V-25 |
+| Polymorphism | Violation | V-26 |
+| Pure Fabrication | Violation | V-28 |
+| Indirection | Correct | — |
+| Protected Variations | Correct | — |
+
+---
+
+## Dev2Audit - V-25
+- **Pattern:** Low Coupling
+- **Module:** WarrantyService
+- **Evidence:**
+```java
+import com.mycompany.gamezone.persistence.SaleRepository;   // L8
+public WarrantyService(WarrantyRepository repository, SaleRepository saleRepository, ...)  // L43
+Sale sale = saleRepository.findById(data.getSaleId());    // L88-89
+```
+- **Explanation:** The service reaches into another module's persistence instead of going through `SaleService`. This is exactly the point that broke when `findById` was removed from `SaleRepository`.
+- **Consequence:** Any change in `SaleRepository` breaks Warranty, and `SaleService` and `WarrantyService` end up tied in a cycle (resolved with `setWarrantyService`).
+- **Proposed solution:** Depend on a small **`SaleLookup`** interface (`findById`) implemented by `SaleService` (Indirection). **New class: SaleLookup interface.**
+- **Other member's code:** SaleRepository, SaleService, Main
+- **Verdict:** Violation
+
+## Dev2Audit - V-26
+- **Pattern:** Polymorphism
+- **Module:** WarrantyRepository, WarrantyService
+- **Evidence:**
+```java
+if (warranty instanceof BasicWarranty) { type = "BASIC"; } else if (warranty instanceof ExtendedWarranty) ...  // L128-132
+if ("BASIC".equals(data.getType())) {...} else if ("EXTENDED".equals(data.getType())) {...}                    // L95-105
+hasWarrantyOfType(..., Class<? extends Warranty> type)                                                         // L166
+```
+- **Explanation:** The type code ("BASIC"/"EXTENDED") is decided with `instanceof` on write and with strings on read, duplicated across two classes. `assignBasicWarranty` and `assignExtendedWarranty` are also near-identical.
+- **Consequence:** A new warranty type requires editing both the repository and the service.
+- **Proposed solution:** Polymorphic `Warranty.getTypeCode()` and a **`WarrantyFactory`**. **New class: WarrantyFactory.**
+- **Other member's code:** Warranty, BasicWarranty, ExtendedWarranty
+- **Verdict:** Violation
+
+## Dev2Audit - V-27
+- **Pattern:** Information Expert
+- **Module:** WarrantyService
+- **Evidence:**
+```java
+warranty.getProduct().getId().equals(productId) && warranty.getSale().getId().equals(saleId)  // L228, repeated at L169 and L272
+```
+- **Explanation:** The "does this warranty match this product and sale?" comparison is repeated three times in the service.
+- **Consequence:** If the matching criterion changes, it must be fixed in three places.
+- **Proposed solution:** Add `Warranty.matches(productId, saleId)`. No new class.
+- **Other member's code:** Warranty
+- **Verdict:** Violation
+
+## Dev2Audit - V-28
+- **Pattern:** Pure Fabrication
+- **Module:** WarrantyService
+- **Evidence:**
+```java
+String warrantyId = "WAR-" + nextNumber; while (findById(warrantyId) != null) { nextNumber++; ... }  // L353-361
+```
+- **Explanation:** ID generation is reimplemented in each service: the same logic appears in `generateReturnId` (L2704-2715) and in the sale numbering of `SaleService`.
+- **Consequence:** Three parallel algorithms that can diverge.
+- **Proposed solution:** Create **`IdGenerator`** (Pure Fabrication) with a prefix and a uniqueness check. **New class: IdGenerator.**
+- **Other member's code:** ReturnService, SaleService
+- **Verdict:** Violation
+
