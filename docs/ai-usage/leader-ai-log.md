@@ -153,3 +153,49 @@ refactor: handle GameZone exceptions with differentiated messages in ConsoleMenu
 docs: update README with exception handling and validation
 docs: add exception class diagram
 docs: log leader AI usage for requirement 6
+
+## Requirement 7 — GRASP Audit and Correction
+
+### Phase 1 — Audit
+
+### Entry 9
+
+**Date:** 2026-10-25
+**Tool used:** Claude (Claude Code)
+**Phase and branch:** Requirement 7, Phase 1 (Audit) — feature/grasp-audit
+
+**Reason for use:**
+Review the code under my responsibility against the nine GRASP patterns before writing my individual audit. The professor confirmed that, in Phase 1, using AI to review our own code and identify possible improvements is allowed.
+
+**Problem faced:**
+`Sale`, `SaleService` and `ConsoleMenu` received changes in every requirement (accessories, promotions, returns, warranties and exceptions). I needed to check, pattern by pattern, which responsibilities were badly placed and which were correct, with exact line numbers from develop (`bf35aa2`).
+
+**Prompt used:**
+"Tu tarea ahora es cumplir las labores de líder técnico, el cual está encargado de realizar un informe estilo auditoría en donde se identifiquen las violaciones de los principios GRASP [...] Si ves un error, DÉJALO ASÍ, solo debes indicar que ese error o falla existe con documentación."
+
+**Solution obtained and decision taken:**
+The AI produced a review of the whole system with 31 possible violations. I kept only the ones that belong to my classes according to `TEAM.md` (`Sale`, `SaleRepository`, `SaleService`, `ConsoleMenu`, `Main` and `ProductService.restoreStock`), which gave 9 violations (V-01 to V-09), plus Correct verdicts for Creator and Pure Fabrication. The findings that involve code of Developer 1 or Developer 2 were marked as boundary findings for the consolidation instead of being audited by me. Functional defects (for example, loaded sales losing their discount) were moved to the out-of-scope section and not fixed. I checked each line number against the code before committing.
+
+**Commit related:**
+docs: add technical lead GRASP audit
+
+### Entry 10
+
+**Date:** 2026-10-25
+**Tool used:** Claude (Claude Code)
+**Phase and branch:** Requirement 7, Phase 1 (Audit) — feature/grasp-audit
+
+**Reason for use:**
+Draft the answers to the five guiding questions in `docs/grasp-analysis.md`. The professor confirmed that the AI may draft the guiding question answers and documentation as long as the team verifies them.
+
+**Problem faced:**
+The questions ask about our audit criteria, boundary findings, code that breaks more than one pattern, the non-regression strategy and the correction order. The answers had to use concrete cases from our own repository.
+
+**Prompt used:**
+"Ahora hazme lo que piden los requerimientos 7 y 8."
+
+**Solution obtained and decision taken:**
+The AI drafted the five answers using cases from our audit (stock routing with `instanceof Accessory` in `SaleService` and `ReturnService`, and `ConsoleMenu` loading and saving the lists of other modules). I signed answers 1 and 2 as Technical Lead and left 3, 4 and 5 to be assigned in the team meeting. I reviewed the draft and checked that the cases it cites match my audit before committing.
+
+**Commit related:**
+docs: add guiding question answers to grasp analysis

@@ -1,0 +1,96 @@
+# GRASP Audit - Developer 2
+
+**Audited commit (develop):** `bf35aa2`
+**Author:** Estefanía Márquez Martínez (Developer 2)
+
+## Scope
+
+| Module (requirement) | Class | Methods audited |
+|---|---|---|
+| Persons (Workshop 1) | `Person`, `Customer`, `Seller` | |
+| Persons (Workshop 1) | `PersonRepository`, `PersonService` | |
+| Accessories (Req. 1) | `AccessoryRepository`, `AccessoryService` | |
+| Promotions (Req. 2) | `PromotionRepository`, `PromotionService` | |
+| Returns (Req. 3) | `ReturnRepository`, `ReturnService` (including monthly balance) | |
+| Warranties (Req. 4) | `WarrantyRepository`, `WarrantyService` | |
+| Exceptions and validations (Req. 6) | Use of exceptions and validators in services and repositories | |
+
+## Summary of verdicts
+
+| Pattern | Verdict | Violations |
+|---|---|---|
+| Information Expert | | |
+| Creator | | |
+| Controller | | |
+| Low Coupling | | |
+| High Cohesion | | |
+| Polymorphism | | |
+| Pure Fabrication | | |
+| Indirection | | |
+| Protected Variations | | |
+
+---
+
+## 1. Information Expert
+**Verdict:**
+
+<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
+
+## 2. Creator
+**Verdict:**
+
+<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
+
+## 3. Controller
+**Verdict:**
+
+<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
+
+## 4. Low Coupling
+**Verdict:**
+
+<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
+
+## 5. High Cohesion
+**Verdict:**
+
+<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
+
+## 6. Polymorphism
+**Verdict:**
+
+<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
+
+## 7. Pure Fabrication
+**Verdict:**
+
+<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
+
+## 8. Indirection
+**Verdict:**
+
+<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
+
+## 9. Protected Variations
+**Verdict:**
+
+<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
+
+<!-- Violation table (copy inside the pattern section):
+
+### V-01
+| Field | Content |
+|---|---|
+| Pattern | |
+| Module | Module and requirement |
+| Evidence | Class, method and exact lines in develop (bf35aa2) |
+| Explanation | |
+| Consequence | |
+| Proposed solution | Design change and pattern applied |
+| Other member's code | No / Yes: which class and member |
+-->
+
+---
+
+## Findings reported to the Technical Lead
+<!-- Problems whose origin is in another member's code. Do not audit them here; list them for the consolidation. -->
