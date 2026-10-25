@@ -5,6 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import com.mycompany.gamezone.exceptions.BusinessRuleException;
+import com.mycompany.gamezone.exceptions.GameZoneException;
+import com.mycompany.gamezone.exceptions.InvalidDataException;
+import com.mycompany.gamezone.exceptions.PersistenceException;
+import com.mycompany.gamezone.exceptions.ResourceNotFoundException;
 import com.mycompany.gamezone.model.Accessory;
 import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Customer;
@@ -143,8 +148,8 @@ public class ConsoleMenu {
         try {
             productService.registerVideoGame(id, title, price, stock, platform, genre, ageRating);
             System.out.println("Videojuego registrado exitosamente.");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (GameZoneException | IllegalArgumentException e) {
+            handleException(e);
         }
     }
 
@@ -167,8 +172,8 @@ public class ConsoleMenu {
         try {
             productService.registerConsole(id, title, price, stock, brand, model, generation);
             System.out.println("Consola registrada exitosamente.");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (GameZoneException | IllegalArgumentException e) {
+            handleException(e);
         }
     }
 
@@ -204,8 +209,8 @@ public class ConsoleMenu {
             personService.registerCustomer(persons, email, name, id, phone);
             personService.savePersons(persons);
             System.out.println("Cliente registrado exitosamente.");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (GameZoneException | IllegalArgumentException e) {
+            handleException(e);
         }
     }
 
@@ -326,8 +331,8 @@ public class ConsoleMenu {
                     productIdsWithExtendedWarranty);
             System.out.println("¡Venta registrada exitosamente!");
             System.out.println(sale.generateReceipt());
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (GameZoneException | IllegalArgumentException e) {
+            handleException(e);
         }
     }
 
@@ -453,8 +458,8 @@ public class ConsoleMenu {
                     connectionType, compatibleConsoleIds);
             accessoryService.saveAll(accessories);
             System.out.println("Control registrado exitosamente.");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (GameZoneException | IllegalArgumentException e) {
+            handleException(e);
         }
     }
 
@@ -478,8 +483,8 @@ public class ConsoleMenu {
                     length, connectorType);
             accessoryService.saveAll(accessories);
             System.out.println("Cable registrado exitosamente.");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (GameZoneException | IllegalArgumentException e) {
+            handleException(e);
         }
     }
 
@@ -507,8 +512,8 @@ public class ConsoleMenu {
                     capacity, memoryType, compatibleConsoleIds);
             accessoryService.saveAll(accessories);
             System.out.println("Memoria registrada exitosamente.");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (GameZoneException | IllegalArgumentException e) {
+            handleException(e);
         }
     }
 
@@ -615,8 +620,8 @@ public class ConsoleMenu {
             promotionService.registerPercentageDiscount(promotions, id, name, startDate, endDate, percentage);
             promotionService.saveAll(promotions);
             System.out.println("Promoción por porcentaje registrada exitosamente.");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (GameZoneException | IllegalArgumentException e) {
+            handleException(e);
         }
     }
 
@@ -639,8 +644,8 @@ public class ConsoleMenu {
             promotionService.registerCategoryDiscount(promotions, id, name, startDate, endDate, category, percentage);
             promotionService.saveAll(promotions);
             System.out.println("Promoción por categoría registrada exitosamente.");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (GameZoneException | IllegalArgumentException e) {
+            handleException(e);
         }
     }
 
@@ -663,8 +668,8 @@ public class ConsoleMenu {
             promotionService.registerBulkPurchaseDiscount(promotions, id, name, startDate, endDate, minimumQuantity, percentage);
             promotionService.saveAll(promotions);
             System.out.println("Promoción por volumen registrada exitosamente.");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (GameZoneException | IllegalArgumentException e) {
+            handleException(e);
         }
     }
 
@@ -758,8 +763,8 @@ public class ConsoleMenu {
             Return returnObj = returnService.registerReturn(saleId, productIds, reason);
             System.out.println("Devolución registrada exitosamente.");
             System.out.println(returnObj.generateReturnReceipt());
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (GameZoneException | IllegalArgumentException e) {
+            handleException(e);
         }
     }
 
@@ -846,8 +851,8 @@ public class ConsoleMenu {
             System.out.println("Total de ventas: $" + String.format("%.2f", totalSales));
             System.out.println("Total de devoluciones: $" + String.format("%.2f", totalReturns));
             System.out.println("Balance neto: $" + String.format("%.2f", balance));
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        } catch (GameZoneException | IllegalArgumentException e) {
+            handleException(e);
         }
     }
 
@@ -956,6 +961,23 @@ public class ConsoleMenu {
             }
         }
         return sellers;
+    }
+
+    /** Prints a Spanish message according to the type of failure. */
+    private void handleException(RuntimeException e) {
+        if (e instanceof ResourceNotFoundException) {
+            System.out.println("No se encontró el recurso solicitado: " + e.getMessage());
+        } else if (e instanceof BusinessRuleException) {
+            System.out.println("No se puede completar la operación: " + e.getMessage());
+        } else if (e instanceof InvalidDataException) {
+            System.out.println("Los datos ingresados no son válidos: " + e.getMessage());
+        } else if (e instanceof PersistenceException) {
+            System.out.println("Ocurrió un problema al acceder a los datos del sistema. "
+                    + "Contacte al administrador.");
+        } else {
+            // Modules not yet migrated still throw IllegalArgumentException
+            System.out.println("Error: " + e.getMessage());
+        }
     }
 
     private int readInt() {

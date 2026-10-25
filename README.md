@@ -10,24 +10,29 @@ The system started as the Taller 1 delivery — products, people and sales — a
 
 ## System architecture
 
-Every class in the project belongs to one of four layers, and dependencies only flow downwards:
+Every class in the project belongs to one of four layers, plus two supporting packages (`validation` and `exceptions`). Dependencies only flow downwards:
 
 ```mermaid
 flowchart TD
     UI["ui"] --> SERVICE["service"]
+    SERVICE --> VALIDATION["validation"]
     SERVICE --> PERSISTENCE["persistence"]
     SERVICE --> MODEL["model"]
+    VALIDATION --> MODEL
     PERSISTENCE --> MODEL
+    EXCEPTIONS["exceptions (usable from any layer)"]
 ```
 
-| Layer         | Contains                                              |
-|---------------|--------------------------------------------------------|
-| `ui`          | The console menu that reads input and shows output      |
-| `service`     | The business rules and coordination between entities     |
-| `persistence` | The code that writes to and reads from files             |
-| `model`       | The domain entities (products, sales, people, etc.)      |
+| Layer / package | Contains                                                     |
+|-----------------|---------------------------------------------------------------|
+| `ui`            | The console menu that reads input and shows output            |
+| `service`       | The business rules and coordination between entities          |
+| `validation`    | Static validators that check data and throw typed exceptions  |
+| `persistence`   | The code that writes to and reads from files                  |
+| `model`         | The domain entities (products, sales, people, etc.)           |
+| `exceptions`    | The `GameZoneException` hierarchy shared by all layers        |
 
-The rule is enforced strictly: the `model` layer never imports anything from the other layers, and the `ui` layer never touches files directly.
+The rule is enforced strictly: the `model` layer never imports anything from the other layers, the `ui` layer never touches files directly, and validators never access persistence or services.
 
 ## Compilation and execution
 
@@ -101,6 +106,21 @@ New menu option (14 — Warranty management):
 3. List active warranties
 4. List warranties expiring within the next 30 days
 
+### Exception handling and validation (Requirement 6)
+
+Failures are reported with a single exception hierarchy rooted at `GameZoneException`, an unchecked exception that carries a stable `errorCode`. Each subclass represents one kind of failure:
+
+| Exception                   | When it is thrown                                    | Message shown by the console menu                                                   |
+|-----------------------------|------------------------------------------------------|--------------------------------------------------------------------------------------|
+| `ResourceNotFoundException` | A product, person or sale does not exist             | `No se encontró el recurso solicitado: <detail>`                                     |
+| `BusinessRuleException`     | A business rule is violated (e.g. not enough stock)  | `No se puede completar la operación: <detail>`                                       |
+| `InvalidDataException`      | A field is empty or outside its allowed range        | `Los datos ingresados no son válidos: <detail>`                                      |
+| `PersistenceException`      | Reading or writing a data file fails                 | `Ocurrió un problema al acceder a los datos del sistema. Contacte al administrador.` |
+
+The `validation` package contains `ProductValidator`, `PersonValidator` and `SaleValidator`. Their static methods are called by the services, so the rules live in one place instead of being repeated in each service. Repositories wrap `IOException` in `PersistenceException`, and `ConsoleMenu` handles every failure in a single `handleException` method, so the user never sees a stack trace.
+
+Products, people and sales already use the new hierarchy. Accessories, promotions, returns and warranties still throw `IllegalArgumentException`; the console menu keeps handling it until those modules are migrated. No menu option was added or changed: the behaviour of the 14 existing options is the same.
+
 ## Project layout
 
 GameZoneUnicesar/
@@ -116,10 +136,12 @@ GameZoneUnicesar/
 │ └── com/
 │ └── mycompany/
 │ └── gamezone/
+│ ├── exceptions/
 │ ├── model/
 │ ├── persistence/
 │ ├── service/
 │ ├── ui/
+│ ├── validation/
 │ └── Main.java
 ├── data/
 └── docs/
@@ -145,6 +167,7 @@ Design documentation lives under `docs/`:
 - [Promotion Analysis](docs/promotion-analysis.md)
 - [Return Analysis](docs/return-analysis.md)
 - [Warranty Analysis](docs/warranty-analysis.md)
+- [Exception Class Diagram](docs/exception-class-diagram.md)
 
 ## Team
 
