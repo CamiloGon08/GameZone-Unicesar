@@ -3,8 +3,6 @@
 ```mermaid
 classDiagram
 direction TB
-    classDiagram
-    direction TB
 
     %% ==========================================
     %% PACKAGE MODEL
@@ -364,3 +362,4 @@ direction TB
     ReturnService --> ReturnRepository
     ReturnService --> SaleService
     ReturnService --> ProductService
+```
