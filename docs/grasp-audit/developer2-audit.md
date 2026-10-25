@@ -494,3 +494,100 @@ String warrantyId = "WAR-" + nextNumber; while (findById(warrantyId) != null) { 
 - **Other member's code:** ReturnService, SaleService
 - **Verdict:** Violation
 
+# Audit 6/6 — Use of Exceptions and Validators in Services and Repositories
+
+(`L###` = line number in the .java)
+**Scope note:** This is a cross-cutting audit of the five modules above. `ProductService`, `SaleService`, `ProductRepository`, `SaleRepository`, V-13 and V-17 (repositories that print and swallow errors) are already recorded and not repeated.
+
+## Compliant code found
+- `PersonRepository` rethrows `IOException` as `PersistenceException` with file and operation (L56, L101, L125) and wraps malformed records.
+- `PersonService` uses typed exceptions (`BusinessRuleException`, L147) and calls `PersonValidator` for data, existence and uniqueness (L103, L183, L219, L249, L268).
+
+## Verdict per pattern
+
+| Pattern | Verdict | Violations |
+|---|---|---|
+| Information Expert | Correct | — |
+| Creator | N/A | — |
+| Controller | N/A | — |
+| High Cohesion | Violation | V-31, V-32 |
+| Low Coupling | Correct | — |
+| Polymorphism | N/A | — |
+| Pure Fabrication | Correct | — |
+| Indirection | Correct | — |
+| Protected Variations | Violation | V-29, V-30 |
+
+---
+
+## Dev2Audit - V-29
+- **Pattern:** Protected Variations
+- **Module:** AccessoryService, PromotionService, ReturnService, WarrantyService
+- **Evidence:**
+```java
+throw new IllegalArgumentException("Accessory ID cannot be empty.");        // AccessoryService L265
+throw new IllegalArgumentException("Promotion ID cannot be empty.");        // PromotionService L273
+throw new IllegalArgumentException("The sale ID cannot be empty.");         // ReturnService L86
+throw new IllegalArgumentException("WarrantyRepository cannot be null.");   // WarrantyService L49
+```
+- **Explanation:** These services still use the generic exception instead of the `GameZoneException` hierarchy, so failures cannot be told apart by category. Examples that would need other types: "was not found" → `ResourceNotFoundException`, "stock cannot be negative" and the 30-day rule → `BusinessRuleException`, empty or invalid fields → `InvalidDataException`.
+- **Consequence:** Errors from these modules escape the differentiated handling that the UI applies by exception type, and the user may see a raw error.
+- **Proposed solution:** Replace each generic throw with the matching typed exception, invoked from validators (see V-31 and V-12/V-16). No new class.
+- **Other member's code:** None (the hierarchy is only used, not modified)
+- **Verdict:** Violation
+
+## Dev2Audit - V-30
+- **Pattern:** Protected Variations
+- **Module:** ReturnRepository, WarrantyRepository
+- **Evidence:**
+```java
+throw new RuntimeException("Could not save returns to " + filePath, e);       // ReturnRepository L79
+} catch (IOException e) { return returns; }                                    // ReturnRepository L115
+double refundAmount = Double.parseDouble(fields[5]);                           // ReturnRepository L187 
+throw new RuntimeException("Could not save warranties to " + filePath, e);    // WarrantyRepository L63
+throw new IllegalArgumentException("Invalid warranty record: " + line);        // WarrantyRepository L166
+```
+- **Explanation:** These repositories do not use `PersistenceException`. They throw a generic `RuntimeException`, hide read errors by returning an empty list, and let raw parsing errors (`NumberFormatException`, `DateTimeParseException`) escape. `WarrantyRepository.loadAll` catches only `FileNotFoundException`. Missing-file handling differs from `PersonRepository` (which checks `Files.exists`).
+- **Consequence:** An inconsistent persistence-failure policy: callers cannot tell "no data" from "corrupt file", and raw technical errors can reach the user.
+- **Proposed solution:** Use `PersistenceException` with file and operation, wrap parsing errors with the line number, and treat a missing file as an empty list (same policy as `PersonRepository`). No new class.
+- **Other member's code:** None
+- **Verdict:** Violation
+
+## Dev2Audit - V-31
+- **Pattern:** High Cohesion
+- **Module:** ReturnService, WarrantyService
+- **Evidence:**
+```java
+if (saleId == null || saleId.trim().isEmpty()) { throw new IllegalArgumentException(...) }   // ReturnService L85
+private void validateMonth(int month) { if (month < 1 || month > 12) ... }                    // ReturnService L387
+private void validateWarrantyData(Product product, Sale sale) {...}                           // WarrantyService L184
+```
+- **Explanation:** Both services validate inline, whereas the project has a dedicated validation layer (`ProductValidator`, `PersonValidator`, `SaleValidator`).
+- **Consequence:** Business logic mixed with validation, rules not reusable, and no typed-exception mapping.
+- **Proposed solution:** Create **`ReturnValidator`** and **`WarrantyValidator`** in the `validation` package. **New classes: ReturnValidator, WarrantyValidator.**
+- **Other member's code:** None
+- **Verdict:** Violation
+
+## Dev2Audit - V-32
+- **Pattern:** High Cohesion
+- **Module:** PersonService
+- **Evidence:**
+```java
+requireNotBlank("código de empleado", employeeCode);   // validateSeller L76
+if (name.matches(".*\\d.*")) {...}                      // requireNameWithoutDigits L390
+if (contactNumber <= 0) {...}                           // requirePositiveContactNumber L404
+```
+- **Explanation:** Validation rules are split between `PersonValidator` and private helpers in `PersonService`. `PersonValidator.validatePersonData` requires an email, so it cannot validate sellers, and it does not check name digits or a positive phone number.
+- **Consequence:** Rule knowledge is divided in two places, and the service keeps validation code that belongs to the validation layer.
+- **Proposed solution:** Extend `PersonValidator` with a seller method and the name and phone rules, and remove the helpers from the service. No new class.
+- **Other member's code:** PersonValidator
+- **Verdict:** Violation
+
+---
+
+## Non-GRASP observations 
+- `viewAllReturns()` returns the internal mutable list (ReturnService L253-255).
+- `AccessoryRepository` uses `|` as the separator and `,` inside a field (L100), while `PromotionRepository` and `ReturnRepository` use `,`: different formats for the same purpose.
+- `WarrantyRepository.toWarranty` throws on a corrupt record and aborts the whole load (L165-168).
+
+## Summary
+32 violations: Person 8 (V-01 to V-08), Accessory 6 (V-09 to V-14), Promotion 5 (V-15 to V-19), Return 5 (V-20 to V-24), Warranty 4 (V-25 to V-28), exceptions and validators 4 (V-29 to V-32). Polymorphism is the most frequent pattern (7).
