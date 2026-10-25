@@ -3,94 +3,136 @@
 **Audited commit (develop):** `bf35aa2`
 **Author:** Estefanía Márquez Martínez (Developer 2)
 
-## Scope
+# Audit 1/6 — Person Module (Person, Customer, Seller, PersonService, PersonRepository)
 
-| Module (requirement) | Class | Methods audited |
-|---|---|---|
-| Persons (Workshop 1) | `Person`, `Customer`, `Seller` | |
-| Persons (Workshop 1) | `PersonRepository`, `PersonService` | |
-| Accessories (Req. 1) | `AccessoryRepository`, `AccessoryService` | |
-| Promotions (Req. 2) | `PromotionRepository`, `PromotionService` | |
-| Returns (Req. 3) | `ReturnRepository`, `ReturnService` (including monthly balance) | |
-| Warranties (Req. 4) | `WarrantyRepository`, `WarrantyService` | |
-| Exceptions and validations (Req. 6) | Use of exceptions and validators in services and repositories | |
+(`L###` = line number in the .java)
 
-## Summary of verdicts
+## Verdict per pattern
 
 | Pattern | Verdict | Violations |
 |---|---|---|
-| Information Expert | | |
-| Creator | | |
-| Controller | | |
-| Low Coupling | | |
-| High Cohesion | | |
-| Polymorphism | | |
-| Pure Fabrication | | |
-| Indirection | | |
-| Protected Variations | | |
+| Information Expert | Violation | V-01 |
+| Creator | Correct | — |
+| Controller | N/A | — |
+| High Cohesion | Violation | V-02 |
+| Low Coupling | Violation | V-03, V-04 |
+| Polymorphism | Violation | V-05, V-06 |
+| Pure Fabrication | Violation | V-07 |
+| Indirection | Correct | — |
+| Protected Variations | Violation | V-08 |
 
 ---
 
-## 1. Information Expert
-**Verdict:**
+## Dev2Audit - V-01
+- **Pattern:** Information Expert
+- **Module:** PersonService
+- **Evidence:**
+```java
+public void registerCustomer(ArrayList<Person> persons, String eMail, ...)  // L96
+public Person searchPerson(ArrayList<Person> persons, String iD) { ... }   // L303 (duplicated in PersonRepository L184)
+```
+- **Explanation:** The service does not own the person collection; callers pass it on every call. `searchPerson` is also implemented twice.
+- **Consequence:** Uniqueness holds only for the list passed in, and the two `searchPerson` copies can diverge.
+- **Proposed solution:** `PersonService` loads the list once from the repository and keeps it as state (Information Expert). Remove the duplicate `searchPerson`. No new class.
+- **Other member's code:** ConsoleMenu
+- **Verdict:** Violation
 
-<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
+## Dev2Audit - V-02
+- **Pattern:** High Cohesion
+- **Module:** PersonRepository
+- **Evidence:**
+```java
+public Customer searchCustomer(ArrayList<Person> persons, String iD) { ... instanceof Customer ... }  // L205
+public Seller searchSeller(ArrayList<Person> persons, String employeeCode) { ... }                   // L230
+```
+- **Explanation:** A repository should only persist, yet it also searches in-memory lists. `PersonService.searchCustomer/searchSeller` (L205-L230) only delegate.
+- **Consequence:** Changing a search criterion forces edits in the persistence layer.
+- **Proposed solution:** Move the three searches to `PersonService`, leaving the repository with only `listPersons`/`savePersons` (separation of responsibilities). No new class.
+- **Other member's code:** None
+- **Verdict:** Violation
 
-## 2. Creator
-**Verdict:**
+## Dev2Audit - V-03
+- **Pattern:** Low Coupling
+- **Module:** PersonService
+- **Evidence:**
+```java
+private final PersonRepository personRepository = new PersonRepository();  // L30
+```
+- **Explanation:** The service instantiates its own concrete dependency, unlike the other services, which receive it by constructor.
+- **Consequence:** The repository cannot be replaced and the service cannot be tested in isolation.
+- **Proposed solution:** Constructor injection (`PersonService(PersonRepository repo)`) (Low Coupling + Dependency Injection). No new class.
+- **Other member's code:** Main
+- **Verdict:** Violation
 
-<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
+## Dev2Audit - V-04
+- **Pattern:** Low Coupling
+- **Module:** Customer, Seller
+- **Evidence:**
+```java
+private ArrayList<Sale> purchases;   // Customer L15
+private ArrayList<Sale> sales;       // Seller L15
+returnRecord.getOriginalSale().getCustomer()  // ReturnService L269: Sale knows Customer
+```
+- **Explanation:** Person and Sale depend on each other. Nothing in the provided scripts calls `addPurchase`/`addSale`, so these lists are redundant, likely empty state.
+- **Consequence:** Two sources of truth that drift apart; changes to Sale ripple into Person.
+- **Proposed solution:** Keep a single direction (Sale → Customer/Seller) and query sales through `SaleService.viewSalesByCustomer/Seller`. No new class.
+- **Other member's code:** Sale, SaleService
+- **Verdict:** Violation
 
-## 3. Controller
-**Verdict:**
+## Dev2Audit - V-05
+- **Pattern:** Polymorphism
+- **Module:** PersonRepository
+- **Evidence:**
+```java
+if (CUSTOMER_TYPE.equals(type)) {...} else if (SELLER_TYPE.equals(type)) {...}  // createPerson L142-L156
+if (currentPerson instanceof Customer customer)                                   // L211
+```
+- **Explanation:** Writing is polymorphic (`textFormat()`), but reading branches on a string and on `instanceof`.
+- **Consequence:** A new Person type (e.g. Supplier) requires edits in several places in the repository.
+- **Proposed solution:** Create a **`PersonFactory`** (Factory) that builds each subtype, and let each Person subclass report its own key. **New class: PersonFactory.**
+- **Other member's code:** None
+- **Verdict:** Violation
 
-<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
+## Dev2Audit - V-06
+- **Pattern:** Polymorphism
+- **Module:** PersonService
+- **Evidence:**
+```java
+registerCustomer/registerSeller (L96/L130), updateCustomer/updateSeller (L174/L209),
+deleteCustomer/deleteSeller (L243/L262), validateCustomer/validateSeller (L42/L69)
+currentPerson instanceof Customer   // customersOf L359
+```
+- **Explanation:** Every operation is duplicated per type instead of being resolved polymorphically.
+- **Consequence:** Each new subtype multiplies the service methods.
+- **Proposed solution:** `Person` declares `getKey()` (iD or employeeCode) and `validate()`; expose generic `register(Person)`, `update`, `delete` and `search(key)`. No new class.
+- **Other member's code:** ConsoleMenu
+- **Verdict:** Violation
 
-## 4. Low Coupling
-**Verdict:**
+## Dev2Audit - V-07
+- **Pattern:** Pure Fabrication
+- **Module:** Person, Customer, Seller
+- **Evidence:**
+```java
+public abstract String textFormat();                        // Person L92
+return "CUSTOMER|" + getiD() + "|" + getName() + ...;       // Customer L82
+return "SELLER|" + getiD() + "|" + getName() + ...;         // Seller L100
+```
+- **Explanation:** Domain classes know the file format while the reading side of that same format lives in `PersonRepository`. The format knowledge is split across two places.
+- **Consequence:** A format change requires editing both the model and the repository.
+- **Proposed solution:** Create **`PersonRecordMapper`** (`toLine(Person)` / `toPerson(String[])`) (Pure Fabrication) and remove `textFormat()` from the model. **New class: PersonRecordMapper.**
+- **Other member's code:** None
+- **Verdict:** Violation
 
-<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
-
-## 5. High Cohesion
-**Verdict:**
-
-<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
-
-## 6. Polymorphism
-**Verdict:**
-
-<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
-
-## 7. Pure Fabrication
-**Verdict:**
-
-<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
-
-## 8. Indirection
-**Verdict:**
-
-<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
-
-## 9. Protected Variations
-**Verdict:**
-
-<!-- Violation: add one V-XX table per finding. Correct: class + method where it is applied well and why. Not applicable: why there is no application point. -->
-
-<!-- Violation table (copy inside the pattern section):
-
-### V-01
-| Field | Content |
-|---|---|
-| Pattern | |
-| Module | Module and requirement |
-| Evidence | Class, method and exact lines in develop (bf35aa2) |
-| Explanation | |
-| Consequence | |
-| Proposed solution | Design change and pattern applied |
-| Other member's code | No / Yes: which class and member |
--->
-
----
-
-## Findings reported to the Technical Lead
-<!-- Problems whose origin is in another member's code. Do not audit them here; list them for the consolidation. -->
+## Dev2Audit - V-08
+- **Pattern:** Protected Variations
+- **Module:** PersonRepository, PersonService
+- **Evidence:**
+```java
+new FileReader(FilePath.PERSONS) ... infoPerson[1], infoPerson[2], infoPerson[4]  // L79, L144-162
+private final PersonRepository personRepository ...                                // concrete class, no interface (L30)
+```
+- **Explanation:** The service depends on a concrete file-based class, and the format uses hard-coded positions with no protective layer.
+- **Consequence:** Switching storage (DB, JSON) forces service changes.
+- **Proposed solution:** Create a **`PersonRepository` interface** and rename the current class to `FilePersonRepository` (Protected Variations via Indirection). **New class: PersonRepository interface.**
+- **Other member's code:** Main
+- **Verdict:** Violation
