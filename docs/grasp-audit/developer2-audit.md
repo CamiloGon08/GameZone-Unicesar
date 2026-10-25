@@ -139,7 +139,7 @@ private final PersonRepository personRepository ...                             
 
 # Audit 2/6 — Accessory Module (AccessoryRepository, AccessoryService)
 
-(`L###` = line number in the file)
+(`L###` = line number in the .java)
 
 ## Verdict per pattern
 
@@ -241,7 +241,7 @@ if (!connectionType.equalsIgnoreCase("WIRELESS") && !connectionType.equalsIgnore
 
 # Audit 3/6 — Promotion Module (PromotionRepository, PromotionService)
 
-(`L###` = line number in the file)
+(`L###` = line number in the .java)
 **Strength:** `findBestPromotionFor` uses `promotion.isActive()` and `promotion.calculateDiscount()` polymorphically (L178, L213).
 
 ## Verdict per pattern
@@ -327,5 +327,94 @@ registerPercentageDiscount (L48), registerCategoryDiscount (L85), registerBulkPu
 - **Consequence:** A new type touches the service, the repository and the menu.
 - **Proposed solution:** Create **`PromotionFactory`** and a single `register(Promotion)` in the service. **New class: PromotionFactory.**
 - **Other member's code:** ConsoleMenu
+- **Verdict:** Violation
+
+# Audit 4/6 — Return Module (ReturnRepository, ReturnService, including the monthly balance)
+
+(`L###` = line number in the .java)
+
+## Verdict per pattern
+
+| Pattern | Verdict | Violations |
+|---|---|---|
+| Information Expert | Violation | V-21 |
+| Creator | Correct | — |
+| Controller | N/A | — |
+| High Cohesion | Violation | V-22 |
+| Low Coupling | Violation | V-20 |
+| Polymorphism | Violation | V-23 |
+| Pure Fabrication | Correct | — |
+| Indirection | Correct | — |
+| Protected Variations | Violation | V-24 |
+
+---
+
+## Dev2Audit - V-20
+- **Pattern:** Low Coupling
+- **Module:** ReturnRepository
+- **Evidence:**
+```java
+import com.mycompany.gamezone.service.SaleService;   // L8 (also ProductService, AccessoryService)
+Sale originalSale = saleService.findById(saleId);    // L94
+```
+- **Explanation:** The persistence layer depends on the service layer, inverting the intended ui → service → persistence direction.
+- **Consequence:** Circular dependencies, and service changes that break the repository.
+- **Proposed solution:** Make the repository return raw data (**`ReturnData`**, like `WarrantyData`) and let `ReturnService` resolve the references (Indirection). **New class: ReturnData.**
+- **Other member's code:** Main
+- **Verdict:** Violation
+
+## Dev2Audit - V-21
+- **Pattern:** Information Expert
+- **Module:** ReturnService
+- **Evidence:**
+```java
+for (Product saleProduct : sale.getProducts()) { if (saleProduct.getId().equals(productId)) ... }  // L134-140
+returnRecord.getOriginalSale().getCustomer().equals(customer)                                    // L269-271
+```
+- **Explanation:** The service walks through the internals of Sale and Return instead of asking them.
+- **Consequence:** Every rule like "does this product belong to this sale?" gets copied into services.
+- **Proposed solution:** Add `Sale.containsProduct(id)` and `Return.belongsTo(customer)`. No new class.
+- **Other member's code:** Sale, Return
+- **Verdict:** Violation
+
+## Dev2Audit - V-22
+- **Pattern:** High Cohesion
+- **Module:** ReturnService
+- **Evidence:**
+```java
+public double calculateMonthlySales(int month, int year) { ... saleService.viewAllSales() ... }  // L315
+public double generateMonthlyBalance(int month, int year)                                        // L375
+```
+- **Explanation:** A returns service also computes sales and the monthly balance, and `registerReturn` does validation, stock, warranties, IDs and persistence (L80-178).
+- **Consequence:** Changing the reports forces edits in the returns service.
+- **Proposed solution:** Create **`MonthlyBalanceReport`** and move the three calculations there. **New class: MonthlyBalanceReport.**
+- **Other member's code:** ConsoleMenu
+- **Verdict:** Violation
+
+## Dev2Audit - V-23
+- **Pattern:** Polymorphism
+- **Module:** ReturnService
+- **Evidence:**
+```java
+if (product instanceof Console) { warrantyService.cancelWarranties(...) }   // L157
+if (item instanceof Accessory) { accessoryService.restoreStock(...) } else { productService.restoreStock(...) }  // L206
+```
+- **Explanation:** It decides by concrete type which service to use and whether a warranty applies. `findItemById` (L189) also repeats the double lookup found in `ReturnRepository` (L208-212).
+- **Consequence:** A new product type forces edits across several services.
+- **Proposed solution:** Polymorphic methods (e.g. `Product.hasWarranty()`) plus a single inventory lookup, **`InventoryLookup`**. **New class: InventoryLookup.**
+- **Other member's code:** Product, Console, Accessory, ProductService
+- **Verdict:** Violation
+
+## Dev2Audit - V-24
+- **Pattern:** Protected Variations
+- **Module:** ReturnService
+- **Evidence:**
+```java
+if (daysSinceSale < 0 || daysSinceSale > 30) { throw ... }   // L114
+```
+- **Explanation:** The return-window policy is hard-coded.
+- **Consequence:** Changing the window, or varying it per category, requires service edits.
+- **Proposed solution:** Create **`ReturnPolicy`** (Strategy) with a configurable window. **New class: ReturnPolicy.**
+- **Other member's code:** None
 - **Verdict:** Violation
 
