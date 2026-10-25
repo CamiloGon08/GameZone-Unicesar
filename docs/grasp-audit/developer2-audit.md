@@ -239,3 +239,93 @@ if (!connectionType.equalsIgnoreCase("WIRELESS") && !connectionType.equalsIgnore
 - **Other member's code:** Controller (model)
 - **Verdict:** Violation
 
+# Audit 3/6 — Promotion Module (PromotionRepository, PromotionService)
+
+(`L###` = line number in the file)
+**Strength:** `findBestPromotionFor` uses `promotion.isActive()` and `promotion.calculateDiscount()` polymorphically (L178, L213).
+
+## Verdict per pattern
+
+| Pattern | Verdict | Violations |
+|---|---|---|
+| Information Expert | Violation | V-18 |
+| Creator | Correct | — |
+| Controller | N/A | — |
+| High Cohesion | Violation | V-16, V-17 |
+| Low Coupling | Correct | — |
+| Polymorphism | Violation | V-15 |
+| Pure Fabrication | Correct | — |
+| Indirection | Correct | — |
+| Protected Variations | Violation | V-19 |
+
+---
+
+## Dev2Audit - V-15
+- **Pattern:** Polymorphism
+- **Module:** PromotionRepository
+- **Evidence:**
+```java
+if (promotion instanceof PercentageDiscount ...) else if (promotion instanceof CategoryDiscount ...)  // L111-139
+if (PERCENTAGE_TYPE.equals(type)) ... else if (CATEGORY_TYPE.equals(type)) ...                        // L158-206
+```
+- **Explanation:** Same per-type `if` chain on both save and load.
+- **Consequence:** Each new promotion type requires repository edits.
+- **Proposed solution:** Create **`PromotionRecordMapper`**, one per type (Factory + Polymorphism). **New class: PromotionRecordMapper.**
+- **Other member's code:** None
+- **Verdict:** Violation
+
+## Dev2Audit - V-16
+- **Pattern:** High Cohesion
+- **Module:** PromotionService
+- **Evidence:**
+```java
+validateCommonFields, validatePercentage, validateCategory,
+validateMinimumQuantity, validateUniqueId   // L266-361
+```
+- **Explanation:** Validation is mixed with promotion logic inside the service.
+- **Consequence:** The service grows with every type and the rules are not reusable.
+- **Proposed solution:** Create **`PromotionValidator`** in the `validation` package. **New class: PromotionValidator.**
+- **Other member's code:** None
+- **Verdict:** Violation
+
+## Dev2Audit - V-17
+- **Pattern:** High Cohesion
+- **Module:** PromotionRepository
+- **Evidence:**
+```java
+System.out.println("Error: Failed to save the promotion records.");  // L57
+} catch (IOException e) { return promotions; }                          // L93-95
+```
+- **Explanation:** Same as V-13: presentation inside persistence and a hidden error.
+- **Consequence:** A corrupt file looks like "no promotions", silently dropping discounts.
+- **Proposed solution:** Throw `PersistenceException`. No new class.
+- **Other member's code:** ConsoleMenu, SaleService (uses `findBestPromotionFor`)
+- **Verdict:** Violation
+
+## Dev2Audit - V-18
+- **Pattern:** Information Expert
+- **Module:** PromotionService
+- **Evidence:**
+```java
+if (percentage <= 0 || percentage > 100) { throw ... }   // validatePercentage L308
+public List<Promotion> listAllPromotions() { return promotionRepository.loadAll(); }  // L157-159
+```
+- **Explanation:** The percentage rule belongs to the promotion, yet the service applies it. Each query rereads the file and lists are passed in from outside.
+- **Consequence:** An invalid promotion can be built bypassing the service, and every sale triggers disk reads (SaleService asks for the best promotion).
+- **Proposed solution:** Each `Promotion` constructor protects its own invariants and the service keeps the list in memory. No new class.
+- **Other member's code:** Promotion, PercentageDiscount, CategoryDiscount, BulkPurchaseDiscount
+- **Verdict:** Violation
+
+## Dev2Audit - V-19
+- **Pattern:** Protected Variations
+- **Module:** PromotionService
+- **Evidence:**
+```java
+registerPercentageDiscount (L48), registerCategoryDiscount (L85), registerBulkPurchaseDiscount (L125)
+```
+- **Explanation:** The "promotion type" variation point is unprotected: there is one register method per type.
+- **Consequence:** A new type touches the service, the repository and the menu.
+- **Proposed solution:** Create **`PromotionFactory`** and a single `register(Promotion)` in the service. **New class: PromotionFactory.**
+- **Other member's code:** ConsoleMenu
+- **Verdict:** Violation
+
