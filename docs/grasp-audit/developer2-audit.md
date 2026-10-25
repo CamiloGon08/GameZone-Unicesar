@@ -34,7 +34,7 @@ public Person searchPerson(ArrayList<Person> persons, String iD) { ... }   // L3
 - **Explanation:** The service does not own the person collection; callers pass it on every call. `searchPerson` is also implemented twice.
 - **Consequence:** Uniqueness holds only for the list passed in, and the two `searchPerson` copies can diverge.
 - **Proposed solution:** `PersonService` loads the list once from the repository and keeps it as state (Information Expert). Remove the duplicate `searchPerson`. No new class.
-- **Other member's code:** ConsoleMenu
+- **Other member's code:** ConsoleMenu (Leader)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-02
@@ -61,7 +61,7 @@ private final PersonRepository personRepository = new PersonRepository();  // L3
 - **Explanation:** The service instantiates its own concrete dependency, unlike the other services, which receive it by constructor.
 - **Consequence:** The repository cannot be replaced and the service cannot be tested in isolation.
 - **Proposed solution:** Constructor injection (`PersonService(PersonRepository repo)`) (Low Coupling + Dependency Injection). No new class.
-- **Other member's code:** Main
+- **Other member's code:** Main (Leader)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-04
@@ -76,7 +76,7 @@ returnRecord.getOriginalSale().getCustomer()  // ReturnService L269: Sale knows 
 - **Explanation:** Person and Sale depend on each other. Nothing in the provided scripts calls `addPurchase`/`addSale`, so these lists are redundant, likely empty state.
 - **Consequence:** Two sources of truth that drift apart; changes to Sale ripple into Person.
 - **Proposed solution:** Keep a single direction (Sale → Customer/Seller) and query sales through `SaleService.viewSalesByCustomer/Seller`. No new class.
-- **Other member's code:** Sale, SaleService
+- **Other member's code:** Sale, SaleService (Leader)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-05
@@ -105,7 +105,7 @@ currentPerson instanceof Customer   // customersOf L359
 - **Explanation:** Every operation is duplicated per type instead of being resolved polymorphically.
 - **Consequence:** Each new subtype multiplies the service methods.
 - **Proposed solution:** `Person` declares `getKey()` (iD or employeeCode) and `validate()`; expose generic `register(Person)`, `update`, `delete` and `search(key)`. No new class.
-- **Other member's code:** ConsoleMenu
+- **Other member's code:** ConsoleMenu (Leader)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-07
@@ -134,7 +134,7 @@ private final PersonRepository personRepository ...                             
 - **Explanation:** The service depends on a concrete file-based class, and the format uses hard-coded positions with no protective layer.
 - **Consequence:** Switching storage (DB, JSON) forces service changes.
 - **Proposed solution:** Create a **`PersonRepository` interface** and rename the current class to `FilePersonRepository` (Protected Variations via Indirection). **New class: PersonRepository interface.**
-- **Other member's code:** Main
+- **Other member's code:** Main (Leader)
 - **Verdict:** Violation
 
 # Audit 2/6 — Accessory Module (AccessoryRepository, AccessoryService)
@@ -168,7 +168,7 @@ if (newStock < 0) { throw new IllegalArgumentException("Stock cannot be negative
 - **Explanation:** The rule "stock cannot go negative" belongs to the item that owns the stock, but the service applies it. Methods also receive the list from outside (L50, L259) and `listAllAccessories()` rereads the file on every call (L152).
 - **Consequence:** The same rule is duplicated in `ProductService`, and the model can end up with invalid stock if `adjustStock` is called directly.
 - **Proposed solution:** `adjustStock` enforces the invariant and throws `BusinessRuleException`; the service only calls it. No new class.
-- **Other member's code:** Accessory, Product
+- **Other member's code:** Accessory, Product (Developer 1)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-10
@@ -181,7 +181,7 @@ if (accessory instanceof Controller && "Controller".equalsIgnoreCase(type)) ... 
 - **Explanation:** It filters by type using `instanceof` and strings instead of each accessory reporting its own type.
 - **Consequence:** A new type (e.g. Headset) forces changes to the method.
 - **Proposed solution:** Polymorphic `Accessory.getTypeName()` and filter with `equalsIgnoreCase`. No new class.
-- **Other member's code:** Accessory
+- **Other member's code:** Accessory (Developer 1)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-11
@@ -223,7 +223,7 @@ System.out.println("Error: Failed to save the accessories records.");  // L52
 - **Explanation:** The persistence layer prints to the console and hides read failures by returning an empty list.
 - **Consequence:** It mixes persistence with presentation, and callers cannot tell "no data" from "corrupt file".
 - **Proposed solution:** Throw `PersistenceException`, as the other refactored repositories already do, and let the UI show the message. No new class.
-- **Other member's code:** ConsoleMenu
+- **Other member's code:** ConsoleMenu (Leader)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-14
@@ -236,7 +236,7 @@ if (!connectionType.equalsIgnoreCase("WIRELESS") && !connectionType.equalsIgnore
 - **Explanation:** A variation point (connection types) is hard-coded as text inside the service.
 - **Consequence:** Adding a type (e.g. BLUETOOTH) forces service edits.
 - **Proposed solution:** Create the enum **`ConnectionType`** and validate against it. **New class: ConnectionType.**
-- **Other member's code:** Controller (model)
+- **Other member's code:** Controller (model) (Developer 1)
 - **Verdict:** Violation
 
 # Audit 3/6 — Promotion Module (PromotionRepository, PromotionService)
@@ -299,7 +299,7 @@ System.out.println("Error: Failed to save the promotion records.");  // L57
 - **Explanation:** Same as V-13: presentation inside persistence and a hidden error.
 - **Consequence:** A corrupt file looks like "no promotions", silently dropping discounts.
 - **Proposed solution:** Throw `PersistenceException`. No new class.
-- **Other member's code:** ConsoleMenu, SaleService (uses `findBestPromotionFor`)
+- **Other member's code:** ConsoleMenu, SaleService (uses `findBestPromotionFor`) (Developer 1)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-18
@@ -313,7 +313,7 @@ public List<Promotion> listAllPromotions() { return promotionRepository.loadAll(
 - **Explanation:** The percentage rule belongs to the promotion, yet the service applies it. Each query rereads the file and lists are passed in from outside.
 - **Consequence:** An invalid promotion can be built bypassing the service, and every sale triggers disk reads (SaleService asks for the best promotion).
 - **Proposed solution:** Each `Promotion` constructor protects its own invariants and the service keeps the list in memory. No new class.
-- **Other member's code:** Promotion, PercentageDiscount, CategoryDiscount, BulkPurchaseDiscount
+- **Other member's code:** Promotion, PercentageDiscount, CategoryDiscount, BulkPurchaseDiscount (Developer 1)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-19
@@ -326,7 +326,7 @@ registerPercentageDiscount (L48), registerCategoryDiscount (L85), registerBulkPu
 - **Explanation:** The "promotion type" variation point is unprotected: there is one register method per type.
 - **Consequence:** A new type touches the service, the repository and the menu.
 - **Proposed solution:** Create **`PromotionFactory`** and a single `register(Promotion)` in the service. **New class: PromotionFactory.**
-- **Other member's code:** ConsoleMenu
+- **Other member's code:** ConsoleMenu (Leader)
 - **Verdict:** Violation
 
 # Audit 4/6 — Return Module (ReturnRepository, ReturnService, including the monthly balance)
@@ -360,7 +360,7 @@ Sale originalSale = saleService.findById(saleId);    // L94
 - **Explanation:** The persistence layer depends on the service layer, inverting the intended ui → service → persistence direction.
 - **Consequence:** Circular dependencies, and service changes that break the repository.
 - **Proposed solution:** Make the repository return raw data (**`ReturnData`**, like `WarrantyData`) and let `ReturnService` resolve the references (Indirection). **New class: ReturnData.**
-- **Other member's code:** Main
+- **Other member's code:** Main (Leader)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-21
@@ -374,7 +374,7 @@ returnRecord.getOriginalSale().getCustomer().equals(customer)                   
 - **Explanation:** The service walks through the internals of Sale and Return instead of asking them.
 - **Consequence:** Every rule like "does this product belong to this sale?" gets copied into services.
 - **Proposed solution:** Add `Sale.containsProduct(id)` and `Return.belongsTo(customer)`. No new class.
-- **Other member's code:** Sale, Return
+- **Other member's code:** Sale, Return (Leader and Develooper 1)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-22
@@ -388,7 +388,7 @@ public double generateMonthlyBalance(int month, int year)                       
 - **Explanation:** A returns service also computes sales and the monthly balance, and `registerReturn` does validation, stock, warranties, IDs and persistence (L80-178).
 - **Consequence:** Changing the reports forces edits in the returns service.
 - **Proposed solution:** Create **`MonthlyBalanceReport`** and move the three calculations there. **New class: MonthlyBalanceReport.**
-- **Other member's code:** ConsoleMenu
+- **Other member's code:** ConsoleMenu (Leader)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-23
@@ -402,7 +402,7 @@ if (item instanceof Accessory) { accessoryService.restoreStock(...) } else { pro
 - **Explanation:** It decides by concrete type which service to use and whether a warranty applies. `findItemById` (L189) also repeats the double lookup found in `ReturnRepository` (L208-212).
 - **Consequence:** A new product type forces edits across several services.
 - **Proposed solution:** Polymorphic methods (e.g. `Product.hasWarranty()`) plus a single inventory lookup, **`InventoryLookup`**. **New class: InventoryLookup.**
-- **Other member's code:** Product, Console, Accessory, ProductService
+- **Other member's code:** Product, Console, Accessory, ProductService (Developer 1)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-24
@@ -450,7 +450,7 @@ Sale sale = saleRepository.findById(data.getSaleId());    // L88-89
 - **Explanation:** The service reaches into another module's persistence instead of going through `SaleService`. This is exactly the point that broke when `findById` was removed from `SaleRepository`.
 - **Consequence:** Any change in `SaleRepository` breaks Warranty, and `SaleService` and `WarrantyService` end up tied in a cycle (resolved with `setWarrantyService`).
 - **Proposed solution:** Depend on a small **`SaleLookup`** interface (`findById`) implemented by `SaleService` (Indirection). **New class: SaleLookup interface.**
-- **Other member's code:** SaleRepository, SaleService, Main
+- **Other member's code:** SaleRepository, SaleService, Main (Leader)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-26
@@ -465,7 +465,7 @@ hasWarrantyOfType(..., Class<? extends Warranty> type)                          
 - **Explanation:** The type code ("BASIC"/"EXTENDED") is decided with `instanceof` on write and with strings on read, duplicated across two classes. `assignBasicWarranty` and `assignExtendedWarranty` are also near-identical.
 - **Consequence:** A new warranty type requires editing both the repository and the service.
 - **Proposed solution:** Polymorphic `Warranty.getTypeCode()` and a **`WarrantyFactory`**. **New class: WarrantyFactory.**
-- **Other member's code:** Warranty, BasicWarranty, ExtendedWarranty
+- **Other member's code:** Warranty, BasicWarranty, ExtendedWarranty (Developer 1)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-27
@@ -478,7 +478,7 @@ warranty.getProduct().getId().equals(productId) && warranty.getSale().getId().eq
 - **Explanation:** The "does this warranty match this product and sale?" comparison is repeated three times in the service.
 - **Consequence:** If the matching criterion changes, it must be fixed in three places.
 - **Proposed solution:** Add `Warranty.matches(productId, saleId)`. No new class.
-- **Other member's code:** Warranty
+- **Other member's code:** Warranty (Developer 1)
 - **Verdict:** Violation
 
 ## Dev2Audit - V-28
@@ -491,7 +491,7 @@ String warrantyId = "WAR-" + nextNumber; while (findById(warrantyId) != null) { 
 - **Explanation:** ID generation is reimplemented in each service: the same logic appears in `generateReturnId` (L2704-2715) and in the sale numbering of `SaleService`.
 - **Consequence:** Three parallel algorithms that can diverge.
 - **Proposed solution:** Create **`IdGenerator`** (Pure Fabrication) with a prefix and a uniqueness check. **New class: IdGenerator.**
-- **Other member's code:** ReturnService, SaleService
+- **Other member's code:** SaleService (Leader)
 - **Verdict:** Violation
 
 # Audit 6/6 — Use of Exceptions and Validators in Services and Repositories
@@ -579,7 +579,7 @@ if (contactNumber <= 0) {...}                           // requirePositiveContac
 - **Explanation:** Validation rules are split between `PersonValidator` and private helpers in `PersonService`. `PersonValidator.validatePersonData` requires an email, so it cannot validate sellers, and it does not check name digits or a positive phone number.
 - **Consequence:** Rule knowledge is divided in two places, and the service keeps validation code that belongs to the validation layer.
 - **Proposed solution:** Extend `PersonValidator` with a seller method and the name and phone rules, and remove the helpers from the service. No new class.
-- **Other member's code:** PersonValidator
+- **Other member's code:** PersonValidator (Developer 1)
 - **Verdict:** Violation
 
 ---
