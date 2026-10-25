@@ -127,3 +127,29 @@ refactor: split generateReceipt into header, products and totals in Sale
 refactor: split registerSale into named steps for the unified sale flow
 fix: remove duplicate imports and undefined variable in SaleRepository
 fix: update ConsoleMenu warranty calls to match new WarrantyService signatures
+
+
+
+### Entry 8
+
+**Date:** 2026-10-24
+**Tool used:** Claude (Claude Code)
+**Phase and branch:** Requirement 6 (Validations and Exceptions) — feature/console-exception-handling
+
+**Reason for use:**
+Refactor ConsoleMenu so that each kind of failure shows its own Spanish message, and document the new exception layer in the README.
+
+**Problem faced:**
+ConsoleMenu had twelve identical catch (IllegalArgumentException) blocks that printed a generic "Error: ..." message. The new GameZoneException hierarchy and the validators were already merged, but the menu did not tell the four kinds of failure apart. Accessories, promotions, returns and warranties still throw IllegalArgumentException, so the old exception could not simply be removed.
+
+**Prompt used:**
+"Quisiera que me dieras el comando para bajar los cambios y me deje en la rama que debo trabajar, una vez hecho eso me pasas completo lo que debo cambiar en el R6."
+
+**Solution obtained and decision taken:**
+Added a private handleException method with one message per exception type and replaced the twelve catch blocks with catch (GameZoneException | IllegalArgumentException e). I kept IllegalArgumentException in the catch on purpose, as a transition until the four remaining modules are migrated. The first proposal included a long Javadoc on handleException; I shortened it to one line to match the rest of the class. I also asked for the complete class so I could paste it, and compiled it before committing. The README section and the class diagram were drafted with the assistant and reviewed by me before committing.
+
+**Commit related:**
+refactor: handle GameZone exceptions with differentiated messages in ConsoleMenu
+docs: update README with exception handling and validation
+docs: add exception class diagram
+docs: log leader AI usage for requirement 6
