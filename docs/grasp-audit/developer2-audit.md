@@ -136,3 +136,106 @@ private final PersonRepository personRepository ...                             
 - **Proposed solution:** Create a **`PersonRepository` interface** and rename the current class to `FilePersonRepository` (Protected Variations via Indirection). **New class: PersonRepository interface.**
 - **Other member's code:** Main
 - **Verdict:** Violation
+
+# Audit 2/6 — Accessory Module (AccessoryRepository, AccessoryService)
+
+(`L###` = line number in the file)
+
+## Verdict per pattern
+
+| Pattern | Verdict | Violations |
+|---|---|---|
+| Information Expert | Violation | V-09 |
+| Creator | Correct | — |
+| Controller | N/A | — |
+| High Cohesion | Violation | V-12, V-13 |
+| Low Coupling | Correct | — |
+| Polymorphism | Violation | V-10, V-11 |
+| Pure Fabrication | Correct | — |
+| Indirection | Correct | — |
+| Protected Variations | Violation | V-14 |
+
+---
+
+## Dev2Audit - V-09
+- **Pattern:** Information Expert
+- **Module:** AccessoryService
+- **Evidence:**
+```java
+int newStock = accessory.getStock() + quantity;
+if (newStock < 0) { throw new IllegalArgumentException("Stock cannot be negative."); }  // L273-278
+```
+- **Explanation:** The rule "stock cannot go negative" belongs to the item that owns the stock, but the service applies it. Methods also receive the list from outside (L50, L259) and `listAllAccessories()` rereads the file on every call (L152).
+- **Consequence:** The same rule is duplicated in `ProductService`, and the model can end up with invalid stock if `adjustStock` is called directly.
+- **Proposed solution:** `adjustStock` enforces the invariant and throws `BusinessRuleException`; the service only calls it. No new class.
+- **Other member's code:** Accessory, Product
+- **Verdict:** Violation
+
+## Dev2Audit - V-10
+- **Pattern:** Polymorphism
+- **Module:** AccessoryService
+- **Evidence:**
+```java
+if (accessory instanceof Controller && "Controller".equalsIgnoreCase(type)) ...  // L175-189
+```
+- **Explanation:** It filters by type using `instanceof` and strings instead of each accessory reporting its own type.
+- **Consequence:** A new type (e.g. Headset) forces changes to the method.
+- **Proposed solution:** Polymorphic `Accessory.getTypeName()` and filter with `equalsIgnoreCase`. No new class.
+- **Other member's code:** Accessory
+- **Verdict:** Violation
+
+## Dev2Audit - V-11
+- **Pattern:** Polymorphism
+- **Module:** AccessoryRepository
+- **Evidence:**
+```java
+if (accessory instanceof Controller controller) {...} else if (accessory instanceof Cable cable) {...}  // L106-136
+if (CONTROLLER_TYPE.equals(type)) {...} else if (CABLE_TYPE.equals(type)) {...}                         // L150-207
+```
+- **Explanation:** Both writing and reading are resolved with per-type `if` chains.
+- **Consequence:** Every new accessory type requires editing both methods.
+- **Proposed solution:** Create **`AccessoryRecordMapper`** (one mapper per type, Factory Method + Polymorphism). **New class: AccessoryRecordMapper.**
+- **Other member's code:** None
+- **Verdict:** Violation
+
+## Dev2Audit - V-12
+- **Pattern:** High Cohesion
+- **Module:** AccessoryService
+- **Evidence:**
+```java
+validateCommonFields, validateControllerFields, validateCableFields,
+validateMemoryFields, validateUniqueId   // L346-458, ~112 lines
+```
+- **Explanation:** The service mixes business coordination with data validation, which already has its own layer in the project (`ProductValidator`, `PersonValidator`).
+- **Consequence:** Rules are duplicated with `ProductValidator.validateProductData`, and the service is harder to maintain.
+- **Proposed solution:** Create **`AccessoryValidator`** in the `validation` package (Pure Fabrication) and reuse `ProductValidator` for the common fields. **New class: AccessoryValidator.**
+- **Other member's code:** None (`ProductValidator` is only called, not modified)
+- **Verdict:** Violation
+
+## Dev2Audit - V-13
+- **Pattern:** High Cohesion
+- **Module:** AccessoryRepository
+- **Evidence:**
+```java
+System.out.println("Error: Failed to save the accessories records.");  // L52
+} catch (IOException e) { return accessories; }                          // L87-89
+```
+- **Explanation:** The persistence layer prints to the console and hides read failures by returning an empty list.
+- **Consequence:** It mixes persistence with presentation, and callers cannot tell "no data" from "corrupt file".
+- **Proposed solution:** Throw `PersistenceException`, as the other refactored repositories already do, and let the UI show the message. No new class.
+- **Other member's code:** ConsoleMenu
+- **Verdict:** Violation
+
+## Dev2Audit - V-14
+- **Pattern:** Protected Variations
+- **Module:** AccessoryService
+- **Evidence:**
+```java
+if (!connectionType.equalsIgnoreCase("WIRELESS") && !connectionType.equalsIgnoreCase("WIRED"))  // L388-389
+```
+- **Explanation:** A variation point (connection types) is hard-coded as text inside the service.
+- **Consequence:** Adding a type (e.g. BLUETOOTH) forces service edits.
+- **Proposed solution:** Create the enum **`ConnectionType`** and validate against it. **New class: ConnectionType.**
+- **Other member's code:** Controller (model)
+- **Verdict:** Violation
+
