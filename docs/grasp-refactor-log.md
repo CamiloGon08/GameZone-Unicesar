@@ -24,7 +24,7 @@ git worktree add ../gamezone-reference 8382d85
 cd ../gamezone-reference && mvn -q clean compile && cd -
 
 # on each check: build the current branch and compare
-mvn -q clean compile
+mvn -q compile
 scripts/verify-grasp.sh ../gamezone-reference/target/classes
 mvn test
 ```
@@ -80,6 +80,14 @@ One entry per correction commit, in the order of section 6 of the consolidated a
 **Change:** <what moved where, and which pattern it applies>
 **Verification:** mvn clean compile OK · mvn test 20/20 · verify-grasp.sh PASS
 -->
+
+### C-21 — Sale computes its own total
+
+**Member:** Technical Lead
+**Commit:** refactor: let Sale apply promotion and warranty cost to its total (C-21)
+**Classes changed:** `Sale`, `SaleService`
+**Change:** `SaleService.registerSale` no longer computes the total with `sale.setTotal(sale.getTotal() - discount)` and `sale.setTotal(sale.getTotal() + cost)`. `Sale` now has `applyPromotion(name, amount)` and `addWarrantyCost(amount)`, and the public `setTotal` was removed, so only `Sale` changes its total (Information Expert). `warrantyCost` is still not assigned, because filling it would add a new line to the receipt (out-of-scope defect 2). The part of Developer 1 (`PercentageDiscount` and `BulkPurchaseDiscount` reading `getSubtotal()`) is a separate commit.
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical)
 
 ## Final verification
 

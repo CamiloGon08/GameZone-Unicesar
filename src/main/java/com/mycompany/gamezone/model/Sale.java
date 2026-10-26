@@ -151,10 +151,26 @@ public class Sale {
     }
 
     /**
-     * @param total the new final total amount of the sale
+     * Applies the discount of a promotion to this sale. The sale keeps the
+     * name of the promotion and the discount amount, and subtracts the
+     * discount from its total.
+     *
+     * @param promotionName name of the promotion applied
+     * @param amount        discount amount to subtract from the total
      */
-    public void setTotal(double total) {
-        this.total = total;
+    public void applyPromotion(String promotionName, double amount) {
+        this.appliedPromotionName = promotionName;
+        this.discountAmount = amount;
+        this.total = total - amount;
+    }
+
+    /**
+     * Adds the cost of an extended warranty to the total of this sale.
+     *
+     * @param amount additional cost of the warranty
+     */
+    public void addWarrantyCost(double amount) {
+        this.total = total + amount;
     }
 
     /**

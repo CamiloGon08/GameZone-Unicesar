@@ -107,9 +107,7 @@ public class SaleService {
         if (bestPromotion != null) {
             double discount = bestPromotion.calculateDiscount(sale);
             if (discount > 0) {
-                sale.setAppliedPromotionName(bestPromotion.getName());
-                sale.setDiscountAmount(discount);
-                sale.setTotal(sale.getTotal() - discount);
+                sale.applyPromotion(bestPromotion.getName(), discount);
             }
         }
 
@@ -122,7 +120,7 @@ public class SaleService {
                         && productIdsWithExtendedWarranty.contains(product.getId())) {
                     Warranty extended = warrantyService.assignExtendedWarranty(product, sale);
                     if (extended != null) {
-                        sale.setTotal(sale.getTotal() + extended.getAdditionalCost());
+                        sale.addWarrantyCost(extended.getAdditionalCost());
                     }
                 }
             }
