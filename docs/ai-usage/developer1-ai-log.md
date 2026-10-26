@@ -608,3 +608,52 @@ reviewing the deliverable and executing my commits and pushes. The six atomic pa
 Git commands are prepared locally, not published by the assistant. This entry does not
 claim that I have already committed them, received PR approval, answered unassigned
 guiding questions, or finished the team's consolidated audit or Phase 2.
+
+## Requirement 8 - Phase 2 (Corrections)
+
+### 2026-10-26 - Review the assigned reference and prepare the complete correction delivery
+
+**Tool used:** OpenAI Codex.
+
+**Reason for use:** Compare the leader's r8-fase2-jesus.zip with the updated team branch,
+review the missing promotion contract, discuss behavior-preserving adaptations, and
+prepare code, regression checks and publication commands for my review.
+
+**Request:** "aplica todos los cambios y me das los commits todos de un solo por cuestión de tiempo".
+
+I used AI support to inspect the assigned reference files, check their ownership and
+consumer contracts, adapt the English JavaDoc and implementation, and prepare regression
+tests and separate commit groups. The package is a leader-provided reference; its sample
+entry names Claude, but the tool I used in this session is OpenAI Codex. I do not copy
+unperformed verification or another tool's attribution into my personal record.
+
+My correction covers Return and Warranty formatter extraction, generic product
+registration with family validation, ProductLookup, the product repository interface and
+injectable file converters, and Promotion.isValid. The latter matches the method already
+called by Developer 2's PromotionValidator; I retain responsibility for the promotion
+model classes while that validator remains her contribution.
+
+The reference was checked against the individual audit's preservation constraints.
+Category and bulk promotions retain the original direct-registration percentage rule;
+the additional factory checks are not silently added to that entry point. Existing NaN
+behavior, validation ordering/messages, permissive loading, charged-price fallback,
+receipt arithmetic and cached totals were also considered. The new generic product API
+adds a typed null-product input error without changing the existing menu methods.
+
+I downloaded the team's updates through 011922c, including Developer 2's warranty
+integration. The complete actual project then passed 127 tests with zero failures,
+errors or skips, and a clean compilation succeeded. The menu scenario compared against
+freshly compiled d2d7245 classes matched all eleven console/error/data files using
+external fixtures. This is a passing full-project result, not an isolated substitute.
+
+The work is prepared as seven commits: five code/test groups, the refactor log and this
+personal entry. Promotions are first so the teammate's existing validator receives its
+missing contract promptly. I execute my own commits and pushes; the assistant has not
+published this delivery. The publication commands record the real code commit hashes in
+the refactor log when those commits exist.
+
+The individual audit PR #64 is merged. The consolidated SOLID audit is still absent from
+develop at this checkpoint, so final consolidated IDs, coordination and the final Phase 2
+PR/peer review remain team workflow items. This entry describes review assistance and
+observed evidence without claiming that I have already committed, obtained approval or
+completed every team deliverable.
