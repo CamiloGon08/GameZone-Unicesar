@@ -137,6 +137,24 @@ calls service signatures that have changed. Full-branch compilation/non-regressi
 pending completion of those model contracts and the lead's UI/integration work. The isolated
 results above are not presented as a successful build of the current integration branch.
 
+### C-26 — Product families report warranty eligibility (Developer 1 part)
+
+**Member:** Developer 1
+**Commit:** refactor: add product warranty eligibility queries (C-26)
+**Classes changed:** `Product`, `Console`.
+**Change:** Added `requiresBasicWarranty()` and `allowsExtendedWarranty()` to Product,
+both false by default. Console overrides both queries to return true. Product-typed
+callers can ask the domain object about coverage eligibility instead of identifying its
+concrete class (Polymorphism). Other product families inherit the default behavior.
+Service and menu consumer changes remain with their assigned team members.
+
+**Verification:** The exact Product/Console sources, together with C-11, compiled in the
+isolated `6012971` validation worktree. The 28 existing cases passed; `verify-grasp.sh`
+against reference `8382d85` passed with all 11 console/error/data files identical.
+**Integration status:** Full-branch verification remains pending the other model contracts
+and the lead's integration/UI updates recorded under C-11. These isolated results are
+not a successful build or end-to-end integration check of the latest shared branch.
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.

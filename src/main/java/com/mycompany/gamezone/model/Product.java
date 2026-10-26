@@ -122,4 +122,22 @@ public abstract class Product {
     public boolean canAdjustStock(int amount) {
         return (long) stock + amount >= 0;
     }
+
+    /**
+     * Reports whether this product family requires basic warranty coverage.
+     *
+     * @return true if a basic warranty must be assigned
+     */
+    public boolean requiresBasicWarranty() {
+        return false;
+    }
+
+    /**
+     * Reports whether this product family permits extended warranty coverage.
+     *
+     * @return true if an extended warranty may be assigned
+     */
+    public boolean allowsExtendedWarranty() {
+        return false;
+    }
 }
