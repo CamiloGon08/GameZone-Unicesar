@@ -90,3 +90,19 @@ Correctly applied in `PersonService.register(Person)` and `PromotionService.regi
 | Consequence | Every new accessory type modifies the service and repeats the same steps. |
 | Proposed solution | Add `register(Accessory accessory, List<String> compatibleConsoleIds)` with the common steps, and an `AccessoryFactory` with one `create...` method per type that runs the type-specific validation (as `PromotionFactory` does). The three current methods delegate to them, so the messages stay the same. |
 | Other member's code | Yes: `AccessoryMenu` (Technical Lead) lines 80, 103 and 130 can keep calling the old methods while they only delegate. |
+
+## 3. Liskov Substitution Principle
+**Verdict:** Violation
+
+Correctly applied in the repositories: `FilePersonRepository` keeps the contract of `PersonRepository` (empty list when the file does not exist).
+
+### V-05
+| Field | Content |
+|---|---|
+| Principle | Liskov Substitution |
+| Module | Persons (Workshop 1), GRASP (Req. 7) |
+| Evidence | `Person.updateFrom(Person changes)` line 113 accepts any person. `Customer.updateFrom` line 71: `Customer other = (Customer) changes;` and `Seller.updateFrom` line 95: `Seller other = (Seller) changes;`. |
+| Explanation | The subclasses strengthen the precondition of the base method: `updateFrom` declared on `Person` only works if the argument is of the same subclass, otherwise it throws `ClassCastException`. A client that only knows `Person` cannot use the method safely. |
+| Consequence | Today `PersonService.update` (line 42) avoids it by searching with `changes.getClass()`, but any new caller that passes a different subtype fails at run time instead of at compile time. |
+| Proposed solution | Make the base contract explicit and safe: `Person` checks `getClass() == changes.getClass()` and throws the existing `BusinessRuleException` otherwise, then calls a protected `copyFrom` implemented by each subclass with its own type (generic `Person<T>` is not needed). |
+| Other member's code | No. |
