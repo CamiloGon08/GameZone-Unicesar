@@ -3,7 +3,7 @@
 **Audited commit (develop):** `d2d7245`
 **Author:** Jesus David Dominguez Theran (Developer 1, GitHub `jdaviddominguez`)
 **Phase:** Requirement 8, Phase 1 - Audit
-**Progress:** 2 of five principle sections recorded; remaining sections follow in separate commits.
+**Progress:** 3 of five principle sections recorded; remaining sections follow in separate commits.
 
 Evidence and line numbers refer to the audited commit of develop. The leader's
 `r8-jesus.zip` supplies candidate findings to verify against that commit. The audit is
@@ -50,7 +50,7 @@ their implementations remain under the corresponding member's audit responsibili
 |---|---|---|
 | Single Responsibility (SRP) | Violation | V-01, V-02 |
 | Open/Closed (OCP) | Violation | V-03, V-04 |
-| Liskov Substitution (LSP) | Pending | - |
+| Liskov Substitution (LSP) | Correct for the existing substitution points | No confirmed violation |
 | Interface Segregation (ISP) | Pending | - |
 | Dependency Inversion (DIP) | Pending | - |
 
@@ -155,3 +155,40 @@ Preserve converter order and first-match dispatch, eight-field records, common p
 before type dispatch, `split(",")`/trim behavior, case-sensitive type tokens, platform
 line separators, and the exact contextual `PersistenceException` messages and causes.
 Moving registration to composition does not justify changing malformed-record handling.
+
+## 3. Liskov Substitution Principle
+
+**Verdict:** Correct for the existing hierarchies and documented usage; no confirmed
+substitution violation was found in this scope.
+
+- `VideoGame`, `Console`, `Controller`, `Cable` and `Memory` retain the inherited
+  `adjustStock` / `canAdjustStock` behavior. Their category and warranty-query overrides
+  answer family policy without stronger input requirements. Their descriptions fulfill
+  the base string-returning contract. Accessory compatibility remains an accessory API.
+- `PercentageDiscount`, `CategoryDiscount` and `BulkPurchaseDiscount` implement
+  `calculateDiscount(Sale)` using the supplied sale and their configured policy, without
+  changing the sale. For a non-null sale and appropriate promotion data they remain usable
+  through `Promotion` by `PromotionService.findBestPromotionFor`.
+- This is **not** a claim that discounts are always nonnegative or never throw. Promotion
+  constructors/setters are permissive: negative or NaN percentages and null sale inputs
+  have legacy behavior. The abstract calculation does not promise universal nonnegative
+  results for such inputs. These cases do not by themselves prove a subtype strengthened
+  the base contract, and this audit does not add validation to change them.
+- `BasicWarranty.getDurationInMonths`:21-23 returns 6; the extended implementation:23-25
+  returns 12. The base constructor's virtual call (line 30) works with these constant
+  implementations. A future override depending on uninitialized subclass fields would
+  be a construction hazard to consider, rather than a present failure of either subtype.
+  Type labels, storage codes, costs and matching retain their distinct contracts.
+- Both `ProductLineConverter` implementations accept the products selected by `supports`
+  and reconstruct their own family for the selected type token. The repository checks
+  that contract before the implementation's family cast; the cast alone is not an LSP
+  violation. Invalid records retain the repository's contextual failure behavior.
+- The four concrete exceptions extend `GameZoneException` without removing its error-code,
+  message or cause behavior. Different codes are intentional failure categories, not a
+  broken base contract.
+
+The static validators, `ProductService`, the concrete repository, `Return` and the isolated
+`Sale.canBeReturned` method declare no overriding relationship of their own; LSP is not
+applicable to those portions as standalone types. Their use of the hierarchies above was
+reviewed. The 87-case baseline supports the exercised paths, including prices, discounts,
+stock, return dates, validation and conversion; it is not a proof over all possible inputs.
