@@ -43,7 +43,7 @@ public class CategoryDiscount extends Promotion {
     }
  
     /**
-     * Calculates the discount by summing the price of every product in the
+     * Calculates the discount by summing the charged price of every item in the
      * sale that matches this promotion's target category, and applying the
      * discount percentage to that sum. Each product reports category membership;
      * Controller, Cable and Memory inherit the ACCESSORY family policy.
@@ -54,9 +54,10 @@ public class CategoryDiscount extends Promotion {
     @Override
     public double calculateDiscount(Sale sale) {
         double matchingTotal = 0.0;
-        for (Product product : sale.getProducts()) {
+        for (SaleItem item : sale.getItems()) {
+            Product product = item.getProduct();
             if (product != null && product.matchesCategory(targetCategory)) {
-                matchingTotal += product.getPrice();
+                matchingTotal += item.getUnitPrice();
             }
         }
         return matchingTotal * percentage / 100;

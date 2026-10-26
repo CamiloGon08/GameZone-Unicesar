@@ -33,6 +33,16 @@ public class ExtendedWarranty extends Warranty {
     
     @Override
     public double getAdditionalCost() {
-        return getProduct().getPrice() * EXTENDED_COST_RATE;
+        return chargedPrice() * EXTENDED_COST_RATE;
+    }
+
+    /** Looks up the charged price by product ID, preserving the unmatched fallback. */
+    private double chargedPrice() {
+        for (SaleItem item : getSale().getItems()) {
+            if (item.getProduct().getId().equals(getProduct().getId())) {
+                return item.getUnitPrice();
+            }
+        }
+        return getProduct().getPrice();
     }
 }

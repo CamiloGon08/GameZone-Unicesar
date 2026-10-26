@@ -239,6 +239,33 @@ against `8382d85` passed with all 11 console/error/data files identical.
 **Integration status:** These are isolated results. Full-branch verification remains pending
 the remaining model contracts and team integration/UI work recorded under C-11.
 
+### C-28 — Use charged item prices in refunds, warranties and category discounts (Developer 1 part)
+
+**Member:** Developer 1
+**Commit:** refactor: use charged sale item prices (C-28)
+**Classes changed:** `Return`, `ExtendedWarranty`, `CategoryDiscount`;
+verification added in `ChargedPriceTest`.
+**Change:** Return calculations/receipts and extended warranty costs now look up the first
+SaleItem with an exactly matching product ID and use its frozen unit price. They retain the
+agreed current-price fallback when no item matches. CategoryDiscount sums matching items'
+individual unit prices while preserving the C-16 family query, null-product guard, sum order
+and percentage formula (Protected Variations). Existing receipt labels, proportional discount
+arithmetic and warranty refund handling are preserved.
+
+**Verification:** The exact sources/test compiled with the earlier Developer 1 blocks in the
+isolated `6012971` worktree; all 50 cases passed. Seven new cases cover refund recalculation
+and receipt stability after catalog changes, proportional and warranty refunds, matching a
+different product instance by ID, warranty cost/certificate stability, all three category
+families, per-entry prices with repeated IDs, and the unmatched-product fallback. The tested
+Sale/SaleItem/Warranty implementations match the shared prerequisite. `verify-grasp.sh`
+against `8382d85` passed with all 11 console/error/data files identical.
+
+**Persistence limitation:** As agreed in the consolidated audit, the sales file format stays
+unchanged. Charged prices are protected in the existing in-memory SaleItems; reloading a sale
+rebuilds those items from the current catalog rather than restoring a separately stored price.
+**Integration status:** These are isolated results. Full-branch verification remains pending
+the remaining model contracts and team integration/UI work recorded under C-11.
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.
