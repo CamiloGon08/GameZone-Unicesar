@@ -10,7 +10,7 @@ import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.service.MonthlyBalanceReport;
 import com.mycompany.gamezone.service.PersonService;
 import com.mycompany.gamezone.service.ReturnService;
-import com.mycompany.gamezone.service.SaleService;
+import com.mycompany.gamezone.service.SaleLookup;
 
 /**
  * Console submenu for the management of returns and the monthly balance.
@@ -19,8 +19,9 @@ import com.mycompany.gamezone.service.SaleService;
 class ReturnMenu {
 
     private final PersonService personService;
-    private final SaleService saleService;
+    private final SaleLookup saleLookup;
     private final ReturnService returnService;
+    private final ReturnReceiptFormatter receiptFormatter = new ReturnReceiptFormatter();
     private final MonthlyBalanceReport monthlyBalanceReport;
     private final ConsoleIO io;
 
@@ -28,18 +29,18 @@ class ReturnMenu {
      * Creates the menu with the collaborators it needs.
      *
      * @param personService service that handles person-related operations
-     * @param saleService service that handles sale-related operations
+     * @param saleLookup lookup used to find the sale of a return
      * @param returnService service that handles return-related operations
      * @param monthlyBalanceReport report that computes the monthly balance
      * @param io helper that reads the input and prints error messages
      */
     ReturnMenu(PersonService personService,
-               SaleService saleService,
+               SaleLookup saleLookup,
                ReturnService returnService,
                MonthlyBalanceReport monthlyBalanceReport,
                ConsoleIO io) {
         this.personService = personService;
-        this.saleService = saleService;
+        this.saleLookup = saleLookup;
         this.returnService = returnService;
         this.monthlyBalanceReport = monthlyBalanceReport;
         this.io = io;
@@ -80,7 +81,7 @@ class ReturnMenu {
         System.out.print("ID de la venta: ");
         String saleId = io.readLine();
 
-        Sale sale = saleService.findById(saleId);
+        Sale sale = saleLookup.findById(saleId);
         if (sale == null) {
             System.out.println("No existe una venta con ese ID.");
             return;
@@ -103,7 +104,7 @@ class ReturnMenu {
         try {
             Return returnObj = returnService.registerReturn(saleId, productIds, reason);
             System.out.println("Devolución registrada exitosamente.");
-            System.out.println(returnObj.generateReturnReceipt());
+            System.out.println(receiptFormatter.format(returnObj));
         } catch (GameZoneException | IllegalArgumentException e) {
             io.handleException(e);
         }
@@ -117,7 +118,7 @@ class ReturnMenu {
         }
         System.out.println("--- Todas las devoluciones ---");
         for (Return returnObj : returns) {
-            System.out.println(returnObj.generateReturnReceipt());
+            System.out.println(receiptFormatter.format(returnObj));
             System.out.println("---------------------------");
         }
     }
@@ -146,7 +147,7 @@ class ReturnMenu {
         }
         System.out.println("--- Devoluciones de " + selected.getName() + " ---");
         for (Return returnObj : returns) {
-            System.out.println(returnObj.generateReturnReceipt());
+            System.out.println(receiptFormatter.format(returnObj));
             System.out.println("---------------------------");
         }
     }
@@ -161,7 +162,7 @@ class ReturnMenu {
         }
         System.out.println("--- Devoluciones de la venta " + saleId + " ---");
         for (Return returnObj : returns) {
-            System.out.println(returnObj.generateReturnReceipt());
+            System.out.println(receiptFormatter.format(returnObj));
             System.out.println("---------------------------");
         }
     }

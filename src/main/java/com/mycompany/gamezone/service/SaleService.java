@@ -30,7 +30,7 @@ public class SaleService {
 
     private static final String SALE_PREFIX = "SALE";
 
-    private final SaleCatalog saleCatalog;
+    private final SaleStore saleStore;
     private final InventoryService inventoryService;
     private final PromotionService promotionService;
     private final WarrantyService warrantyService;
@@ -40,18 +40,18 @@ public class SaleService {
      * Creates a SaleService with the collaborators required to register
      * sales, update inventory, apply promotions and assign warranties.
      *
-     * @param saleCatalog      catalog that keeps and saves the sales
+     * @param saleStore        store that keeps and saves the sales
      * @param inventoryService service used to update the stock of every item
      * @param promotionService service used to find the best promotion for a sale
      * @param warrantyService  service used to assign warranties
      * @param idGenerator      generator of sale identifiers
      */
-    public SaleService(SaleCatalog saleCatalog,
+    public SaleService(SaleStore saleStore,
                        InventoryService inventoryService,
                        PromotionService promotionService,
                        WarrantyService warrantyService,
                        IdGenerator idGenerator) {
-        this.saleCatalog = saleCatalog;
+        this.saleStore = saleStore;
         this.inventoryService = inventoryService;
         this.promotionService = promotionService;
         this.warrantyService = warrantyService;
@@ -87,13 +87,13 @@ public class SaleService {
             ProductValidator.validateStockAvailability(product, 1);
         }
 
-        String saleId = idGenerator.nextId(SALE_PREFIX, saleCatalog.size(), id -> false);
+        String saleId = idGenerator.nextId(SALE_PREFIX, saleStore.size(), id -> false);
         Sale sale = new Sale(LocalDate.now(), saleId, products, seller, customer);
 
         applyBestPromotion(sale);
         sale.addWarrantyCost(warrantyService.assignWarrantiesFor(sale, productIdsWithExtendedWarranty));
         inventoryService.decreaseStock(products);
-        saleCatalog.add(sale);
+        saleStore.add(sale);
 
         return sale;
     }
@@ -114,7 +114,7 @@ public class SaleService {
      * @return list containing every sale
      */
     public List<Sale> viewAllSales() {
-        return saleCatalog.findAll();
+        return saleStore.findAll();
     }
 
     /**
@@ -125,7 +125,7 @@ public class SaleService {
      */
     public List<Sale> viewSalesByCustomer(Customer customer) {
         List<Sale> result = new ArrayList<>();
-        for (Sale sale : saleCatalog.findAll()) {
+        for (Sale sale : saleStore.findAll()) {
             if (sale.getCustomer().equals(customer)) {
                 result.add(sale);
             }
@@ -140,7 +140,7 @@ public class SaleService {
      * @return the Sale with the specified ID, or null if it does not exist
      */
     public Sale findById(String id) {
-        return saleCatalog.findById(id);
+        return saleStore.findById(id);
     }
 
     /**
@@ -151,7 +151,7 @@ public class SaleService {
      */
     public List<Sale> viewSalesBySeller(Seller seller) {
         List<Sale> result = new ArrayList<>();
-        for (Sale sale : saleCatalog.findAll()) {
+        for (Sale sale : saleStore.findAll()) {
             if (sale.getSeller().equals(seller)) {
                 result.add(sale);
             }

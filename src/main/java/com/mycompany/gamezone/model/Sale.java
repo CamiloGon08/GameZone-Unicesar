@@ -264,57 +264,6 @@ public class Sale {
     public void setWarrantyCost(double warrantyCost) {
         this.warrantyCost = warrantyCost;
     }
-    /**
-     * Generates a formatted receipt for the sale including the subtotal,
-     * the discount applied (with the promotion name) and the final total.
-     *
-     * @return the formatted receipt as a String
-     */
-    public String generateReceipt() {
-        StringBuilder sb = new StringBuilder();
-        appendHeader(sb);
-        appendProducts(sb);
-        appendTotals(sb);
-        return sb.toString();
-    }
-
-    private void appendHeader(StringBuilder sb) {
-        sb.append("===== RECIBO DE VENTA =====\n");
-        sb.append("ID: ").append(id).append("\n");
-        sb.append("Fecha: ").append(date).append("\n");
-        sb.append("Cliente: ").append(customer.getName()).append("\n");
-        sb.append("Vendedor: ").append(seller.getName()).append("\n");
-        sb.append("Productos:\n");
-    }
-
-    private void appendProducts(StringBuilder sb) {
-        for (SaleItem item : items) {
-            sb.append("  - ").append(item.getProduct().getTitle())
-            .append(": $").append(String.format("%.2f", item.getUnitPrice()))
-            .append("\n");
-        }
-        sb.append("---------------------------\n");
-    }
-
-    private void appendTotals(StringBuilder sb) {
-        sb.append("Subtotal:  $").append(String.format("%.2f", getSubtotal())).append("\n");
-
-        if (discountAmount > 0) {
-            sb.append("Descuento: $").append(String.format("%.2f", discountAmount));
-            if (appliedPromotionName != null) {
-                sb.append("  (").append(appliedPromotionName).append(")");
-            }
-            sb.append("\n");
-        }
-
-        if (warrantyCost > 0) {
-            sb.append("Garantía extendida: $").append(String.format("%.2f", warrantyCost)).append("\n");
-        }
-
-        sb.append("TOTAL:     $").append(String.format("%.2f", total)).append("\n");
-        sb.append("===========================");
-    }
-
     @Override
     public String toString(){
         return "Sale : "+ id + " Date : "+ date +

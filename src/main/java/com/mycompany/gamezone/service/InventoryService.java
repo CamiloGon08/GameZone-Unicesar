@@ -2,46 +2,42 @@ package com.mycompany.gamezone.service;
 
 import java.util.List;
 
-import com.mycompany.gamezone.model.Accessory;
 import com.mycompany.gamezone.model.Product;
 
 /**
  * Service that gives a single entry point to the stock of every sellable
  * item, whether it is a product (video game or console) or an accessory.
- * Clients no longer decide which service owns an item: this class routes
- * each operation to {@link ProductService} or {@link AccessoryService}.
+ * Each family of items is reached through a {@link StockHandler}, so a new
+ * family only adds a handler and this class does not change.
  */
 public class InventoryService {
 
-    private final ProductService productService;
-    private final AccessoryService accessoryService;
+    private final List<StockHandler> handlers;
 
     /**
-     * Creates an InventoryService that delegates to the product and
-     * accessory services.
+     * Creates an InventoryService that delegates to the given handlers. The
+     * first handler is also used when no handler recognizes an item.
      *
-     * @param productService   service that manages products
-     * @param accessoryService service that manages accessories
+     * @param handlers one handler per family, in search order
      */
-    public InventoryService(ProductService productService,
-                            AccessoryService accessoryService) {
-        this.productService = productService;
-        this.accessoryService = accessoryService;
+    public InventoryService(List<StockHandler> handlers) {
+        this.handlers = List.copyOf(handlers);
     }
 
     /**
-     * Finds a sellable item by its identifier, looking first among the
-     * products and then among the accessories.
+     * Finds a sellable item by its identifier, asking each handler in order.
      *
      * @param id identification number of the item
-     * @return the matching product or accessory, or null if it does not exist
+     * @return the matching item, or null if it does not exist
      */
     public Product findAnyById(String id) {
-        Product product = productService.findById(id);
-        if (product == null) {
-            product = accessoryService.findById(id);
+        for (StockHandler handler : handlers) {
+            Product item = handler.findById(id);
+            if (item != null) {
+                return item;
+            }
         }
-        return product;
+        return null;
     }
 
     /**
@@ -56,11 +52,7 @@ public class InventoryService {
      */
     public void decreaseStock(List<Product> items) {
         for (Product item : items) {
-            if (item instanceof Accessory) {
-                accessoryService.updateStock(item.getId(), -1);
-            } else {
-                productService.updateStock(item.getId(), -1);
-            }
+            handlerFor(item).decrease(item.getId());
         }
     }
 
@@ -76,10 +68,15 @@ public class InventoryService {
      *         inventory cannot be saved
      */
     public void increaseStock(String itemId, int quantity) {
-        if (findAnyById(itemId) instanceof Accessory) {
-            accessoryService.restoreStock(itemId, quantity);
-        } else {
-            productService.restoreStock(itemId, quantity);
+        handlerFor(findAnyById(itemId)).restore(itemId, quantity);
+    }
+
+    private StockHandler handlerFor(Product item) {
+        for (StockHandler handler : handlers) {
+            if (handler.handles(item)) {
+                return handler;
+            }
         }
+        return handlers.get(0);
     }
 }
