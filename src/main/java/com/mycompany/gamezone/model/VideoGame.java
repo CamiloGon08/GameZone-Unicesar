@@ -83,4 +83,10 @@ public class VideoGame extends Product {
     public void setAgeRating(String ageRating) {
         this.ageRating = ageRating;
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean matchesCategory(String category) {
+        return "VIDEOGAME".equals(category);
+    }
 }

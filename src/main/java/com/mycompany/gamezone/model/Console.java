@@ -96,4 +96,10 @@ public class Console extends Product {
     public boolean allowsExtendedWarranty() {
         return true;
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean matchesCategory(String category) {
+        return "CONSOLE".equals(category);
+    }
 }

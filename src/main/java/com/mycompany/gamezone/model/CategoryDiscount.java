@@ -45,9 +45,8 @@ public class CategoryDiscount extends Promotion {
     /**
      * Calculates the discount by summing the price of every product in the
      * sale that matches this promotion's target category, and applying the
-     * discount percentage to that sum. An accessory matches the
-     * "ACCESSORY" category if it is any instance of {@link Accessory}
-     * (Controller, Cable, or Memory), not just one specific accessory type.
+     * discount percentage to that sum. Each product reports category membership;
+     * Controller, Cable and Memory inherit the ACCESSORY family policy.
      *
      * @param sale the sale to calculate the discount for
      * @return the calculated discount amount
@@ -56,15 +55,10 @@ public class CategoryDiscount extends Promotion {
     public double calculateDiscount(Sale sale) {
         double matchingTotal = 0.0;
         for (Product product : sale.getProducts()) {
-            if ("VIDEOGAME".equals(targetCategory) && product instanceof VideoGame) {
-                matchingTotal += product.getPrice();
-            } else if ("CONSOLE".equals(targetCategory) && product instanceof Console) {
-                matchingTotal += product.getPrice();
-            } else if ("ACCESSORY".equals(targetCategory) && product instanceof Accessory) {
+            if (product != null && product.matchesCategory(targetCategory)) {
                 matchingTotal += product.getPrice();
             }
         }
         return matchingTotal * percentage / 100;
     }
 }
- 

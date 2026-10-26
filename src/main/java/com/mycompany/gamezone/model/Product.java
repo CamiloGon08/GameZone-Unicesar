@@ -140,4 +140,15 @@ public abstract class Product {
     public boolean allowsExtendedWarranty() {
         return false;
     }
+
+    /**
+     * Checks category membership through the product family's policy.
+     * Unclassified products do not match any category.
+     *
+     * @param category exact category label, possibly null
+     * @return true if this family matches the supplied category
+     */
+    public boolean matchesCategory(String category) {
+        return false;
+    }
 }

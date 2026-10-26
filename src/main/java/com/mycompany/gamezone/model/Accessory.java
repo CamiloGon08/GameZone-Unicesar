@@ -27,4 +27,10 @@ public abstract class Accessory extends Product {
     public boolean isCompatibleWith(String consoleId) {
         return compatibleConsoleIds.contains(consoleId);
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean matchesCategory(String category) {
+        return "ACCESSORY".equals(category);
+    }
 }

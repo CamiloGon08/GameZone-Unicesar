@@ -155,6 +155,30 @@ against reference `8382d85` passed with all 11 console/error/data files identica
 and the lead's integration/UI updates recorded under C-11. These isolated results are
 not a successful build or end-to-end integration check of the latest shared branch.
 
+### C-16 — Delegate category matching to product families
+
+**Member:** Developer 1
+**Commit:** refactor: delegate category matching to product families (C-16)
+**Classes changed:** `Product`, `VideoGame`, `Console`, `Accessory`, `CategoryDiscount`;
+verification added in `CategoryDiscountTest`.
+**Change:** Added `matchesCategory(String)` with a false default in Product and exact
+VIDEOGAME/CONSOLE/ACCESSORY matches at the family roots. All accessory variants inherit
+the same category. CategoryDiscount now asks each product through that contract instead
+of selecting concrete families with instanceof (Polymorphism, related to Low Coupling and
+Protected Variations). The null-product guard preserves the previous nonmatching result.
+The sum order, category case sensitivity and percentage formula remain unchanged.
+SaleItem pricing is deferred to the separate assigned C-28 correction.
+
+**Verification:** 40 cases passed in the isolated `6012971` worktree with the exact C-11,
+C-26 and C-16 source changes: 20 validator, 8 stock and 12 category-discount cases. Category
+cases cover mixed families/all accessory variants, null/empty/unknown/differently cased
+labels, an unclassified product, repeated items, nonmutation and an additional family
+participating without changing the discount policy. `verify-grasp.sh` against `8382d85`
+passed with all 11 console/error/data files identical.
+**Integration status:** Full-branch verification remains pending the other assigned model
+contracts and team integration/UI work recorded under C-11. These are isolated results,
+not a passing build of the latest integrated branch.
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.
