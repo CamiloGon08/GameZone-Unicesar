@@ -6,16 +6,17 @@
 **Accessory review date:** 2026-10-25
 **Promotion review date:** 2026-10-25
 **Return review date:** 2026-10-25
+**Warranty review date:** 2026-10-25
 
 ## Status
 
-The first four incremental audit blocks cover products, the accessory and promotion
-domain hierarchies, Return and Sale.canBeReturned. Warranties, exceptions and validations
-are pending.
+The first five incremental audit blocks cover products, the accessory and promotion
+domain hierarchies, Return, Sale.canBeReturned and the warranty domain hierarchy.
+The exceptions and validations block is pending.
 The reference matches the team's existing audit templates. The Java sources were rechecked
 after synchronizing with develop at `06fd7c6` and are unchanged relative to the audited commit.
 R6 service/repository and console integration is now present; the earlier pre-integration
-product, accessory, promotion and return drafts are superseded by these reviews.
+product, accessory, promotion, return and warranty drafts are superseded by these reviews.
 
 Finding IDs are local to this individual report until the lead consolidates the findings.
 No correction is implemented by this document. Proposed changes must preserve current
@@ -40,7 +41,9 @@ inputs, outputs, messages, exception categories and persisted record formats.
 | Promotions (Req. 2) | BulkPurchaseDiscount | Constructor; minimumQuantity and percentage getters/setters; calculateDiscount |
 | Returns (Req. 3) | Return | Both constructors; all ID/date/originalSale/returnedProducts/reason/refund getters and declared setters; calculateRefundAmount; generateReturnReceipt; warranty-refund integration is a collaboration boundary |
 | Returns (Req. 3) | Sale | canBeReturned only; other Sale methods are collaboration boundaries covered by the lead |
-| Warranties (Req. 4) | Warranty, BasicWarranty, ExtendedWarranty | Pending |
+| Warranties (Req. 4) | Warranty | Constructor; duration/type/cost declarations; ID/product/sale/startDate/endDate getters; isActive; generateWarrantyCertificate |
+| Warranties (Req. 4) | BasicWarranty | Constructor; getDurationInMonths; getWarrantyType; getAdditionalCost |
+| Warranties (Req. 4) | ExtendedWarranty | Constructor; getDurationInMonths; getWarrantyType; getAdditionalCost |
 | Exceptions and validations (Req. 6) | exceptions and validation packages | Pending |
 
 Ownership follows TEAM.md and history, not a file-level author tag alone. Original product
@@ -68,6 +71,11 @@ subsequently edited canBeReturned in ac40006. Developer 2 added warranty-refund 
 constructor integration and receipt/calculation additions in 04302d8. Preserve those
 contributions at their boundary with the original return logic. ReturnService and
 ReturnRepository belong to Developer 2 and are not added to the owned scope.
+
+The warranty domain commits are cb42205 (Warranty), e52533e (BasicWarranty),
+9f11b04 (ExtendedWarranty) and 5303cde (English certificate/type wording), authored by
+Developer 1. WarrantyService and WarrantyRepository belong to Developer 2; their type,
+matching and price-query contracts are inspected only as collaboration boundaries.
 
 ## Summary of verdicts - reviewed modules
 
@@ -97,6 +105,20 @@ ReturnRepository belong to Developer 2 and are not added to the owned scope.
 | Indirection | Not applicable within the owned domain operations | No additional mediator is demonstrated |
 | Protected Variations | Shared violation at the duplicated return-window policy | Additional owned-method evidence for Developer 2 V-24; price snapshot boundary is lead V-09 |
 
+### Warranty domain hierarchy
+
+| Pattern | Verdict | Reference |
+|---|---|---|
+| Information Expert | Correct for coverage dates and existing cost formulas | Warranty:25-30, 68-69; BasicWarranty:33-34; ExtendedWarranty:35-36 |
+| Creator | Not applicable to external domain-object creation | Service selects/creates warranties; the model initializes its own state |
+| Controller | Not applicable to domain warranty operations | No system events or console input |
+| Low Coupling | Correct at the domain/infrastructure boundary | Product/Sale references and standard date API; live-price issue remains separate |
+| High Cohesion | Correct for coverage state, policy queries and its certificate | No registration, persistence or cancellation workflow |
+| Polymorphism | Correct for duration, display type and cost | Warranty:34-40 and both subtype overrides |
+| Pure Fabrication | Not applicable within the owned hierarchy | Domain classes contain no file handling or technical coordination |
+| Indirection | Not applicable within the owned hierarchy | Abstract dispatch is recorded under Polymorphism/Protected Variations |
+| Protected Variations | Correct for existing behavior dispatch; shared historical-price violation remains | Lead V-09 affects ExtendedWarranty; Developer 2 V-26/V-27 propose consumer/model contracts |
+
 These are not final verdicts for all Developer 1 modules; the summary will be extended
 as each remaining module is reviewed.
 Accessory verdicts concern the responsibilities declared in these four classes. The inherited
@@ -105,6 +127,8 @@ V-01 and V-02 are two local findings; their related pattern references do not in
 The return-window issue retains Developer 2's existing V-24 identifier. The owned-method
 evidence below extends that shared finding and must be consolidated once, not counted
 as a new local violation.
+The warranty block adds no new local finding. The lead's existing V-09 and Developer 2's
+V-26/V-27 retain their original report IDs and require coordinated correction assignments.
 
 ## 1. Information Expert
 
@@ -150,6 +174,15 @@ window check instead of calling it; the shared V-24 evidence appears below.
 Developer 2's V-21 proposes additional membership/customer queries at the model boundary;
 those proposals are not implemented or counted as new local findings here.
 
+**Verdict for warranties: Correct for coverage dates and the existing cost formulas.**
+
+Warranty owns its coverage interval (Warranty.java:11-12), derives its end date from
+startDate and the subtype duration (25-30), and answers isActive from those dates (68-69).
+BasicWarranty supplies zero additional cost (33-34); ExtendedWarranty owns the 0.10
+rate and queries its associated Product's price (7, 35-36). The lead's V-09 separately
+questions that live price as a historical monetary basis. Developer 2's V-27 concerns
+external matching queries, not a new local finding or an implemented model method.
+
 ## 2. Creator
 
 **Verdict for products: Correct.**
@@ -184,6 +217,14 @@ initializes state and calculates the initial refund (49-57). Neither it nor canB
 creates a Sale/Product aggregate or coordinates return registration. ReturnService and
 ReturnRepository create/reconstruct returns outside this owned scope.
 
+**Verdict for warranties: Not applicable to external domain-object creation.**
+
+Warranty receives existing Product/Sale references and a start date (25-29); both concrete
+constructors delegate to it (BasicWarranty.java:15-16, ExtendedWarranty.java:17-18).
+It derives the contained end-date value with plusMonths (Warranty.java:30), but that
+calculation alone is not treated as responsibility for selecting/creating another domain
+aggregate. Warranty selection, registration and reconstruction occur in Developer 2's service.
+
 ## 3. Controller
 
 **Verdict for products: Correct for ProductService; not applicable to product entities.**
@@ -212,6 +253,13 @@ The inspected methods answer eligibility/refund questions or build a receipt Str
 They receive no system events and coordinate no stock restoration, warranty cancellation,
 service calls or file operations. Returning a formatted String is distinct from reading
 console input or printing it; no application controller is assigned to these model methods.
+
+**Verdict for warranties: Not applicable.**
+
+The owned hierarchy answers coverage/type/cost queries and returns a certificate String.
+It receives no system events, reads no console input and coordinates no registration,
+warranty cancellation or file operations. The consuming UI prints the returned certificate;
+that application interaction remains outside these model classes.
 
 ## 4. Low Coupling
 
@@ -244,6 +292,14 @@ Return depends on Sale and Product public queries plus List/LocalDate; it does n
 repositories, services or UI classes (Return.java:3-4, 18-19, 119-168). The inspected Sale
 method uses its date and LocalDate. This verdict does not establish independence from
 current time or mutable price data; those variation boundaries are recorded separately.
+
+**Verdict for warranties: Correct at the domain/infrastructure boundary.**
+
+Warranty uses Product/Sale references and LocalDate without importing services,
+repositories or UI classes (Warranty.java:3, 9-12). ExtendedWarranty queries getProduct's
+price rather than identifying a concrete product family (35-36). This does not establish
+historical-price stability or approve the external service/repository dependencies reported
+by Developer 2; those are different boundaries.
 
 ## 5. High Cohesion
 
@@ -279,6 +335,15 @@ returns text without performing IO; Sale.canBeReturned is a date-based sale quer
 No registration, stock-restoration or reporting workflow is added to the owned model.
 The receipt repeats proportional-refund arithmetic (143-157); this is a maintenance
 observation below, not asserted as a second, independent GRASP violation by itself.
+
+**Verdict for warranties: Correct for the inspected warranty responsibility.**
+
+Warranty holds its product/sale association and coverage interval. BasicWarranty and
+ExtendedWarranty supply their respective duration, display label and cost policy.
+generateWarrantyCertificate (Warranty.java:73-76) describes that warranty and returns
+text without IO. No registration, cancellation, identifier generation or persistence workflow
+is mixed into the hierarchy. No separate cohesion violation is asserted solely for returning
+a formatted certificate about the same domain object.
 
 ## 6. Polymorphism
 
@@ -362,6 +427,16 @@ demonstrated requirement for multiple return-policy subclasses in these owned me
 Ordinary shared price/title getters alone are not presented as separate overridden
 behavior. The external service's stock/warranty selection is Developer 2's V-23 boundary.
 
+**Verdict for warranties: Correct for duration, display type and cost.**
+
+Warranty declares getDurationInMonths, getWarrantyType and getAdditionalCost (34-40).
+BasicWarranty implements six months, "Basic warranty" and 0.0 (21-34); ExtendedWarranty
+implements twelve months, "Extended warranty" and price times 0.10 (23-36). The base
+constructor and certificate invoke those contracts without subtype-selection chains
+(Warranty.java:30, 76). Consumers also call getAdditionalCost through Warranty
+(SaleService.java:125; WarrantyService.java:275). External persistence/reconstruction
+type selection is Developer 2's V-26, not a duplicate violation in these overrides.
+
 ## 7. Pure Fabrication
 
 **Verdict for products: Correct.**
@@ -392,6 +467,13 @@ file access or infrastructure coordination assigned to them. Developer 2's propo
 ReturnData/MonthlyBalanceReport concern other classes; no technical helper is introduced
 into the model merely to add an instance of this pattern.
 
+**Verdict for warranties: Not applicable within the owned hierarchy.**
+
+These classes represent domain warranties and contain no file access or other technical
+coordination requiring a fabricated collaborator. Developer 2's V-28 proposes a shared
+ID generator for services; warranty ID generation is not implemented by these model
+classes. No technical helper is added just to make the pattern appear here.
+
 ## 8. Indirection
 
 **Verdict for products: Correct.**
@@ -421,6 +503,14 @@ Refund calculation uses the associated Sale and returned Product data directly, 
 service-to-service or infrastructure calls. No extra mediator is demonstrated by this
 collaboration. Consolidating the shared eligibility policy is a specific variation problem,
 not a reason to introduce a general intermediary into every model call.
+
+**Verdict for warranties: Not applicable within the owned hierarchy.**
+
+Coverage calculations and the certificate query associated domain data directly. No
+service-to-service or infrastructure coordination here demonstrates a need for an extra
+mediator. The abstract Warranty contract supports polymorphic dispatch, as recorded
+under Polymorphism and Protected Variations, rather than establishing a separate
+indirection responsibility by itself.
 
 ## 9. Protected Variations
 
@@ -480,6 +570,18 @@ test. The service currently accepts elapsed days 0 through 30 inclusively and re
 sales. The public model query currently checks only the upper deadline. Consolidation must
 explicitly resolve that difference; calling the existing query from the service unchanged
 would drop its future-date rejection. No such substitution is made by this audit.
+
+**Verdict for warranties: Correct for existing behavior dispatch; shared historical-price
+violation remains under the lead's V-09.**
+
+The duration/type/cost contracts let the base certificate and existing cost-query callers
+use either current warranty subtype without choosing its formula. This verdict is limited
+to that behavior boundary: WarrantyRepository and WarrantyService still select stored
+types (Developer 2 V-26), and ExtendedWarranty.getAdditionalCost reads a mutable Product
+price on every call (35-36). A product-price change therefore changes its computed fee,
+certificate amount and cancellation-refund query. The lead already names ExtendedWarranty
+in V-09 and proposes sale-time item data; retain that shared finding and agree on the
+historical monetary contract before changing this formula or persistence.
 
 ---
 
@@ -557,5 +659,27 @@ would drop its future-date rejection. No such substitution is made by this audit
   recalculation. These are static observations, not failure-injection results or silent fixes.
   Preserve current Spanish receipt text, item order, line breaks and default-locale %.2f
   formatting during any later behavior-preserving extraction.
+- **Warranty type / matching boundary:** Developer 2 V-26 proposes getTypeCode and a
+  WarrantyFactory; V-27 proposes Warranty.matches(productId, saleId). getWarrantyType
+  currently returns display labels ("Basic warranty"/"Extended warranty"), while persistence
+  uses BASIC/EXTENDED tokens (WarrantyRepository:128-144). Do not substitute display
+  labels for stored tokens. A new code/query contract remains a proposal for consolidation.
+- **Warranty matching semantics:** hasWarrantyOfType currently uses equalsIgnoreCase
+  for product/sale IDs (WarrantyService:169-170), while findByProductAndSale and
+  cancelWarranties use equals (228-229, 272-273). A single matching helper must not
+  silently normalize these different behaviors. Agree the intended rule and affected
+  callers with Developer 2 before applying V-27.
+- **Warranty behavior preserved:** the end date is startDate.plusMonths(duration), using
+  calendar months; isActive includes both endpoints and evaluates the supplied date.
+  BasicWarranty returns 6 months/0.0 cost; ExtendedWarranty returns 12 months and the
+  current price times 0.10 using existing double arithmetic. No snapshot, new validation,
+  rounding or alternative time unit is introduced by this audit. The live-price boundary
+  remains the lead's V-09, not a new local finding.
+- **Warranty construction / certificate observations:** the base constructor calls the
+  overridable duration method (Warranty:30). Both current overrides return constants and
+  need no subclass fields; future variants must account for that construction contract.
+  Preserve certificate wording, leading/trailing literal quotation marks, platform %n
+  newlines, default-locale %.2f formatting and subtype display labels during any later
+  behavior-preserving extraction. These are static observations, not new runtime-test results.
 - Shared guiding answers, consolidated findings, diagrams and team verification retain
   their assigned authors/coordination. No shared file is modified by this individual report.
