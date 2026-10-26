@@ -450,6 +450,14 @@ team integration, full non-regression, final documentation and PR completion rem
 **Change:** `ConsoleMenu` loaded the lists of persons, accessories and promotions, passed them to the services and saved them. It now calls `personService.register(personFactory.createCustomer(...))` (C-06), the accessory register methods without lists, `promotionService.register(promotionFactory.create...(...))` (C-20), reads customers and sellers with `listCustomers()` / `listSellers()` (C-01), asks `allowsExtendedWarranty()` instead of `instanceof Console` (C-26) and uses `MonthlyBalanceReport` for the balance (C-31) (Controller).
 **Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
 
+### C-25 — ConsoleMenu split into one menu class per module
+
+**Member:** Technical Lead
+**Commit:** refactor: split ConsoleMenu into one menu class per module (C-25)
+**Classes changed:** `ConsoleMenu`, `ConsoleIO` (new), `ProductMenu` (new), `PersonMenu` (new), `SaleMenu` (new), `AccessoryMenu` (new), `PromotionMenu` (new), `ReturnMenu` (new), `WarrantyMenu` (new)
+**Change:** `ConsoleMenu` had about 970 lines with every option of every module. It now only shows the main menu and delegates each option to the menu class of its module. `ConsoleIO` keeps the shared input reading, the comma-separated parsing and `handleException`, so they are not repeated (High Cohesion). Texts, prompts and option numbers did not change.
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.
