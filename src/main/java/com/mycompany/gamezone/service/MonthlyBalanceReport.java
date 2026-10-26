@@ -5,14 +5,19 @@ import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.validation.ReturnValidator;
 import java.time.LocalDate;
 
-/** Monthly sales, returns and balance. */
+/**
+ * Monthly sales, returns and balance.
+ * 
+ * @author EstefaniaMarquez 
+ * 
+ */
 public class MonthlyBalanceReport {
 
-    private final SaleService saleService;
+    private final SaleStore saleStore;
     private final ReturnService returnService;
 
-    public MonthlyBalanceReport(SaleService saleService, ReturnService returnService) {
-        this.saleService = saleService;
+    public MonthlyBalanceReport(SaleStore saleStore, ReturnService returnService) {
+        this.saleStore = saleStore;
         this.returnService = returnService;
     }
 
@@ -21,7 +26,7 @@ public class MonthlyBalanceReport {
 
         double totalSales = 0.0;
 
-        for (Sale sale : saleService.viewAllSales()) {
+        for (Sale sale : saleStore.findAll()) {
             LocalDate saleDate = sale.getDate();
 
             if (saleDate.getMonthValue() == month && saleDate.getYear() == year) {
