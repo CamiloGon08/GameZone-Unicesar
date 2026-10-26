@@ -442,6 +442,14 @@ team integration, full non-regression, final documentation and PR completion rem
 **Change:** `Main` creates `FilePersonRepository` behind the `PersonRepository` interface and injects it into `PersonService` (C-03, C-08), creates the repositories with their record mappers, creates `ReturnRepository` without services (C-29), creates `SaleCatalog` before `WarrantyService` and `SaleService` (C-33), shares one `IdGenerator`, and creates `MonthlyBalanceReport` (C-31) for the console menu.
 **Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
 
+### C-01, C-06, C-20, C-26, C-31 — ConsoleMenu only forwards input (Technical Lead part)
+
+**Member:** Technical Lead
+**Commit:** refactor: let ConsoleMenu forward input to the owning services (C-01, C-06, C-20, C-26, C-31)
+**Classes changed:** `ConsoleMenu`
+**Change:** `ConsoleMenu` loaded the lists of persons, accessories and promotions, passed them to the services and saved them. It now calls `personService.register(personFactory.createCustomer(...))` (C-06), the accessory register methods without lists, `promotionService.register(promotionFactory.create...(...))` (C-20), reads customers and sellers with `listCustomers()` / `listSellers()` (C-01), asks `allowsExtendedWarranty()` instead of `instanceof Console` (C-26) and uses `MonthlyBalanceReport` for the balance (C-31) (Controller).
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.

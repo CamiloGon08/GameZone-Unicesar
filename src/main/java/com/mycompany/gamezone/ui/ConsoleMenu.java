@@ -11,16 +11,17 @@ import com.mycompany.gamezone.exceptions.InvalidDataException;
 import com.mycompany.gamezone.exceptions.PersistenceException;
 import com.mycompany.gamezone.exceptions.ResourceNotFoundException;
 import com.mycompany.gamezone.model.Accessory;
-import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Customer;
-import com.mycompany.gamezone.model.Person;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Promotion;
 import com.mycompany.gamezone.model.Return;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.Seller;
 import com.mycompany.gamezone.model.Warranty;
+import com.mycompany.gamezone.factory.PersonFactory;
+import com.mycompany.gamezone.factory.PromotionFactory;
 import com.mycompany.gamezone.service.AccessoryService;
+import com.mycompany.gamezone.service.MonthlyBalanceReport;
 import com.mycompany.gamezone.service.PersonService;
 import com.mycompany.gamezone.service.ProductService;
 import com.mycompany.gamezone.service.PromotionService;
@@ -45,7 +46,9 @@ public class ConsoleMenu {
     private final PromotionService promotionService;
     private final ReturnService returnService;
     private final WarrantyService warrantyService;
-    private final ArrayList<Person> persons;
+    private final MonthlyBalanceReport monthlyBalanceReport;
+    private final PersonFactory personFactory;
+    private final PromotionFactory promotionFactory;
 
     /**
      * Creates a console menu with the services required to perform the
@@ -58,6 +61,9 @@ public class ConsoleMenu {
      * @param promotionService service that handles promotion-related operations
      * @param returnService    service that handles return-related operations
      * @param warrantyService  service that handles warranty-related operations
+     * @param monthlyBalanceReport report that computes the monthly balance
+     * @param personFactory    factory that builds new customers
+     * @param promotionFactory factory that builds new promotions
      */
     public ConsoleMenu(ProductService productService,
                        PersonService personService,
@@ -65,7 +71,10 @@ public class ConsoleMenu {
                        AccessoryService accessoryService,
                        PromotionService promotionService,
                        ReturnService returnService,
-                       WarrantyService warrantyService) {
+                       WarrantyService warrantyService,
+                       MonthlyBalanceReport monthlyBalanceReport,
+                       PersonFactory personFactory,
+                       PromotionFactory promotionFactory) {
         this.scanner = new Scanner(System.in);
         this.productService = productService;
         this.personService = personService;
@@ -74,7 +83,9 @@ public class ConsoleMenu {
         this.promotionService = promotionService;
         this.returnService = returnService;
         this.warrantyService = warrantyService;
-        this.persons = personService.listPersons();
+        this.monthlyBalanceReport = monthlyBalanceReport;
+        this.personFactory = personFactory;
+        this.promotionFactory = promotionFactory;
     }
 
     /**
@@ -206,8 +217,7 @@ public class ConsoleMenu {
         String email = scanner.nextLine();
 
         try {
-            personService.registerCustomer(persons, email, name, id, phone);
-            personService.savePersons(persons);
+            personService.register(personFactory.createCustomer(email, name, id, phone));
             System.out.println("Cliente registrado exitosamente.");
         } catch (GameZoneException | IllegalArgumentException e) {
             handleException(e);
@@ -215,7 +225,7 @@ public class ConsoleMenu {
     }
 
     private void listCustomers() {
-        List<Customer> customers = getCustomers();
+        List<Customer> customers = personService.listCustomers();
         if (customers.isEmpty()) {
             System.out.println("No hay clientes registrados aún.");
             return;
@@ -230,7 +240,7 @@ public class ConsoleMenu {
     }
 
     private void listSellers() {
-        List<Seller> sellers = getSellers();
+        List<Seller> sellers = personService.listSellers();
         if (sellers.isEmpty()) {
             System.out.println("No hay vendedores registrados aún.");
             return;
@@ -245,7 +255,7 @@ public class ConsoleMenu {
     }
 
     private void registerSale() {
-        List<Customer> customers = getCustomers();
+        List<Customer> customers = personService.listCustomers();
         if (customers.isEmpty()) {
             System.out.println("No hay clientes disponibles. Registre un cliente primero.");
             return;
@@ -262,7 +272,7 @@ public class ConsoleMenu {
         }
         Customer selectedCustomer = customers.get(customerIndex);
 
-        List<Seller> sellers = getSellers();
+        List<Seller> sellers = personService.listSellers();
         if (sellers.isEmpty()) {
             System.out.println("No hay vendedores disponibles. Verifique que estén precargados.");
             return;
@@ -316,7 +326,7 @@ public class ConsoleMenu {
 
         List<String> productIdsWithExtendedWarranty = new ArrayList<>();
         for (Product item : selectedItems) {
-            if (item instanceof Console) {
+            if (item.allowsExtendedWarranty()) {
                 System.out.print("¿Desea agregar garantía extendida a "
                         + item.getTitle() + "? (s/n): ");
                 String respuesta = scanner.nextLine();
@@ -349,7 +359,7 @@ public class ConsoleMenu {
     }
 
     private void viewSalesByCustomer() {
-        List<Customer> customers = getCustomers();
+        List<Customer> customers = personService.listCustomers();
         if (customers.isEmpty()) {
             System.out.println("No hay clientes registrados aún.");
             return;
@@ -376,7 +386,7 @@ public class ConsoleMenu {
     }
 
     private void viewSalesBySeller() {
-        List<Seller> sellers = getSellers();
+        List<Seller> sellers = personService.listSellers();
         if (sellers.isEmpty()) {
             System.out.println("No hay vendedores registrados aún.");
             return;
@@ -453,10 +463,8 @@ public class ConsoleMenu {
         List<String> compatibleConsoleIds = parseCommaSeparated(consoleIdsRaw);
 
         try {
-            List<Accessory> accessories = accessoryService.listAllAccessories();
-            accessoryService.registerController(accessories, id, title, price, stock,
+            accessoryService.registerController(id, title, price, stock,
                     connectionType, compatibleConsoleIds);
-            accessoryService.saveAll(accessories);
             System.out.println("Control registrado exitosamente.");
         } catch (GameZoneException | IllegalArgumentException e) {
             handleException(e);
@@ -478,10 +486,8 @@ public class ConsoleMenu {
         String connectorType = scanner.nextLine();
 
         try {
-            List<Accessory> accessories = accessoryService.listAllAccessories();
-            accessoryService.registerCable(accessories, id, title, price, stock,
+            accessoryService.registerCable(id, title, price, stock,
                     length, connectorType);
-            accessoryService.saveAll(accessories);
             System.out.println("Cable registrado exitosamente.");
         } catch (GameZoneException | IllegalArgumentException e) {
             handleException(e);
@@ -507,10 +513,8 @@ public class ConsoleMenu {
         List<String> compatibleConsoleIds = parseCommaSeparated(consoleIdsRaw);
 
         try {
-            List<Accessory> accessories = accessoryService.listAllAccessories();
-            accessoryService.registerMemory(accessories, id, title, price, stock,
+            accessoryService.registerMemory(id, title, price, stock,
                     capacity, memoryType, compatibleConsoleIds);
-            accessoryService.saveAll(accessories);
             System.out.println("Memoria registrada exitosamente.");
         } catch (GameZoneException | IllegalArgumentException e) {
             handleException(e);
@@ -616,9 +620,8 @@ public class ConsoleMenu {
         double percentage = Double.parseDouble(scanner.nextLine());
 
         try {
-            List<Promotion> promotions = promotionService.listAllPromotions();
-            promotionService.registerPercentageDiscount(promotions, id, name, startDate, endDate, percentage);
-            promotionService.saveAll(promotions);
+            promotionService.register(promotionFactory.createPercentageDiscount(
+                    id, name, startDate, endDate, percentage));
             System.out.println("Promoción por porcentaje registrada exitosamente.");
         } catch (GameZoneException | IllegalArgumentException e) {
             handleException(e);
@@ -640,9 +643,8 @@ public class ConsoleMenu {
         double percentage = Double.parseDouble(scanner.nextLine());
 
         try {
-            List<Promotion> promotions = promotionService.listAllPromotions();
-            promotionService.registerCategoryDiscount(promotions, id, name, startDate, endDate, category, percentage);
-            promotionService.saveAll(promotions);
+            promotionService.register(promotionFactory.createCategoryDiscount(
+                    id, name, startDate, endDate, category, percentage));
             System.out.println("Promoción por categoría registrada exitosamente.");
         } catch (GameZoneException | IllegalArgumentException e) {
             handleException(e);
@@ -664,9 +666,8 @@ public class ConsoleMenu {
         double percentage = Double.parseDouble(scanner.nextLine());
 
         try {
-            List<Promotion> promotions = promotionService.listAllPromotions();
-            promotionService.registerBulkPurchaseDiscount(promotions, id, name, startDate, endDate, minimumQuantity, percentage);
-            promotionService.saveAll(promotions);
+            promotionService.register(promotionFactory.createBulkPurchaseDiscount(
+                    id, name, startDate, endDate, minimumQuantity, percentage));
             System.out.println("Promoción por volumen registrada exitosamente.");
         } catch (GameZoneException | IllegalArgumentException e) {
             handleException(e);
@@ -782,7 +783,7 @@ public class ConsoleMenu {
     }
 
     private void viewReturnsByCustomer() {
-        List<Customer> customers = getCustomers();
+        List<Customer> customers = personService.listCustomers();
         if (customers.isEmpty()) {
             System.out.println("No hay clientes registrados aún.");
             return;
@@ -844,9 +845,9 @@ public class ConsoleMenu {
         }
 
         try {
-            double totalSales = returnService.calculateMonthlySales(month, year);
-            double totalReturns = returnService.calculateMonthlyReturns(month, year);
-            double balance = returnService.generateMonthlyBalance(month, year);
+            double totalSales = monthlyBalanceReport.calculateMonthlySales(month, year);
+            double totalReturns = monthlyBalanceReport.calculateMonthlyReturns(month, year);
+            double balance = monthlyBalanceReport.generateMonthlyBalance(month, year);
             System.out.println("--- Balance mensual " + month + "/" + year + " ---");
             System.out.println("Total de ventas: $" + String.format("%.2f", totalSales));
             System.out.println("Total de devoluciones: $" + String.format("%.2f", totalReturns));
@@ -942,26 +943,6 @@ public class ConsoleMenu {
     // ---------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------
-
-    private List<Customer> getCustomers() {
-        List<Customer> customers = new ArrayList<>();
-        for (Person person : persons) {
-            if (person instanceof Customer customer) {
-                customers.add(customer);
-            }
-        }
-        return customers;
-    }
-
-    private List<Seller> getSellers() {
-        List<Seller> sellers = new ArrayList<>();
-        for (Person person : persons) {
-            if (person instanceof Seller seller) {
-                sellers.add(seller);
-            }
-        }
-        return sellers;
-    }
 
     /** Prints a Spanish message according to the type of failure. */
     private void handleException(RuntimeException e) {
