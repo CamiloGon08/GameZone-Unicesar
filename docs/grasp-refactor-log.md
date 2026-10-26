@@ -286,6 +286,28 @@ check the isolated build; they do not establish current-service integration cove
 **Integration status:** Full-branch verification remains pending the remaining model
 contracts and team integration/UI work recorded under C-11.
 
+### C-32 — Evaluate the return window using an explicit date (Developer 1 part)
+
+**Member:** Developer 1
+**Commit:** refactor: evaluate sale return window with explicit date (C-32)
+**Classes changed:** Developer 1's `Sale.canBeReturned` method, its required import/constant;
+verification added in `SaleReturnWindowTest`.
+**Change:** Replaced the unused no-argument query with canBeReturned(LocalDate), using
+calendar days between the sale and evaluation dates. Eligibility is 0 through 30 days
+inclusive; evaluation before the sale is rejected. The named 30-day constant and the
+explicit date concentrate the existing service rule in the domain query (Protected
+Variations). Other Sale responsibilities and service/validator implementations are unchanged.
+
+**Verification:** The predicate was compared with the pre-refactor ReturnService rule and
+the current ReturnValidator call. The exact source/test compiled with the earlier Developer 1
+blocks in the isolated `6012971` worktree; all 59 cases passed. Nine new cases cover a
+future sale, same-day return, days 29/30/31, year boundaries and leap-year February, using
+fixed evaluation dates without relying on the system clock. `verify-grasp.sh` against
+`8382d85` passed with all 11 console/error/data files identical.
+**Integration status:** These are isolated results. Full-branch verification remains pending
+the remaining model contracts and team integration/UI work recorded under C-11, including
+the lead's Sale.containsProduct dependency of the current ReturnValidator.
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.
