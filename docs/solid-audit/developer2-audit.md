@@ -106,3 +106,19 @@ Correctly applied in the repositories: `FilePersonRepository` keeps the contract
 | Consequence | Today `PersonService.update` (line 42) avoids it by searching with `changes.getClass()`, but any new caller that passes a different subtype fails at run time instead of at compile time. |
 | Proposed solution | Make the base contract explicit and safe: `Person` checks `getClass() == changes.getClass()` and throws the existing `BusinessRuleException` otherwise, then calls a protected `copyFrom` implemented by each subclass with its own type (generic `Person<T>` is not needed). |
 | Other member's code | No. |
+
+## 4. Interface Segregation Principle
+**Verdict:** Violation
+
+Correctly applied in `PersonRepository` (two methods) and `SaleLookup` (one method, used by `WarrantyService`).
+
+### V-06
+| Field | Content |
+|---|---|
+| Principle | Interface Segregation |
+| Module | Returns (Req. 3), Warranties (Req. 4) |
+| Evidence | `ReturnService` line 19: `private final SaleService saleService;`, used only at lines 44 and 138 (`saleService.findById`). `MonthlyBalanceReport` line 11: `private final SaleService saleService;`, used only at line 24 (`viewAllSales`). `WarrantyService` line 23: `private final ProductService productService;`, used only at line 72 (`findById`). |
+| Explanation | These classes depend on whole services but use one operation each. `ReturnService` already could use the existing `SaleLookup`. |
+| Consequence | Any change to `SaleService` or `ProductService` affects classes that do not use the changed methods, and they cannot be built without all the collaborators of those services. |
+| Proposed solution | `ReturnService` depends on `SaleLookup`; `MonthlyBalanceReport` depends on the sales abstraction the Technical Lead creates for `SaleService` (`SaleStore`, leader V-08); `WarrantyService` depends on a small `ProductLookup` (`findById`) implemented by `ProductService`. |
+| Other member's code | Yes: boundary with the Technical Lead (leader-audit V-06 and V-08, wiring in `Main`) and with Developer 1 (`ProductService implements ProductLookup`). |
