@@ -3,7 +3,7 @@
 **Audited commit (develop):** `d2d7245`
 **Author:** Jesus David Dominguez Theran (Developer 1, GitHub `jdaviddominguez`)
 **Phase:** Requirement 8, Phase 1 - Audit
-**Progress:** 4 of five principle sections recorded; remaining sections follow in separate commits.
+**Progress:** All five principles reviewed; individual Phase 1 report prepared for team review.
 
 Evidence and line numbers refer to the audited commit of develop. The leader's
 `r8-jesus.zip` supplies candidate findings to verify against that commit. The audit is
@@ -52,7 +52,7 @@ their implementations remain under the corresponding member's audit responsibili
 | Open/Closed (OCP) | Violation | V-03, V-04 |
 | Liskov Substitution (LSP) | Correct for the existing substitution points | No confirmed violation |
 | Interface Segregation (ISP) | Violation in the general promotion contract | V-05; extension consequence qualified below |
-| Dependency Inversion (DIP) | Pending | - |
+| Dependency Inversion (DIP) | Violation | V-06 |
 
 ## 1. Single Responsibility Principle
 
@@ -229,3 +229,74 @@ creation paths. A new `isValid` must not combine those checks and start rejectin
 accepted directly constructed objects. Preserve check ordering, current error messages,
 the existing NaN rejection-rule behavior and permissive loading. Removing unused queries
 is a separate decision, not necessary to establish or correct this contract boundary.
+
+## 5. Dependency Inversion Principle
+
+**Verdict:** Violation (V-06).
+
+The domain objects do not open files or import UI/services, and the validators rely on
+supplied values rather than locating repositories. Converter dispatch in `ProductRepository`
+depends on `ProductLineConverter`; construction still selects concrete converters (V-04).
+This is a useful partial abstraction, not proof that the entire repository is inverted.
+The persons module's `PersonRepository` interface provides an existing team precedent.
+
+### V-06 - Product policy depends on a concrete file repository
+
+| Field | Content |
+|---|---|
+| Principle | Dependency Inversion |
+| Module | Products (Workshop 1), Exceptions (Req. 6) |
+| Evidence | `service/ProductService.java`:25 stores a concrete `ProductRepository`; line 36 requires it in the constructor. `persistence/ProductRepository.java`:28 is a concrete class, with `FileWriter` at line 52 and `FileReader` at line 79. |
+| Explanation | Product use-case policy depends on the file-storage implementation rather than an abstraction for loading and saving products. Constructor injection of a concrete object does not remove that dependency. |
+| Consequence | Another backend or an isolated fake must inherit the file-oriented class or change the service's dependency. Subclassing is currently possible because the repository is not final; a fake is not impossible, but it inherits the wrong abstraction boundary. |
+| Proposed solution | Extract a product repository interface containing `loadAll` and `saveAll`, rename the existing implementation to `FileProductRepository`, and inject the interface into `ProductService`. Construct the file implementation in `Main`; preserve the existing file behavior and coordinate converter injection from V-04. |
+| Other member's code | Yes. The Technical Lead owns construction in `Main`. Agree new interface/implementation ownership and any compatibility migration with the team. |
+
+The constructor's null-repository rejection, eager load into a copy, failure propagation,
+registration sequence and current save timing must remain unchanged by this extraction.
+The known mutation-before-save defect is not repaired as a side effect.
+
+## Findings for team consolidation
+
+### Ownership and boundary proposals
+
+| Local finding | Developer 1 proposal | Coordination required |
+|---|---|---|
+| V-01 | Separate Return rules/read queries from receipt formatting | Technical Lead: `ReturnMenu` callers; agree formatter ownership |
+| V-02 | Keep coverage in Warranty; extract certificate layout | Technical Lead: `WarrantyMenu` callers; agree formatter ownership |
+| V-03 | Generalize registration behind compatibility adapters | Technical Lead: `ProductMenu` only if public signatures change; agree factory/hook ownership |
+| V-04 | Supply ordered product converters at composition | Technical Lead: `Main` when using the additional constructor; coordinate with V-06 |
+| V-05 | Remove compulsory percentage representation from general validation API | Developer 2: validator, factory and service paths; preserve their different current checks |
+| V-06 | Depend on a product storage contract | Technical Lead: construct the file implementation in `Main`; coordinate interface/converter names |
+
+Developer 2's report also proposes a narrow `ProductLookup` for `WarrantyService`
+(its V-06). `ProductService` could implement it; coordinate that incoming boundary with
+the storage and registration proposals instead of changing Developer 2's code here.
+IDs in different individual reports are not globally unique. The consolidated audit must
+decide final IDs, duplication, ownership and accepted corrections before Phase 2 begins.
+
+### Out-of-scope observations (functional defects, not corrected)
+
+- **New candidate for the consolidated out-of-scope list:** `Product.setStock`:92 assigns
+  a negative value without the `canAdjustStock` guard. No `.setStock(` production caller
+  was found under `src/main/java` at this revision, so this is a public-API invariant gap,
+  not a reproduced menu failure. Adding a rejection changes behavior and is outside this
+  design-only phase; coordinate whether to register it for a later requirement.
+- Requirement 7 consolidated audit, section 5.2, defect **10** already records product
+  memory mutation before a failed save; defect **11** records Return's shared product list
+  and cached refund. These remain references, not newly numbered SOLID violations.
+- Existing permissive promotion construction and percentage/NaN behavior are preservation
+  constraints on the proposals above. No numerical-policy correction is implemented here.
+
+### Verification and remaining workflow
+
+The actual audit-start project passed 87 tests and matched 11 menu/error/data fixtures as
+recorded above. After updating the shared audit branch, `src/main`, `src/test`, `scripts`
+and `data` still match `d2d7245`; the changes in this delivery are documentation only.
+No Java, test, menu or data correction is claimed by this report.
+
+The individual report and personal Phase 1 AI entry are prepared for the author's review
+and publication. PR approval, review of another member's PR, any assigned guiding answers,
+and the Technical Lead's consolidated analysis remain team workflow items; this document
+does not claim they are complete. Phase 2 starts only after the consolidated audit is
+agreed and merged into develop.
