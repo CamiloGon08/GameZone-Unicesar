@@ -61,4 +61,19 @@ public class CategoryDiscount extends Promotion {
         }
         return matchingTotal * percentage / 100;
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean hasValidPercentage() {
+        return isValidPercentage(percentage);
+    }
+
+    /**
+     * Reports whether the target category passes the existing registration rule.
+     *
+     * @return whether the category contains text after trimming
+     */
+    public boolean hasTargetCategory() {
+        return targetCategory != null && !targetCategory.trim().isEmpty();
+    }
 }

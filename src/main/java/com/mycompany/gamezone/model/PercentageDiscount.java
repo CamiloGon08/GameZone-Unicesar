@@ -36,4 +36,10 @@ public class PercentageDiscount extends Promotion {
     public double calculateDiscount(Sale sale) {
         return sale.getTotal() * percentage / 100;
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean hasValidPercentage() {
+        return isValidPercentage(percentage);
+    }
 }

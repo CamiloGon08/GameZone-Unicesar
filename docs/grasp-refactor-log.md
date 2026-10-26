@@ -195,6 +195,30 @@ in the isolated `6012971` worktree. All 40 existing cases passed. `verify-grasp.
 **Integration status:** These are isolated results. Full-branch verification remains pending
 the remaining model contracts and team integration/UI work recorded under C-11.
 
+### C-19 — Promotions report their existing validity rules (Developer 1 part)
+
+**Member:** Developer 1
+**Commit:** refactor: expose promotion validity queries (C-19)
+**Classes changed:** `Promotion`, `PercentageDiscount`, `CategoryDiscount`, `BulkPurchaseDiscount`.
+**Change:** Added the abstract hasValidPercentage query and a shared protected helper,
+implemented by the three discount types (Information Expert). BulkPurchaseDiscount reports
+whether its minimum quantity is positive; CategoryDiscount reports whether its target
+contains text after trim. Queries use the current fields without mutating them. Constructors,
+setters, calculation formulas and persistence remain permissive and unchanged. The percentage
+helper preserves the original service's exact rejection condition, including its existing
+NaN acceptance; changing that behavior would be a separate functional correction.
+Service, validator and factory consumer changes remain with their assigned owner.
+
+**Verification:** The exact four sources compiled with the earlier Developer 1 blocks in
+the isolated `6012971` worktree; all 40 existing tests passed. An external compatibility
+harness compared 55 query results with the unchanged legacy service, including numeric
+boundaries, NaN, infinities, category text and quantity limits. It also confirmed that seven
+previously stored invalid records still load without rewriting the file and that queries
+reflect changes through existing setters. `verify-grasp.sh` against `8382d85` passed with
+all 11 console/error/data files identical.
+**Integration status:** These are isolated results. Full-branch verification remains pending
+the remaining model contracts and team integration/UI work recorded under C-11.
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.
