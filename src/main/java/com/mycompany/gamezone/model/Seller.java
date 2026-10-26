@@ -1,32 +1,33 @@
 package com.mycompany.gamezone.model;
+
 import com.mycompany.gamezone.exceptions.BusinessRuleException;
 import com.mycompany.gamezone.validation.PersonValidator;
 import java.util.List;
 
 /**
- * Concret Class for every Seller in GameZone Unicesar
- * It Extends the Person class and contains specific information
- * 
+ * Concret Class for every Seller in GameZone Unicesar It Extends the Person
+ * class and contains specific information
+ *
  * @author EstefaniaMarquez
  */
+public class Seller extends Person {
 
-public class Seller extends Person{
     private String employeeCode;
     private String shift;
-    
+
     public Seller() {
     }
-    
-    /**
-    * Creates a new Seller with the information of Person and the specific data of Seller
-    * 
-    * @param name the name of each seller
-    * @param iD the identification number of each seller
-    * @param contactNumber the contact number of each seller
-    * @param employeeCode the unique employee code of each seller
-    * @param shift the specific shift of each seller
-    */ 
 
+    /**
+     * Creates a new Seller with the information of Person and the specific data
+     * of Seller
+     *
+     * @param name the name of each seller
+     * @param iD the identification number of each seller
+     * @param contactNumber the contact number of each seller
+     * @param employeeCode the unique employee code of each seller
+     * @param shift the specific shift of each seller
+     */
     public Seller(String employeeCode, String shift, String name, String iD, long contactNumber) {
         super(name, iD, contactNumber);
         this.employeeCode = employeeCode;
@@ -34,27 +35,28 @@ public class Seller extends Person{
     }
 
     /**
-    * Gets the unique employee code of each seller
-    * @return the employee code 
-    */
-    
+     * Gets the unique employee code of each seller
+     *
+     * @return the employee code
+     */
     public String getEmployeeCode() {
         return employeeCode;
     }
 
     /**
-    * Sets the employee code of the seller 
-    * @param employeeCode sets the unique employee code of each seller
-    */
-    
+     * Sets the employee code of the seller
+     *
+     * @param employeeCode sets the unique employee code of each seller
+     */
     public void setEmployeeCode(String employeeCode) {
         this.employeeCode = employeeCode;
     }
 
-     /**
-    * Gets the specific work shift of each seller
-    * @return the shift of each seller
-    */
+    /**
+     * Gets the specific work shift of each seller
+     *
+     * @return the shift of each seller
+     */
     public String getShift() {
         return shift;
     }
@@ -91,7 +93,7 @@ public class Seller extends Person{
     }
 
     @Override
-    public void updateFrom(Person changes) {
+    protected void copyFrom(Person changes) {
         Seller other = (Seller) changes;
         setShift(other.getShift());
         setName(other.getName());
