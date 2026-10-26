@@ -371,6 +371,38 @@ numeric names, the existing trim/isBlank distinction and existing regex line-bre
 and the full branch still require the remaining correction and team work recorded under C-11;
 the isolated results are not presented as a passing build of those current consumers.
 
+### C-10 — Delegate product-file conversion to persistence-side family converters
+
+**Member:** Developer 1
+**Commit:** refactor: delegate product persistence to family converters (C-10)
+**Classes changed:** `ProductRepository`; new `ProductLineConverter`,
+`VideoGameLineConverter`, `ConsoleLineConverter`; verification in `ProductRepositoryTest`.
+**Change:** Each family owns its record conversion behind the shared persistence contract
+(Polymorphism, related to Protected Variations). The repository has a small ordered dispatch
+for writing and reading. Shared-field parsing, trim/split behavior, field order, line separators,
+type tokens, unsupported-type errors and parseLine's contextual exception wrapping are
+preserved. File access and conversion stay outside the domain classes.
+
+**Verification:** The exact sources/test compiled with the earlier Developer 1 blocks in
+the isolated `6012971` worktree; all 87 cases passed. Twelve new persistence cases cover
+exact file bytes and both families' round trips, blank/trimmed input, seven malformed-record
+variants with physical line context and original cause, unsupported products, I/O contexts
+and missing files. `verify-grasp.sh` against `8382d85` passed with all 11 console/error/data
+files identical.
+
+**Full-branch checkpoint:** Maven test was also attempted on `8d4e06b` plus the local C-10
+changes. Compilation failed with 32 errors before tests ran: Main wiring (6), ConsoleMenu
+calls (18), Customer/Seller's missing textFormat implementations (2), AccessoryService's
+tryAdjustStock calls versus the agreed Product contract (2), InventoryService accessory
+signatures (2), ReturnService's increaseStock argument (1), and the lead's pending
+Sale.containsProduct used by ReturnValidator (1). Stock API alignment needs coordination
+between Developer 1 and Developer 2; the agreed C-11 model API is canAdjustStock/adjustStock.
+These integration differences are recorded without mixing another correction into C-10.
+The complete compiler output is preserved outside the repository in the phase-2 backup.
+**Integration status:** All 13 assigned Developer 1 code blocks are now prepared, with this
+block awaiting the user's commit/push. The latest shared branch is not a passing build;
+team integration, full non-regression, final documentation and PR completion remain pending.
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.

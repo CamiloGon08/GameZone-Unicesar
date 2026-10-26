@@ -1,9 +1,7 @@
 package com.mycompany.gamezone.persistence;
 
 import com.mycompany.gamezone.exceptions.PersistenceException;
-import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Product;
-import com.mycompany.gamezone.model.VideoGame;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -30,6 +28,8 @@ import java.util.List;
 public class ProductRepository {
 
     private final String filePath;
+    private final List<ProductLineConverter> converters = List.of(
+            new VideoGameLineConverter(), new ConsoleLineConverter());
 
     /**
      * Creates a repository backed by the given .txt file path.
@@ -123,20 +123,10 @@ public class ProductRepository {
      * @throws PersistenceException if the product type cannot be stored
      */
     private String toLine(Product product) {
-        if (product instanceof VideoGame) {
-            VideoGame videoGame = (VideoGame) product;
-            return "VIDEOGAME," + videoGame.getId() + "," + videoGame.getTitle() + ","
-                    + videoGame.getPrice() + "," + videoGame.getStock() + ","
-                    + videoGame.getPlatform() + "," + videoGame.getGenre() + ","
-                    + videoGame.getAgeRating();
-        }
-
-        if (product instanceof Console) {
-            Console console = (Console) product;
-            return "CONSOLE," + console.getId() + "," + console.getTitle() + ","
-                    + console.getPrice() + "," + console.getStock() + ","
-                    + console.getBrand() + "," + console.getModel() + ","
-                    + console.getGeneration();
+        for (ProductLineConverter converter : converters) {
+            if (converter.supports(product)) {
+                return converter.toLine(product);
+            }
         }
 
         throw new PersistenceException(
@@ -163,12 +153,10 @@ public class ProductRepository {
         double price = Double.parseDouble(fields[3]);
         int stock = Integer.parseInt(fields[4]);
 
-        if (type.equals("VIDEOGAME")) {
-            return new VideoGame(id, title, price, stock, fields[5], fields[6], fields[7]);
-        }
-
-        if (type.equals("CONSOLE")) {
-            return new Console(id, title, price, stock, fields[5], fields[6], fields[7]);
+        for (ProductLineConverter converter : converters) {
+            if (type.equals(converter.getTypeKey())) {
+                return converter.toProduct(id, title, price, stock, fields);
+            }
         }
 
         throw new IllegalArgumentException("Unknown product type in file: " + type);
