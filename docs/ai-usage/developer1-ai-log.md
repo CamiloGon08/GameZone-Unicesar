@@ -535,3 +535,76 @@ requires a successful clean compilation before opening the PR, so that readiness
 and the remaining integration work are still pending. The shared guiding answers remain
 deferred according to the team's decision. I continue to execute my own commits and
 pushes, and will request another team member's review when the PR is ready.
+
+## Requirement 8 - Phase 1 (Audit)
+
+### 2026-10-26 - Repository update and audit scope
+
+**Tool used:** OpenAI Codex.
+
+**Reason for use:** Check the leader's r8-jesus.zip against the updated repository,
+confirm my Developer 1 scope and prepare the English scope section for my review.
+
+**Request:** "Mira lo que mandó el lider. OJO recuerda que debemos bajar todo lo nuevo
+que haya en repositorio".
+
+I received a leader-provided audit draft and six cumulative parts. I used AI support to
+inspect the package, compare its scope with Requirement 8, TEAM.md and class-creation
+history, check references and discuss statements that need qualification before publication.
+The package's sample AI entry names Claude; my own assistance in this session is OpenAI
+Codex, so I record the tool actually used instead of copying that attribution.
+
+I updated the GRASP feature and develop branches, then continued on feature/solid-audit
+at d2d7245, the same revision specified by the package. Ten old untracked SOLID draft
+files were preserved and hash-verified outside the repository before preparing the new
+report. The downloaded code includes the team's GRASP integration fixes.
+
+Verification on the actual updated project passed mvn clean test with all 87 cases and
+zero failures/errors/skips. The team's menu comparison against 8382d85 matched all 11
+console/error/data files using external fixtures. The former 32-error integration result
+is a historical checkpoint, superseded by these results on d2d7245.
+
+The scope and executable-baseline block was subsequently published as c1e5eea after
+integrating changes on the shared audit branch. That checkpoint preceded the detailed
+principle sections below. No Phase 2 correction is claimed by this entry.
+
+### 2026-10-26 - Complete individual SOLID review and prepare six documentation commits
+
+**Tool used:** OpenAI Codex.
+
+**Reason for use:** Review the leader's candidate findings against my code, discuss
+behavior-preserving proposals and prepare the English report and publication commands.
+
+**Request:** "Osea quiero que me des los seis commits pero que trabajes todo de una vez".
+
+I asked for the whole review to be prepared together, with six separate commits that I
+will execute: SRP, OCP, LSP, ISP, DIP with consolidation boundaries, and this personal log.
+I used AI support to inspect source and consumer references, compare the draft with the
+existing contracts, identify overbroad claims, and organize the report for my review.
+The report now covers all five principles in my assigned Developer 1 scope.
+
+The review retains six local candidate findings: receipt/certificate formatting in models
+(V-01/V-02), family-specific product registration and a fixed converter registry
+(V-03/V-04), the percentage-specific obligation on the general promotion contract
+(V-05), and the concrete product-storage dependency (V-06). The ISP finding explicitly
+distinguishes the current percentage-based subclasses from the future extension example.
+LSP is recorded as correct for the existing substitution points; the draft's universal
+claim of nonnegative discounts and no exceptions was removed.
+
+Other suggestions were qualified against the actual code: preserve validation order and
+messages, keep factory checks separate from direct promotion registration, preserve NaN
+and permissive loading behavior, distinguish the two refund arithmetic expressions, and
+acknowledge that the current repository can be subclassed for a fake. These are design
+review constraints rather than new functional fixes. The report also records cross-member
+coordination, including Developer 2's ProductLookup proposal, without changing their code.
+
+A fresh fetch and fast-forward update downloaded the team's new audit documents through
+f5d06e2. Production source, tests, scripts and data still match the verified d2d7245
+baseline: 87 passing test cases and eleven matching scenario files. Because this delivery
+changes documentation only, that evidence is reused without claiming a new test run.
+
+AI support helped with error checking, alternatives and drafting; I remain responsible for
+reviewing the deliverable and executing my commits and pushes. The six atomic patches and
+Git commands are prepared locally, not published by the assistant. This entry does not
+claim that I have already committed them, received PR approval, answered unassigned
+guiding questions, or finished the team's consolidated audit or Phase 2.
