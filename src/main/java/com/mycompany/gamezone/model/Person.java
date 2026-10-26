@@ -1,4 +1,5 @@
 package com.mycompany.gamezone.model;
+import java.util.List;
 
 /**
  * Base Abstract Class for every person in GameZone Unicesar
@@ -66,22 +67,50 @@ public abstract class Person {
     }
 
     /**
-    * Gets the contact number of the person 
-    * @return the person's contact number
-    */
-    
+     * Gets the contact number of the person
+     *
+     * @return the person's contact number
+     */
     public long getContactNumber() {
         return contactNumber;
     }
 
     /**
-    * Sets the contact number of the person 
-    * @param contactNumber sets the person's contact number
-    */
-    
+     * Sets the contact number of the person
+     *
+     * @param contactNumber sets the person's contact number
+     */
     public void setContactNumber(long contactNumber) {
         this.contactNumber = contactNumber;
     }
+
+    /**
+     * Unique key inside its own type (iD for customers, employee code for
+     * sellers).
+     *
+     * @return
+     */
+    public abstract String getKey();
+
+    /**
+     * Validates its own data. Same exceptions and messages as before.
+     */
+    public abstract void validate();
+
+    /**
+     * Throws if a person of the same type already uses this key.
+     *
+     * @param personsOfSameType
+     */
+    public abstract void requireUniqueAmong(List<Person> personsOfSameType);
+
+    /**
+     * Copies the editable data of {@code changes} (same type and key) into this
+     * person.
+     *
+     * @param changes
+     */
+    public abstract void updateFrom(Person changes);
 
     /**
      * Returns the object's information formatted as a tab-separated string for
