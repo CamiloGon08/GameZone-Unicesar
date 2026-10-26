@@ -1,22 +1,28 @@
 package com.mycompany.gamezone.service;
 
+import com.mycompany.gamezone.factory.AccessoryFactory;
 import com.mycompany.gamezone.model.Accessory;
-import com.mycompany.gamezone.model.Cable;
-import com.mycompany.gamezone.model.Controller;
-import com.mycompany.gamezone.model.Memory;
 import com.mycompany.gamezone.persistence.AccessoryRepository;
 import com.mycompany.gamezone.validation.AccessoryValidator;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Owns the accessories list and persists after every change. */
+/**
+ * Owns the accessories list and persists after every change.
+ * 
+ * @author EstefaniaMarquez
+ * 
+ */
 public class AccessoryService {
 
     private final AccessoryRepository accessoryRepository;
+    private final AccessoryFactory accessoryFactory;
     private final List<Accessory> accessories;
 
-    public AccessoryService(AccessoryRepository accessoryRepository) {
+    public AccessoryService(AccessoryRepository accessoryRepository,
+            AccessoryFactory accessoryFactory) {
         this.accessoryRepository = accessoryRepository;
+        this.accessoryFactory = accessoryFactory;
         this.accessories = new ArrayList<>(accessoryRepository.loadAll());
     }
 
@@ -24,41 +30,39 @@ public class AccessoryService {
             String id, String title, double price, int stock,
             String connectionType, List<String> compatibleConsoleIds) {
 
-        AccessoryValidator.validateCommonFields(id, title, price, stock);
-        AccessoryValidator.validateControllerFields(connectionType);
-        AccessoryValidator.validateUniqueId(accessories, id);
-
-        Controller controller = new Controller(id, title, price, stock, connectionType);
-        addCompatibleConsoles(controller, compatibleConsoleIds);
-
-        accessories.add(controller);
-        saveAll();
+        register(accessoryFactory.createController(id, title, price, stock, connectionType),
+                compatibleConsoleIds);
     }
 
     public void registerCable(
             String id, String title, double price, int stock,
             double lengthInMeters, String connectorType) {
 
-        AccessoryValidator.validateCommonFields(id, title, price, stock);
-        AccessoryValidator.validateCableFields(lengthInMeters, connectorType);
-        AccessoryValidator.validateUniqueId(accessories, id);
-
-        accessories.add(new Cable(id, title, price, stock, lengthInMeters, connectorType));
-        saveAll();
+        register(accessoryFactory.createCable(id, title, price, stock,
+                lengthInMeters, connectorType), null);
     }
 
     public void registerMemory(
             String id, String title, double price, int stock,
             int capacityInGb, String memoryType, List<String> compatibleConsoleIds) {
 
-        AccessoryValidator.validateCommonFields(id, title, price, stock);
-        AccessoryValidator.validateMemoryFields(capacityInGb, memoryType);
-        AccessoryValidator.validateUniqueId(accessories, id);
+        register(accessoryFactory.createMemory(id, title, price, stock,
+                capacityInGb, memoryType), compatibleConsoleIds);
+    }
 
-        Memory memory = new Memory(id, title, price, stock, capacityInGb, memoryType);
-        addCompatibleConsoles(memory, compatibleConsoleIds);
+    /**
+     * Registers an accessory of any type built by {@link AccessoryFactory} and
+     * saves the list.
+     *
+     * @param accessory the accessory to register
+     * @param compatibleConsoleIds consoles compatible with it (may be null)
+     */
+    public void register(Accessory accessory, List<String> compatibleConsoleIds) {
+        AccessoryValidator.validateUniqueId(accessories, accessory.getId());
 
-        accessories.add(memory);
+        addCompatibleConsoles(accessory, compatibleConsoleIds);
+
+        accessories.add(accessory);
         saveAll();
     }
 
@@ -112,7 +116,9 @@ public class AccessoryService {
         return null;
     }
 
-    /** Adds {@code quantity} (may be negative) to the stock and saves. */
+    /**
+     * Adds {@code quantity} (may be negative) to the stock and saves.
+     */
     public void updateStock(String accessoryId, int quantity) {
         AccessoryValidator.validateAccessoryId(accessoryId);
 
