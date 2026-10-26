@@ -199,3 +199,24 @@ The AI drafted the five answers using cases from our audit (stock routing with `
 
 **Commit related:**
 docs: add guiding question answers to grasp analysis
+
+### Entry 11
+
+**Date:** 2026-10-26
+**Tool used:** Claude (Claude Code)
+**Phase and branch:** Requirement 7, Phase 1 (Audit) — feature/grasp-audit
+
+**Reason for use:**
+Consolidate the three individual GRASP audits into `docs/grasp-audit/consolidated-audit.md`.
+
+**Problem faced:**
+The three reports had 43 local findings with their own IDs (9 from my audit, 2 from Developer 1 and 32 from Developer 2). Several of them described the same problem from both sides of a boundary, and some corrections would change messages that the user sees.
+
+**Prompt used:**
+"Revisa lo que hay en el develop para ver ahora qué falta del R7 para que me ayudes."
+
+**Solution obtained and decision taken:**
+The AI drafted the consolidation: coverage table, team verdict per pattern, 37 final violations (C-01 to C-37) with their source report and owner, the boundary findings with the commit order for each, and the out-of-scope section. Duplicates were merged (for example, my L-V08 and Developer 2's D2-V23 became C-27). D2-V13, D2-V17, D2-V29 and D2-V30 were moved out of scope because fixing them would change the messages shown in the console. I reviewed the owners and the merged findings before committing.
+
+**Commit related:**
+docs: add consolidated GRASP audit
