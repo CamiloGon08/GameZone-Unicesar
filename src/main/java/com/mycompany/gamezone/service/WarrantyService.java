@@ -4,44 +4,42 @@ import com.mycompany.gamezone.factory.WarrantyFactory;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.Warranty;
-import com.mycompany.gamezone.persistence.WarrantyRepository;
-import com.mycompany.gamezone.persistence.WarrantyRepository.WarrantyData;
 import com.mycompany.gamezone.validation.WarrantyValidator;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Assigns, cancels and queries warranties. Loading and saving the warranties
+ * belongs to {@link WarrantyCatalog}.
+ * 
+ * @author EstefaniaMarquez
+ * 
+ */
 public class WarrantyService {
 
     private static final String WARRANTY_PREFIX = "WAR";
 
-    private final WarrantyRepository repository;
-    private final SaleLookup saleLookup;
-    private final ProductService productService;
+    private final WarrantyCatalog warrantyCatalog;
     private final WarrantyFactory warrantyFactory;
     private final IdGenerator idGenerator;
 
-    /** Loaded on first use (see warranties()). */
-    private List<Warranty> warranties;
-
+    /**
+     * Creates the service with its collaborators.
+     *
+     * @param warrantyCatalog catalog that keeps and saves the warranties
+     * @param warrantyFactory factory that builds each warranty type
+     * @param idGenerator generator of warranty identifiers
+     */
     public WarrantyService(
-            WarrantyRepository repository,
-            SaleLookup saleLookup,
-            ProductService productService,
+            WarrantyCatalog warrantyCatalog,
             WarrantyFactory warrantyFactory,
             IdGenerator idGenerator) {
 
-        if (repository == null) {
-            throw new IllegalArgumentException("WarrantyRepository cannot be null.");
-        }
-        if (saleLookup == null) {
-            throw new IllegalArgumentException("SaleLookup cannot be null.");
-        }
-        if (productService == null) {
-            throw new IllegalArgumentException("ProductService cannot be null.");
+        if (warrantyCatalog == null) {
+            throw new IllegalArgumentException("WarrantyCatalog cannot be null.");
         }
         if (warrantyFactory == null) {
             throw new IllegalArgumentException("WarrantyFactory cannot be null.");
@@ -50,51 +48,19 @@ public class WarrantyService {
             throw new IllegalArgumentException("IdGenerator cannot be null.");
         }
 
-        this.repository = repository;
-        this.saleLookup = saleLookup;
-        this.productService = productService;
+        this.warrantyCatalog = warrantyCatalog;
         this.warrantyFactory = warrantyFactory;
         this.idGenerator = idGenerator;
-    }
-
-    private List<Warranty> warranties() {
-        if (warranties == null) {
-            warranties = loadWarranties();
-        }
-        return warranties;
-    }
-
-    private List<Warranty> loadWarranties() {
-        List<Warranty> loadedWarranties = new ArrayList<>();
-
-        for (WarrantyData data : repository.loadAll()) {
-
-            Product product = productService.findById(data.getProductId());
-            Sale sale = saleLookup.findById(data.getSaleId());
-
-            if (product == null || sale == null) {
-                continue;
-            }
-
-            Warranty warranty = warrantyFactory.create(
-                    data.getType(), data.getId(), product, sale, data.getStartDate());
-
-            if (warranty != null) {
-                loadedWarranties.add(warranty);
-            }
-        }
-
-        return loadedWarranties;
     }
 
     /**
      * Assigns the warranties a sale needs: basic for products that require it,
      * extended for the product IDs the customer asked for.
      *
-     * @return additional cost of the extended warranties created now,
-     *         for the caller to add to the sale
+     * @return additional cost of the extended warranties created now, for the
+     * caller to add to the sale
      */
-        public double assignWarrantiesFor(Sale sale, Collection<String> extendedProductIds) {
+    public double assignWarrantiesFor(Sale sale, Collection<String> extendedProductIds) {
         double extendedCost = 0.0;
 
         for (Product product : sale.getProducts()) {
@@ -144,15 +110,16 @@ public class WarrantyService {
         Warranty warranty = warrantyFactory.create(
                 typeCode, warrantyId, product, sale, LocalDate.now());
 
-        warranties().add(warranty);
-        saveAll();
+        warrantyCatalog.add(warranty);
 
         return warranty;
     }
 
-    /** Case-insensitive match, as before. */
+    /**
+     * Case-insensitive match, as before.
+     */
     private boolean hasWarrantyOfType(String productId, String saleId, String typeCode) {
-        for (Warranty warranty : warranties()) {
+        for (Warranty warranty : warrantyCatalog.findAll()) {
             if (warranty.getTypeCode().equals(typeCode)
                     && warranty.matchesIgnoreCase(productId, saleId)) {
                 return true;
@@ -162,16 +129,11 @@ public class WarrantyService {
     }
 
     public Warranty findById(String id) {
-        for (Warranty warranty : warranties()) {
-            if (warranty.getId().equals(id)) {
-                return warranty;
-            }
-        }
-        return null;
+        return warrantyCatalog.findById(id);
     }
 
     public Warranty findByProductAndSale(String productId, String saleId) {
-        for (Warranty warranty : warranties()) {
+        for (Warranty warranty : warrantyCatalog.findAll()) {
             if (warranty.matches(productId, saleId)) {
                 return warranty;
             }
@@ -183,35 +145,30 @@ public class WarrantyService {
         WarrantyValidator.validateCancellationData(productId, saleId);
 
         double refundableCost = 0.0;
-        boolean removed = false;
+        List<Warranty> cancelled = new ArrayList<>();
 
-        Iterator<Warranty> iterator = warranties().iterator();
-
-        while (iterator.hasNext()) {
-            Warranty warranty = iterator.next();
-
+        for (Warranty warranty : warrantyCatalog.findAll()) {
             if (warranty.matches(productId, saleId)) {
                 refundableCost += warranty.getAdditionalCost();
-                iterator.remove();
-                removed = true;
+                cancelled.add(warranty);
             }
         }
 
-        if (removed) {
-            saveAll();
+        if (!cancelled.isEmpty()) {
+            warrantyCatalog.removeAll(cancelled);
         }
 
         return refundableCost;
     }
 
     public List<Warranty> viewAllWarranties() {
-        return new ArrayList<>(warranties());
+        return new ArrayList<>(warrantyCatalog.findAll());
     }
 
     public List<Warranty> viewActiveWarranties(LocalDate date) {
         List<Warranty> activeWarranties = new ArrayList<>();
 
-        for (Warranty warranty : warranties()) {
+        for (Warranty warranty : warrantyCatalog.findAll()) {
             if (warranty.isActive(date)) {
                 activeWarranties.add(warranty);
             }
@@ -226,7 +183,7 @@ public class WarrantyService {
 
         List<Warranty> expiringWarranties = new ArrayList<>();
 
-        for (Warranty warranty : warranties()) {
+        for (Warranty warranty : warrantyCatalog.findAll()) {
             LocalDate expirationDate = warranty.getEndDate();
 
             if (!expirationDate.isBefore(today) && !expirationDate.isAfter(limitDate)) {
@@ -239,10 +196,7 @@ public class WarrantyService {
 
     private String generateWarrantyId() {
         return idGenerator.nextId(
-                WARRANTY_PREFIX, warranties().size(), id -> findById(id) != null);
+                WARRANTY_PREFIX, warrantyCatalog.size(), id -> warrantyCatalog.findById(id) != null);
     }
 
-    private void saveAll() {
-        repository.saveAll(warranties());
-    }
 }
