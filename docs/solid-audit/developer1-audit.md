@@ -3,7 +3,7 @@
 **Audited commit (develop):** `d2d7245`
 **Author:** Jesus David Dominguez Theran (Developer 1, GitHub `jdaviddominguez`)
 **Phase:** Requirement 8, Phase 1 - Audit
-**Progress:** 3 of five principle sections recorded; remaining sections follow in separate commits.
+**Progress:** 4 of five principle sections recorded; remaining sections follow in separate commits.
 
 Evidence and line numbers refer to the audited commit of develop. The leader's
 `r8-jesus.zip` supplies candidate findings to verify against that commit. The audit is
@@ -51,7 +51,7 @@ their implementations remain under the corresponding member's audit responsibili
 | Single Responsibility (SRP) | Violation | V-01, V-02 |
 | Open/Closed (OCP) | Violation | V-03, V-04 |
 | Liskov Substitution (LSP) | Correct for the existing substitution points | No confirmed violation |
-| Interface Segregation (ISP) | Pending | - |
+| Interface Segregation (ISP) | Violation in the general promotion contract | V-05; extension consequence qualified below |
 | Dependency Inversion (DIP) | Pending | - |
 
 ## 1. Single Responsibility Principle
@@ -192,3 +192,40 @@ The static validators, `ProductService`, the concrete repository, `Return` and t
 applicable to those portions as standalone types. Their use of the hierarchies above was
 reviewed. The 87-case baseline supports the exercised paths, including prices, discounts,
 stock, return dates, validation and conversion; it is not a proof over all possible inputs.
+
+## 4. Interface Segregation Principle
+
+**Verdict:** Violation in the general promotion contract (V-05), with a qualified extension
+consequence. No current promotion has a dummy percentage implementation.
+
+`ProductLineConverter` has four related operations, all consumed by `ProductRepository`
+for record selection and conversion. The validation classes expose focused static checks
+and their private helpers are implementation details, not obligations imposed on clients.
+Product category/warranty queries have meaningful negative answers for nonmatching
+families. The two warranty ID-matching methods serve intentionally different comparisons.
+These cases do not establish a forced, unrelated operation.
+
+### V-05 - General Promotion forces a percentage-specific validation operation
+
+| Field | Content |
+|---|---|
+| Principle | Interface Segregation |
+| Module | Promotions (Req. 2), GRASP (Req. 7) |
+| Evidence | `model/Promotion.java`:72 defines the generic discount calculation; line 80 additionally requires every subtype to implement `hasValidPercentage`. The percentage rejection helper is at line 88. `validation/PromotionValidator.java`:47 is the production consumer of that required query. |
+| Explanation | The general abstraction represents a promotion applied to a sale, but its mandatory validation API exposes the particular percentage representation used by the current families. That obligation belongs to percentage-based policies or a neutral registration contract. |
+| Consequence | A foreseeable fixed-amount promotion would be forced to implement a percentage-specific operation or require a change to the base API and validator. This is an extension consequence of the current contract, not a claim that such a subtype already exists or fails today. |
+| Proposed solution | Replace the mandatory percentage-specific query with a neutral registration-rule query, or segregate a percentage capability with a coordinated validation strategy. For the three current types, retain exactly the existing percentage check; keep additional factory checks separate. Agree the contract and naming with Developer 2 before implementation. |
+| Other member's code | Yes. Developer 2 owns `PromotionValidator` and its registration/factory callers. Its proposed `Promotion.isValid` boundary refers to this finding; the precise semantics must preserve the existing validation paths. |
+
+All three current subclasses genuinely use a percentage. Therefore this finding is about
+the broad contract's forced representation, not an existing meaningless implementation.
+`CategoryDiscount.hasTargetCategory`:77 and `BulkPurchaseDiscount.hasValidMinimumQuantity`:68
+have no production callers, but they are concrete-class methods, not required base methods;
+being unused is not independent evidence of an ISP violation.
+
+**Critical preservation constraint:** Direct `PromotionService.register` currently checks
+null, percentage and duplicate ID. Category/minimum-quantity checks occur on factory
+creation paths. A new `isValid` must not combine those checks and start rejecting previously
+accepted directly constructed objects. Preserve check ordering, current error messages,
+the existing NaN rejection-rule behavior and permissive loading. Removing unused queries
+is a separate decision, not necessary to establish or correct this contract boundary.
