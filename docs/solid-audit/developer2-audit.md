@@ -74,3 +74,19 @@ Correctly applied in `FilePersonRepository` + `PersonRecordMapper`, `AccessoryRe
 | Consequence | Adding a field to these files edits the class that handles the file errors, and the format cannot be tested without a file. |
 | Proposed solution | Create `ReturnRecordMapper` and `WarrantyRecordMapper` (and move `WarrantyData` to its own class, like `ReturnData`), injected in the repositories as `AccessoryRepository` does. The file format and the current error behavior must stay the same. |
 | Other member's code | Yes: `Main` (Technical Lead) creates the repositories with the mappers. |
+
+## 2. Open/Closed Principle
+**Verdict:** Violation
+
+Correctly applied in `PersonService.register(Person)` and `PromotionService.register(Promotion)`, which accept any subtype, in `PersonFactory` / `WarrantyFactory` (builders registered by type key) and in the record mappers (one mapper per type).
+
+### V-04
+| Field | Content |
+|---|---|
+| Principle | Open/Closed |
+| Module | Accessories (Req. 1) |
+| Evidence | `AccessoryService.registerController` lines 23-36, `registerCable` lines 38-48 and `registerMemory` lines 50-63: one method per accessory type, each repeating `validateCommonFields`, a type-specific check, `validateUniqueId`, `new ...`, `accessories.add`, `saveAll`. |
+| Explanation | A new accessory type requires a new method in `AccessoryService`, while persons and promotions already register the built object through one method. |
+| Consequence | Every new accessory type modifies the service and repeats the same steps. |
+| Proposed solution | Add `register(Accessory accessory, List<String> compatibleConsoleIds)` with the common steps, and an `AccessoryFactory` with one `create...` method per type that runs the type-specific validation (as `PromotionFactory` does). The three current methods delegate to them, so the messages stay the same. |
+| Other member's code | Yes: `AccessoryMenu` (Technical Lead) lines 80, 103 and 130 can keep calling the old methods while they only delegate. |
