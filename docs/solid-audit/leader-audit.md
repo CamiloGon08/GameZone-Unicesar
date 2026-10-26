@@ -99,3 +99,27 @@ Correctly applied in `SaleService.applyBestPromotion` (lines 101-109): it calls 
 | Consequence | The number printed and the action executed can get out of sync, and every new module changes the class that runs the whole program loop. |
 | Proposed solution | Build an ordered list of `MenuOption` (number, label, `Runnable` action) in the constructor; `printMainMenu` prints the labels from the list and `start` runs the action of the selected number. Option 0 and the invalid-option message stay as they are, so the console output does not change. |
 | Other member's code | No. |
+
+## 3. Liskov Substitution Principle
+**Verdict:** Correct
+
+The Lead's code has no class hierarchies of its own, but it has two substitution points:
+
+- `SaleCatalog implements SaleLookup` (class line 19, `findById` lines 58-66): it keeps the contract the interface documents (returns the sale or `null`, no new exceptions), so `WarrantyService` works the same with any `SaleLookup`.
+- `SaleService.registerSale`, `SaleMenu.registerSale` and `Sale` receive `List<Product>` that mixes `VideoGame`, `Console` and `Accessory` subclasses. They only use members defined in `Product` (`getId`, `getTitle`, `getPrice`, `getStock`, `allowsExtendedWarranty`), and every subclass answers them without changing the expected result. The `instanceof Accessory` check in `InventoryService` is not caused by a subclass breaking the contract of `Product`; it decides which service stores the item, and it is recorded as V-03 (OCP).
+
+## 4. Interface Segregation Principle
+**Verdict:** Violation
+
+Correctly applied in `SaleLookup` (one method, `findById`), which `WarrantyService` uses instead of the full repository (C-33, Requirement 7).
+
+### V-06
+| Field | Content |
+|---|---|
+| Principle | Interface Segregation |
+| Module | Returns (Req. 3), GRASP (Req. 7) |
+| Evidence | `ReturnMenu` line 22: `private final SaleService saleService;` and its only use, line 83: `Sale sale = saleService.findById(saleId);`. |
+| Explanation | `ReturnMenu` depends on the whole `SaleService` (register sale, list sales, list by customer, list by seller) but only needs to find a sale. The narrow abstraction `SaleLookup` already exists. |
+| Consequence | Any change to the methods of `SaleService` touches a menu that does not use them, and the return menu cannot be built without the full sale service and all its collaborators. |
+| Proposed solution | Change the field and constructor parameter of `ReturnMenu` to `SaleLookup`; `ConsoleMenu` passes the `SaleCatalog`, received from `Main`. |
+| Other member's code | Reported to the consolidation: `ReturnService` (Developer 2) has the same dependency (fields line 19, uses lines 44 and 138 only call `findById`). See "Findings reported to the consolidation". |
