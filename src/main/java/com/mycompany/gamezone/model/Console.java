@@ -84,4 +84,22 @@ public class Console extends Product {
     public void setGeneration(String generation) {
         this.generation = generation;
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean requiresBasicWarranty() {
+        return true;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean allowsExtendedWarranty() {
+        return true;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean matchesCategory(String category) {
+        return "CONSOLE".equals(category);
+    }
 }

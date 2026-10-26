@@ -220,7 +220,318 @@ five shared guiding answers to be handled later. Those answers remain pending fo
 coordination and do not block my current individual audit delivery. No shared answer is
 claimed as assigned or completed in this entry.
 
-### Phase 2 — Not started
+### Phase 2 — Corrections
 
-Corrections will follow the team's merged consolidated GRASP audit and assigned finding IDs.
-Requirement 8's formal audit will use develop after those GRASP corrections are integrated.
+#### 2026-10-26 — Assignment review and C-11 preparation
+
+I resumed the work using the leader's correcciones-jesus-r7.zip and the merged consolidated
+audit. The assigned scope contains 13 corrections: C-11, C-26, C-16, C-12, C-19, C-21,
+C-28, C-30, C-32, C-34, C-35, C-09 and C-10. The package's reference sources were kept
+outside the project for comparison, rather than copied over the working code.
+
+I used AI support to compare that assignment with current Git history, inspect the proposed
+stock guard, discuss its behavior and prepare the implementation, focused test cases and
+verification notes for my review. My audit PR #56 and the lead's consolidated audit are
+merged. I updated develop and continued on feature/grasp-refactor at d3c9744. Old local
+diagram/refactor-log drafts were preserved outside the project before synchronizing.
+
+The downloaded integration branch failed compilation before my changes: it already
+contained consumers of pending model APIs and UI calls to changed service signatures.
+Those integration dependencies were recorded without modifying other members' classes.
+
+The first prepared correction is my Product part of C-11: a nonmutating canAdjustStock
+query and a guard before stock mutation. Its exact source change and focused tests were
+checked in an isolated worktree based on 6012971, whose original Product matches the
+current integration base. All 28 cases passed, and the team's menu comparison against
+8382d85 matched all 11 console/error/data files. These are isolated verification results;
+the current integrated branch is not claimed to compile or pass full non-regression yet.
+
+I then created and pushed be2fd99 (refactor: guard product stock adjustments (C-11)). The
+commit was verified on origin/feature/grasp-refactor. At that checkpoint, the other 12
+assigned corrections remained pending. No completed phase, final PR or Requirement 8
+implementation is claimed by this entry.
+
+#### 2026-10-26 — C-26 warranty eligibility queries
+
+I continued with the assigned Product/Console part of C-26. I used AI support to compare
+the leader's proposal with the consolidated audit, review the default and console-specific
+coverage rules, prepare the methods/JavaDoc and check the existing verification scenario.
+The remote check confirmed C-11 was published and found no additional incoming changes.
+
+Product now supplies false defaults for requiresBasicWarranty/allowsExtendedWarranty,
+and Console overrides both as true. This exposes the eligibility decision through the
+Product contract. Service and menu changes remain with the assigned team members.
+
+The exact Product/Console sources were checked with C-11 in the isolated 6012971-based
+validation worktree: 28 existing cases passed and all 11 console/error/data files matched
+reference 8382d85. This does not claim that the latest integrated branch compiles or that
+every pending consumer has been updated. Full integration verification remains pending.
+I then created and pushed c4247ad (refactor: add product warranty eligibility queries
+(C-26)). The commit was verified on the remote. At that checkpoint, the other 11 assigned
+corrections remained pending.
+
+#### 2026-10-26 — C-16 category matching
+
+I continued with my C-16 category-selection correction. I used AI support to review the
+existing family checks, compare the agreed contract with the code, prepare the implementation
+and meaningful discount-calculation tests, and verify the behavior against the reference.
+Another fetch/pull confirmed the shared branch was up to date and included develop.
+
+Product exposes matchesCategory with a false default; VideoGame, Console and Accessory
+implement the existing exact category labels. CategoryDiscount delegates matching through
+that contract, retaining its sum/rate calculation and nonmatching null-product behavior.
+The separate C-28 price-snapshot correction has not been applied in this block.
+
+The exact C-16 source changes with C-11/C-26 were checked in the isolated 6012971-based
+worktree. All 40 cases passed, including 12 category-policy cases, and the menu comparison
+matched all 11 console/error/data files against 8382d85. Full verification of the latest
+integration branch remains pending the other model APIs and team wiring. I then created
+and pushed 5eeaac9 (refactor: delegate category matching to product families (C-16)),
+verified on the remote. At that checkpoint, the other 10 corrections remained pending.
+No service, UI or other member's implementation was changed by that block.
+
+#### 2026-10-26 — C-12 accessory type names
+
+I continued with my Accessory/Controller/Cable/Memory part of C-12. I used AI support
+to compare the agreed contract and existing labels, prepare the methods/JavaDoc and
+check compatibility with the current variants and reference verification scenario. Another
+fetch/pull confirmed that the branch was up to date before editing.
+
+Accessory now declares getTypeName; each concrete variant returns its existing label.
+The change preserves descriptions, console compatibility and persistence representation.
+Consumer filtering remains the assigned service owner's implementation.
+
+The exact sources were validated with my previous blocks in the isolated 6012971-based
+worktree: all 40 existing cases passed and all 11 console/error/data files matched 8382d85.
+These results do not claim a passing build of the latest integration branch. I then created
+and pushed 11383ee (refactor: expose accessory type names polymorphically (C-12)), verified
+on the remote. At that checkpoint, the other nine assigned corrections remained pending.
+Full integration verification and the phase's final PR are still pending.
+
+#### 2026-10-26 — C-19 promotion validity queries
+
+I continued with my Promotion/PercentageDiscount/CategoryDiscount/BulkPurchaseDiscount
+part of C-19. I used AI support to compare the proposed contract with the original service,
+review the numeric and text boundaries, prepare the query methods and English notes, and
+check compatibility with existing records. Another fetch/pull confirmed that C-12 was
+published and that the branch had no incoming changes.
+
+Promotion now declares hasValidPercentage and shares the original percentage rejection
+rule through a protected helper. The discount types implement that query; category and
+bulk discounts also expose their assigned target/quantity checks. The original handling
+of NaN is retained as part of behavior preservation. Constructors and setters still accept
+existing stored values, and the discount calculations are unchanged by this block.
+Consumer changes remain the assigned service owner's responsibility.
+
+The exact sources were checked with my earlier blocks in the isolated 6012971-based
+worktree: all 40 existing cases passed. An external compatibility check matched 55 query
+results with the unchanged legacy service, checked loading seven invalid stored records
+without rewriting the file, and confirmed that queries use updated field values. The menu
+comparison matched all 11 console/error/data files against 8382d85. These results do not
+claim a passing build of the latest integrated branch. I then created and pushed 8bf508a
+(refactor: expose promotion validity queries (C-19)), verified on the remote. At that
+checkpoint, eight other assigned corrections remained pending. Full integration verification
+and the phase's final PR are still pending.
+
+#### 2026-10-26 — C-21 discount subtotal queries
+
+I continued with my PercentageDiscount/BulkPurchaseDiscount part of C-21. I used AI
+support to compare the assignment with the merged Sale contract, discuss the effect of
+promotion and warranty adjustments, prepare the two method changes and regression cases,
+and check the result against the reference scenario. Another fetch/pull confirmed that
+C-19 was published and that the branch had no incoming changes.
+
+Both calculations now use Sale.getSubtotal, preserving percentage arithmetic and the
+bulk quantity threshold. The query no longer depends on previous changes to the final
+sale total. This uses the leader's already merged prerequisite without changing Sale,
+service consumers or another member's implementation.
+
+The exact sources and new regression cases were validated with my earlier blocks in the
+isolated 6012971-based worktree. All 43 cases passed, including three checks for stable
+discounts after promotion/warranty adjustments, nonmutation during repeated calculation,
+and the bulk threshold with repeated product entries. The menu comparison matched all
+11 console/error/data files against 8382d85. These are isolated results; full verification
+of the latest integrated branch remains pending the remaining contracts and team wiring.
+I then created and pushed 84106ba (refactor: calculate discounts from sale subtotal
+(C-21)), verified on the remote. At that checkpoint, seven other assigned corrections
+remained pending, along with full integration verification and the phase's final PR.
+
+#### 2026-10-26 — C-28 charged sale item prices
+
+I continued with my Return/ExtendedWarranty/CategoryDiscount part of C-28. I used AI
+support to compare the assigned lookup rules with SaleItem, discuss compatibility and
+persistence boundaries, prepare the implementation and regression cases, and verify the
+result against the reference. Another fetch/pull confirmed that C-21 was published and
+that the branch had no incoming changes.
+
+Return and ExtendedWarranty now use the first charged item price matching the product
+ID, retaining the assigned fallback for an unmatched product. CategoryDiscount uses each
+matching SaleItem's own unit price and keeps the existing family contract. Receipt wording,
+discount arithmetic and warranty refunds are preserved. The sales file format is unchanged:
+the in-memory snapshots protect against later catalog mutations, while reloading still
+rebuilds prices from the catalog as specified by the consolidated audit.
+
+The exact sources and new regression cases were validated with my earlier blocks in the
+isolated 6012971-based worktree. All 50 cases passed, including seven covering changed
+catalog prices, refund/receipt and warranty/certificate stability, matching another instance
+by ID, category family selection, repeated IDs and the agreed fallback. The menu comparison
+matched all 11 console/error/data files against 8382d85. These results do not claim a passing
+build of the latest integrated branch. I then created and pushed 70c46cb (refactor: use
+charged sale item prices (C-28)), verified on the remote. At that checkpoint, six other
+assigned corrections remained pending, along with full integration verification and the
+phase's final PR.
+
+#### 2026-10-26 — C-30 return customer ownership
+
+I continued with my Return.belongsTo part of C-30. I used AI support to compare the
+assigned query with the previous service predicate, confirm existing equality behavior,
+prepare the method/JavaDoc and verification notes, and review the isolated build results.
+Another fetch/pull confirmed that C-28 was published and that no incoming changes existed.
+
+The query delegates to the original sale customer's equals comparison, preserving the
+same identity behavior because Customer/Person have no equality override. The separate
+equality defect remains outside the agreed correction. The service consumer and the
+leader's Sale.containsProduct implementation retain their assigned owners.
+
+The exact Return source compiled with my earlier blocks in the isolated 6012971-based
+worktree. All 50 existing tests passed and all 11 console/error/data files matched the
+8382d85 reference. The predicate was compared statically with the old service and the
+current consumer call; these results do not claim full integration coverage of the shared
+service or a passing build of the latest branch. I then created and pushed 073374c
+(refactor: expose return customer ownership query (C-30)), verified on the remote. At that
+checkpoint, five other assigned corrections remained pending, along with full integration
+verification and the phase's final PR.
+
+#### 2026-10-26 — C-32 explicit return-window evaluation
+
+I continued with my Sale.canBeReturned part of C-32. I used AI support to compare the
+model query with the old service rule and current validator call, discuss calendar boundaries,
+prepare the method/JavaDoc and focused regression cases, and review the verification results.
+Another fetch/pull confirmed that C-30 was published and the branch had no incoming changes.
+
+The query now receives an explicit evaluation date and accepts from 0 through 30 calendar
+days after the sale, inclusive. A date before the sale is rejected, matching the existing
+service rule. My changes in Sale are limited to this assigned method and its required
+ChronoUnit import and named constant. Other members' Sale and consumer code is unchanged.
+
+The exact source/test was checked with my earlier blocks in the isolated 6012971-based
+worktree. All 59 cases passed, including nine fixed-date checks covering future sales,
+same-day eligibility, days 29/30/31, year boundaries and leap-year February. The menu
+comparison matched all 11 console/error/data files against 8382d85. These isolated results
+do not establish a passing build of the latest shared branch: the remaining model contracts
+and team integration dependencies, including Sale.containsProduct, are still pending.
+I then created and pushed 68e1f47 (refactor: evaluate sale return window with explicit date
+(C-32)), verified on the remote. At that checkpoint, four other assigned corrections
+remained pending, along with full integration verification and the phase's final PR.
+
+#### 2026-10-26 — C-34 warranty type codes
+
+I continued with my Warranty/BasicWarranty/ExtendedWarranty part of C-34. I used AI
+support to compare the assigned codes with stored tokens and current consumer references,
+prepare the methods/JavaDoc, and review the compatibility evidence. Another fetch/pull
+confirmed that C-32 was published and that the branch had no incoming changes.
+
+Warranty now declares getTypeCode, with BASIC and EXTENDED returned by the respective
+variants. These storage codes remain separate from the existing display names used in
+certificates. Durations, costs and consumer implementation retain their previous scope.
+
+The exact three sources compiled with my earlier blocks in the isolated 6012971-based
+worktree. All 59 existing cases passed and all 11 console/error/data files matched 8382d85.
+The current WarrantyRepository and WarrantyFactory also compiled separately against the
+tested model classes. These results do not claim runtime integration coverage or a passing
+build of the latest shared branch. I then created and pushed be44d2e (refactor: expose
+warranty type codes polymorphically (C-34)), verified on the remote. At that checkpoint,
+three other assigned corrections remained pending, along with full integration verification
+and the phase's final PR.
+
+#### 2026-10-26 — C-35 warranty matching queries
+
+I continued with my Warranty part of C-35. I used AI support to compare the old service's
+case-sensitive and case-insensitive checks, review the current consumer calls, prepare the
+methods/JavaDoc and verification notes, and check compilation compatibility. Another
+fetch/pull confirmed that C-34 was published and the branch had no incoming changes.
+
+Warranty now exposes matches for exact product/sale IDs and matchesIgnoreCase for both
+IDs without case sensitivity. The distinction preserves the prior type-check, lookup and
+cancellation behavior. Consumer implementation remains with the assigned service owner.
+
+The exact source compiled with my earlier blocks in the isolated 6012971-based worktree.
+All 59 existing cases passed and all 11 console/error/data files matched 8382d85. The
+predicates were compared statically with the previous checks; the current warranty service
+and its selected dependencies also compiled separately against the tested model classes.
+These checks do not claim full runtime integration coverage or a passing build of the latest
+shared branch. I then created and pushed 761b190 (refactor: expose warranty matching
+queries (C-35)), verified on the remote. At that checkpoint, C-09 and C-10 remained pending,
+along with full integration verification and the phase's final PR.
+
+#### 2026-10-26 — C-09 seller, name and contact validation
+
+I continued with my PersonValidator part of C-09. I used AI support to compare the
+original service rules/messages with the assignment and current consumer references,
+review validation order and boundary cases, prepare the methods and regression cases,
+and check the verification evidence. Another fetch/pull confirmed that C-35 was published
+and that the branch had no incoming changes.
+
+The validator now exposes the assigned seller, name and contact-number checks while
+preserving the service's order, exception codes and Spanish messages. Its new trim-based
+seller helper stays separate from the existing R6 isBlank checks. The existing name regex
+and positive-long rule retain their behavior. Because Seller.validate already calls
+validateSeller, a thin adapter forwards that name to the assigned validateSellerData
+method; another member's consumer class is unchanged.
+
+The exact source/test compiled with my earlier blocks in the isolated 6012971-based
+worktree. All 75 cases passed, including sixteen new cases for both entry points, first-error
+precedence, Spanish messages/codes, long boundaries and existing text/regex behavior.
+The menu comparison matched all 11 console/error/data files against 8382d85. These are
+isolated results; current Person/Customer/Seller integration and a full-branch passing build
+are still pending. I then created and pushed 8d4e06b (refactor: centralize seller name and
+phone validation (C-09)), verified on the remote. At that checkpoint, C-10 remained as my
+last assigned code correction, followed by integration verification, the remaining
+documentation and the phase's final PR.
+
+#### 2026-10-26 — C-10 product persistence converters and integration checkpoint
+
+I continued with my ProductRepository part of C-10. I used AI support to compare the
+assigned converter contract with the current repository, review field order and error
+handling, prepare the persistence-side classes and regression cases, and inspect the build
+evidence. Another fetch/pull confirmed that C-09 was published and that the branch had no
+incoming changes.
+
+ProductLineConverter now defines the common conversion contract; VideoGameLineConverter
+and ConsoleLineConverter provide the existing family-specific record layout. The repository
+delegates through a small dispatch while retaining its shared parsing, file access and
+contextual exceptions. The original split/trim behavior, field ordering, newline behavior and
+error messages are preserved, and the domain classes do not acquire file-format knowledge.
+
+The exact source/test compiled with my earlier blocks in the isolated 6012971-based
+worktree. All 87 cases passed, including twelve persistence cases for exact bytes, round-trip
+attributes, blank/trimmed lines, malformed records/causes, unsupported products and I/O.
+The menu comparison matched all 11 console/error/data files against 8382d85.
+
+I also checked the actual shared branch with Maven test. It still fails compilation with
+32 integration errors before tests can run. The remaining points include startup/menu
+wiring, person textFormat implementations, stock API alignment, inventory signatures and
+the lead's Sale.containsProduct. Those contracts need team coordination; the isolated test
+result is not a passing full-branch build. The compiler output was preserved outside the
+project and a local integration checklist records the evidence without changing other
+members' code or adding unrelated fixes to this correction.
+
+I then created and pushed 5629953 (refactor: delegate product persistence to family
+converters (C-10)), verified on the remote. All thirteen assigned Developer 1 code blocks
+are published as separate commits. Integration, publication of the remaining documentation,
+full non-regression and the phase's final PR are still pending. This entry does not claim
+that Requirement 7 is complete or that Requirement 8 has started.
+
+#### 2026-10-26 — Individual code delivery and PR preparation
+
+I checked that my thirteen correction commits are on origin/feature/grasp-refactor and
+that the branch includes the current develop reference. I used AI support to verify the
+published scope, organize the evidence and draft the PR title/description for my review.
+No open PR for this branch into develop was found at this checkpoint.
+
+The PR information distinguishes the 87 passing isolated test cases and eleven matching
+reference files from the actual shared branch's 32 compilation errors. The assignment
+requires a successful clean compilation before opening the PR, so that readiness check
+and the remaining integration work are still pending. The shared guiding answers remain
+deferred according to the team's decision. I continue to execute my own commits and
+pushes, and will request another team member's review when the PR is ready.

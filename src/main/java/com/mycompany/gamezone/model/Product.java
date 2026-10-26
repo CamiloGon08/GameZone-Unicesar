@@ -103,8 +103,52 @@ public abstract class Product {
      *
      * @param amount the quantity to add to the current stock; negative
      *               values decrease it
+     * @throws IllegalArgumentException if the change would make stock negative
      */
     public void adjustStock(int amount) {
+        if (!canAdjustStock(amount)) {
+            throw new IllegalArgumentException("Stock cannot be negative.");
+        }
         this.stock += amount;
+    }
+
+    /**
+     * Checks whether a stock adjustment has a nonnegative mathematical result
+     * without modifying the product.
+     *
+     * @param amount the proposed stock change
+     * @return true if current stock plus the amount is nonnegative
+     */
+    public boolean canAdjustStock(int amount) {
+        return (long) stock + amount >= 0;
+    }
+
+    /**
+     * Reports whether this product family requires basic warranty coverage.
+     *
+     * @return true if a basic warranty must be assigned
+     */
+    public boolean requiresBasicWarranty() {
+        return false;
+    }
+
+    /**
+     * Reports whether this product family permits extended warranty coverage.
+     *
+     * @return true if an extended warranty may be assigned
+     */
+    public boolean allowsExtendedWarranty() {
+        return false;
+    }
+
+    /**
+     * Checks category membership through the product family's policy.
+     * Unclassified products do not match any category.
+     *
+     * @param category exact category label, possibly null
+     * @return true if this family matches the supplied category
+     */
+    public boolean matchesCategory(String category) {
+        return false;
     }
 }

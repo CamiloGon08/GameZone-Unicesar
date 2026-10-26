@@ -1,6 +1,7 @@
 package com.mycompany.gamezone.model;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +12,8 @@ import java.util.List;
  * (if any) with its discount.
  */
 public class Sale {
+
+    private static final int RETURN_WINDOW_DAYS = 30;
 
     private String id;
     private LocalDate date;
@@ -308,15 +311,15 @@ public class Sale {
 
     /**
      * Dev 1(dominguez)
-     * Checks whether this sale is still within the 30 calendar day window
-     * during which a return can be registered, counted from the sale date.
+     * Checks whether the evaluation date is from 0 to 30 calendar days after
+     * this sale, inclusive. Evaluation dates before the sale are rejected.
      *
-     * @return true if today's date is within 30 days of the sale date, false otherwise
+     * @param evaluationDate the date on which return eligibility is evaluated
+     * @return whether the evaluation date is inside the return window
      */
-    public boolean canBeReturned() {
-        LocalDate deadline = getDate().plusDays(30);
-        LocalDate today = LocalDate.now();
-        return !today.isAfter(deadline);
+    public boolean canBeReturned(LocalDate evaluationDate) {
+        long daysSinceSale = ChronoUnit.DAYS.between(date, evaluationDate);
+        return daysSinceSale >= 0 && daysSinceSale <= RETURN_WINDOW_DAYS;
     }
 
 }

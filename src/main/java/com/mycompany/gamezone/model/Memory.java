@@ -39,4 +39,10 @@ public class Memory extends Accessory {
     public void setMemoryType(String memoryType) {
         this.memoryType = memoryType;
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getTypeName() {
+        return "Memory";
+    }
 }

@@ -61,6 +61,72 @@ public final class PersonValidator {
         }
     }
 
+    /**
+     * Validates seller data in the same order as the original service.
+     *
+     * @param employeeCode required employee code
+     * @param shift required work shift
+     * @param name required name checked with the existing digit rule
+     * @param id required identification
+     * @param contactNumber positive contact number
+     * @throws InvalidDataException for the first invalid field
+     */
+    public static void validateSellerData(String employeeCode, String shift, String name,
+            String id, long contactNumber) {
+        requireNotBlank("código de empleado", employeeCode);
+        requireNotBlank("turno", shift);
+        requireNotBlank("nombre", name);
+        validateNameWithoutDigits(name);
+        requireNotBlank("identificación", id);
+        validatePositiveContactNumber(contactNumber);
+    }
+
+    /**
+     * Provides the seller-validation name used by the current Seller consumer.
+     *
+     * @param employeeCode required employee code
+     * @param shift required work shift
+     * @param name required name
+     * @param id required identification
+     * @param contactNumber positive contact number
+     * @throws InvalidDataException for the first invalid field
+     */
+    public static void validateSeller(String employeeCode, String shift, String name,
+            String id, long contactNumber) {
+        validateSellerData(employeeCode, shift, name, id, contactNumber);
+    }
+
+    /**
+     * Applies the original service's name pattern without changing its semantics.
+     *
+     * @param name the previously checked, non-null name
+     * @throws InvalidDataException if the name matches the existing digit pattern
+     */
+    public static void validateNameWithoutDigits(String name) {
+        if (name.matches(".*\\d.*")) {
+            throw new InvalidDataException("nombre", "no puede contener números.");
+        }
+    }
+
+    /**
+     * Checks the contact number using the original service's positive-long rule.
+     *
+     * @param contactNumber the number to check
+     * @throws InvalidDataException if the number is zero or negative
+     */
+    public static void validatePositiveContactNumber(long contactNumber) {
+        if (contactNumber <= 0) {
+            throw new InvalidDataException("número de contacto", "debe ser mayor que cero.");
+        }
+    }
+
+    /** Preserves the seller service's trim-based check, separate from the R6 rule. */
+    private static void requireNotBlank(String field, String value) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new InvalidDataException(field, "no puede estar vacío.");
+        }
+    }
+
     private static void requireText(String value, String field) {
         if (value == null || value.isBlank()) {
             throw new InvalidDataException(field, "no puede estar vacío.");

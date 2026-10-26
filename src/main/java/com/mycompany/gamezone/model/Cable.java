@@ -40,4 +40,10 @@ public class Cable extends Accessory {
     public void setConnectorType(String connectorType) {
         this.connectorType = connectorType;
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getTypeName() {
+        return "Cable";
+    }
 }

@@ -43,11 +43,10 @@ public class CategoryDiscount extends Promotion {
     }
  
     /**
-     * Calculates the discount by summing the price of every product in the
+     * Calculates the discount by summing the charged price of every item in the
      * sale that matches this promotion's target category, and applying the
-     * discount percentage to that sum. An accessory matches the
-     * "ACCESSORY" category if it is any instance of {@link Accessory}
-     * (Controller, Cable, or Memory), not just one specific accessory type.
+     * discount percentage to that sum. Each product reports category membership;
+     * Controller, Cable and Memory inherit the ACCESSORY family policy.
      *
      * @param sale the sale to calculate the discount for
      * @return the calculated discount amount
@@ -55,16 +54,27 @@ public class CategoryDiscount extends Promotion {
     @Override
     public double calculateDiscount(Sale sale) {
         double matchingTotal = 0.0;
-        for (Product product : sale.getProducts()) {
-            if ("VIDEOGAME".equals(targetCategory) && product instanceof VideoGame) {
-                matchingTotal += product.getPrice();
-            } else if ("CONSOLE".equals(targetCategory) && product instanceof Console) {
-                matchingTotal += product.getPrice();
-            } else if ("ACCESSORY".equals(targetCategory) && product instanceof Accessory) {
-                matchingTotal += product.getPrice();
+        for (SaleItem item : sale.getItems()) {
+            Product product = item.getProduct();
+            if (product != null && product.matchesCategory(targetCategory)) {
+                matchingTotal += item.getUnitPrice();
             }
         }
         return matchingTotal * percentage / 100;
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean hasValidPercentage() {
+        return isValidPercentage(percentage);
+    }
+
+    /**
+     * Reports whether the target category passes the existing registration rule.
+     *
+     * @return whether the category contains text after trimming
+     */
+    public boolean hasTargetCategory() {
+        return targetCategory != null && !targetCategory.trim().isEmpty();
+    }
 }
- 

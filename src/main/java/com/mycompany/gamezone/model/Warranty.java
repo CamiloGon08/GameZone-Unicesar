@@ -36,6 +36,35 @@ public abstract class Warranty {
     
     public abstract String getWarrantyType();
 
+    /**
+     * Returns the stable type token used in persisted warranty records.
+     *
+     * @return the stored type code, independent of the display label
+     */
+    public abstract String getTypeCode();
+
+    /**
+     * Checks the product and sale IDs using exact, case-sensitive comparisons.
+     *
+     * @param productId the product ID to match
+     * @param saleId the sale ID to match
+     * @return whether both IDs match exactly
+     */
+    public boolean matches(String productId, String saleId) {
+        return product.getId().equals(productId) && sale.getId().equals(saleId);
+    }
+
+    /**
+     * Checks the product and sale IDs using case-insensitive comparisons.
+     *
+     * @param productId the product ID to match
+     * @param saleId the sale ID to match
+     * @return whether both IDs match ignoring case
+     */
+    public boolean matchesIgnoreCase(String productId, String saleId) {
+        return product.getId().equalsIgnoreCase(productId) && sale.getId().equalsIgnoreCase(saleId);
+    }
+
     
     public abstract double getAdditionalCost();
 

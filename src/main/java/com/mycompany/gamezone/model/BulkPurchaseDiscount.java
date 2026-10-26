@@ -49,8 +49,23 @@ public class BulkPurchaseDiscount extends Promotion {
     @Override
     public double calculateDiscount(Sale sale) {
         if (sale.getProducts().size() >= minimumQuantity) {
-            return sale.getTotal() * percentage / 100;
+            return sale.getSubtotal() * percentage / 100;
         }
         return 0.0;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean hasValidPercentage() {
+        return isValidPercentage(percentage);
+    }
+
+    /**
+     * Reports whether the current purchase threshold passes the registration rule.
+     *
+     * @return whether the minimum quantity is positive
+     */
+    public boolean hasValidMinimumQuantity() {
+        return minimumQuantity > 0;
     }
 }

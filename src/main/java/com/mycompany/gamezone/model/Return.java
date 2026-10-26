@@ -69,6 +69,16 @@ public class Return {
         return originalSale;
     }
 
+    /**
+     * Checks ownership using the original sale customer's existing equality rule.
+     *
+     * @param customer the customer to compare with the original sale's customer
+     * @return whether the original sale's customer equals the supplied customer
+     */
+    public boolean belongsTo(Customer customer) {
+        return originalSale.getCustomer().equals(customer);
+    }
+
     public List<Product> getReturnedProducts() {
         return returnedProducts;
     }
@@ -108,11 +118,11 @@ public class Return {
     }
 
     /**
-     * Calculates the refund as the sum of each returned item's price,
+     * Calculates the refund as the sum of each returned item's charged price,
      * scaled down by the same proportion of discount the original sale
      * received, plus the refundable cost of the cancelled warranties.
      * If the sale had no discount and no warranty was cancelled, this
-     * behaves exactly like summing list prices.
+     * behaves exactly like summing the original charged prices.
      *
      * @return the calculated, discount-adjusted refund amount
      */
@@ -123,7 +133,7 @@ public class Return {
 
         double sum = 0.0;
         for (Product product : returnedProducts) {
-            double listPrice = product.getPrice();
+            double listPrice = unitPriceOf(product);
             double proportionalRefund = listPrice * (1 - discountRatio);
             sum += proportionalRefund;
         }
@@ -131,9 +141,19 @@ public class Return {
         return refundAmount;
     }
 
+    /** Looks up the charged price by product ID, preserving the unmatched fallback. */
+    private double unitPriceOf(Product product) {
+        for (SaleItem item : originalSale.getItems()) {
+            if (item.getProduct().getId().equals(product.getId())) {
+                return item.getUnitPrice();
+            }
+        }
+        return product.getPrice();
+    }
+
     /**
      * Builds a Spanish-language receipt showing, for each returned item,
-     * the list price, the proportional discount applied, and the actual
+     * the charged price, the proportional discount applied, and the actual
      * refunded amount, followed by the refund for cancelled warranties
      * and the total refund.
      *
@@ -152,7 +172,7 @@ public class Return {
         receipt.append("Motivo: ").append(reason).append("\n");
         receipt.append("Productos devueltos:\n");
         for (Product product : returnedProducts) {
-            double listPrice = product.getPrice();
+            double listPrice = unitPriceOf(product);
             double proportionalDiscount = listPrice * discountRatio;
             double refunded = listPrice - proportionalDiscount;
             receipt.append("  - ").append(product.getTitle())
