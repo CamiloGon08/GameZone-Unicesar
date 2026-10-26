@@ -122,3 +122,21 @@ Correctly applied in `PersonRepository` (two methods) and `SaleLookup` (one meth
 | Consequence | Any change to `SaleService` or `ProductService` affects classes that do not use the changed methods, and they cannot be built without all the collaborators of those services. |
 | Proposed solution | `ReturnService` depends on `SaleLookup`; `MonthlyBalanceReport` depends on the sales abstraction the Technical Lead creates for `SaleService` (`SaleStore`, leader V-08); `WarrantyService` depends on a small `ProductLookup` (`findById`) implemented by `ProductService`. |
 | Other member's code | Yes: boundary with the Technical Lead (leader-audit V-06 and V-08, wiring in `Main`) and with Developer 1 (`ProductService implements ProductLookup`). |
+
+## 5. Dependency Inversion Principle
+**Verdict:** Violation
+
+Correctly applied in `PersonService` (depends on the `PersonRepository` interface, line 19) and in `WarrantyService` for sales (depends on `SaleLookup`, line 22).
+
+### V-07
+| Field | Content |
+|---|---|
+| Principle | Dependency Inversion |
+| Module | Accessories (Req. 1), Promotions (Req. 2), Returns (Req. 3), Warranties (Req. 4) |
+| Evidence | `AccessoryService` line 15 `private final AccessoryRepository accessoryRepository;`, `PromotionService` line 14 `private final PromotionRepository promotionRepository;`, `ReturnService` line 18 `private final ReturnRepository repository;`, `WarrantyService` line 21 `private final WarrantyRepository repository;` - all concrete file classes (`FilePath.ACCESSORIES`, `FilePath.PROMOTIONS`, `FilePath.RETURNS`, `FilePath.WARRANTIES`). |
+| Explanation | The services hold the business rules and depend directly on the file implementations. The persons module already shows the expected design (`PersonRepository` interface + `FilePersonRepository`). |
+| Consequence | Changing the storage or testing a service without its data file requires editing the service. |
+| Proposed solution | Extract an interface per repository (`AccessoryRepository`, `PromotionRepository`, `ReturnRepository`, `WarrantyRepository`) and rename the current classes `File...Repository`, created in `Main`. |
+| Other member's code | Yes: `Main` (Technical Lead) creates the concrete repositories. |
+
+---
