@@ -308,6 +308,25 @@ fixed evaluation dates without relying on the system clock. `verify-grasp.sh` ag
 the remaining model contracts and team integration/UI work recorded under C-11, including
 the lead's Sale.containsProduct dependency of the current ReturnValidator.
 
+### C-34 — Warranty variants provide their stored type codes (Developer 1 part)
+
+**Member:** Developer 1
+**Commit:** refactor: expose warranty type codes polymorphically (C-34)
+**Classes changed:** `Warranty`, `BasicWarranty`, `ExtendedWarranty`.
+**Change:** Added the abstract getTypeCode contract and variant implementations returning
+the existing BASIC/EXTENDED storage tokens (Polymorphism). The codes match the consumer
+factory's tokens. Display labels, certificates, coverage durations and additional cost
+calculations retain their existing behavior. Consumer implementation stays with Developer 2.
+
+**Verification:** The exact three sources compiled with the earlier Developer 1 blocks in
+the isolated `6012971` worktree; all 59 existing cases passed. `verify-grasp.sh` against
+`8382d85` passed with all 11 console/error/data files identical. The current shared branch's
+WarrantyRepository and WarrantyFactory also compiled separately against the tested model
+classes, confirming this contract's compatibility with those consumers. This separate
+compilation is not a runtime integration check of the latest shared branch.
+**Integration status:** Full-branch verification remains pending the remaining model
+contracts and team integration/UI work recorded under C-11.
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.

@@ -30,6 +30,12 @@ public class ExtendedWarranty extends Warranty {
         return "Extended warranty";
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public String getTypeCode() {
+        return "EXTENDED";
+    }
+
     
     @Override
     public double getAdditionalCost() {

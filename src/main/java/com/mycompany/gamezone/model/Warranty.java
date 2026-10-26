@@ -36,6 +36,13 @@ public abstract class Warranty {
     
     public abstract String getWarrantyType();
 
+    /**
+     * Returns the stable type token used in persisted warranty records.
+     *
+     * @return the stored type code, independent of the display label
+     */
+    public abstract String getTypeCode();
+
     
     public abstract double getAdditionalCost();
 

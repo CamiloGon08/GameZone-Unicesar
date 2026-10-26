@@ -28,6 +28,12 @@ public class BasicWarranty extends Warranty {
         return "Basic warranty";
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public String getTypeCode() {
+        return "BASIC";
+    }
+
     
     @Override
     public double getAdditionalCost() {
