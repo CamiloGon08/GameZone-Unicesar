@@ -72,12 +72,13 @@ public abstract class Promotion {
     public abstract double calculateDiscount(Sale sale);
 
     /**
-     * Reports whether this promotion passes the existing percentage check.
-     * Construction remains permissive so previously stored records can be loaded.
+     * Reports whether this promotion passes the existing direct-registration
+     * rule. Each type owns that rule; additional factory checks remain separate.
+     * Construction stays permissive so previously stored records can be loaded.
      *
-     * @return whether the percentage passes the registration rule
+     * @return whether the promotion can be registered
      */
-    public abstract boolean hasValidPercentage();
+    public abstract boolean isValid();
 
     /**
      * Preserves the service's original rejection rule, including its NaN behavior.

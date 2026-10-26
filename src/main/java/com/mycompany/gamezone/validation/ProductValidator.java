@@ -61,4 +61,17 @@ public final class ProductValidator {
             throw new ResourceNotFoundException("producto", productId);
         }
     }
+
+    /**
+     * Checks that a required text field of a product is not empty.
+     *
+     * @param field Spanish name of the field shown to the user
+     * @param value value to check
+     * @throws InvalidDataException if the value is null or blank
+     */
+    public static void validateRequiredField(String field, String value) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new InvalidDataException(field, "no puede estar vacío.");
+        }
+    }
 }

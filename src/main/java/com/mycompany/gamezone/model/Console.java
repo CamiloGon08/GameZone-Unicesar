@@ -1,5 +1,7 @@
 package com.mycompany.gamezone.model;
 
+import com.mycompany.gamezone.validation.ProductValidator;
+
 
 /**
  * Represents a console product. In addition to the attributes common to
@@ -101,5 +103,18 @@ public class Console extends Product {
     @Override
     public boolean matchesCategory(String category) {
         return "CONSOLE".equals(category);
+    }
+
+    /**
+     * Checks that the brand, model and generation are not empty.
+     *
+     * @throws com.mycompany.gamezone.exceptions.InvalidDataException if any
+     *         of them is empty
+     */
+    @Override
+    public void validateDetails() {
+        ProductValidator.validateRequiredField("marca", brand);
+        ProductValidator.validateRequiredField("modelo", model);
+        ProductValidator.validateRequiredField("generación", generation);
     }
 }

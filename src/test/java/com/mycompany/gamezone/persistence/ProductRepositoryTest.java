@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -25,9 +26,42 @@ class ProductRepositoryTest {
     Path directory;
 
     @Test
+    void injectedConvertersSupportAnotherFamilyAndAreDefensivelyCopied() throws IOException {
+        Path file = directory.resolve("collectibles.txt");
+        ProductLineConverter converter = new ProductLineConverter() {
+            public String getTypeKey() { return "COLLECTIBLE"; }
+            public boolean supports(Product product) { return product instanceof Collectible; }
+            public String toLine(Product product) {
+                return "COLLECTIBLE," + product.getId() + "," + product.getTitle()
+                        + "," + product.getPrice() + "," + product.getStock();
+            }
+            public Product toProduct(String id, String title, double price, int stock, String[] fields) {
+                return new Collectible(id, title, price, stock);
+            }
+        };
+        List<ProductLineConverter> converters = new ArrayList<>(List.of(converter));
+        ProductRepository repository = new FileProductRepository(file.toString(), converters);
+        converters.clear();
+        repository.saveAll(List.of(new Collectible("X1", "Figure", 25, 2)));
+        assertArrayEquals(("COLLECTIBLE,X1,Figure,25.0,2" + System.lineSeparator())
+                .getBytes(Charset.defaultCharset()), Files.readAllBytes(file));
+        Product restored = assertInstanceOf(Collectible.class, repository.loadAll().get(0));
+        assertEquals("X1", restored.getId());
+        assertEquals(25, restored.getPrice());
+        assertEquals(2, restored.getStock());
+    }
+
+    private static class Collectible extends Product {
+        Collectible(String id, String title, double price, int stock) {
+            super(id, title, price, stock);
+        }
+        public String getDescription() { return getTitle(); }
+    }
+
+    @Test
     void bothFamiliesKeepTheirExactFileBytesAndRoundTripAttributes() throws IOException {
         Path file = directory.resolve("products.txt");
-        ProductRepository repository = new ProductRepository(file.toString());
+        ProductRepository repository = new FileProductRepository(file.toString());
         VideoGame game = new VideoGame("G1", "Game", 100.5, 2, "PC", "RPG", "E");
         Console console = new Console("C1", "Console", 200, 3, "Sony", "PS5", "9");
 
@@ -62,7 +96,7 @@ class ProductRepositoryTest {
         Path file = directory.resolve("products.txt");
         Files.writeString(file, "\n \t\n VIDEOGAME , G1 , Game , 100.5 , 2 , PC , RPG , E \n");
 
-        List<Product> loaded = new ProductRepository(file.toString()).loadAll();
+        List<Product> loaded = new FileProductRepository(file.toString()).loadAll();
 
         assertEquals(1, loaded.size());
         VideoGame game = assertInstanceOf(VideoGame.class, loaded.get(0));
@@ -83,7 +117,7 @@ class ProductRepositoryTest {
         Files.writeString(file, "\nVIDEOGAME,VALID,Game,100,2,PC,RPG,E\n \n" + record + "\n");
 
         PersistenceException failure = assertThrows(PersistenceException.class,
-                () -> new ProductRepository(file.toString()).loadAll());
+                () -> new FileProductRepository(file.toString()).loadAll());
 
         assertEquals("Read error: malformed product at line 4 of file '" + file + "'",
                 failure.getMessage());
@@ -99,7 +133,7 @@ class ProductRepositoryTest {
     void unsupportedProductsKeepTheExistingWriteFailure() {
         Path file = directory.resolve("products.txt");
         PersistenceException failure = assertThrows(PersistenceException.class,
-                () -> new ProductRepository(file.toString()).saveAll(List.of(
+                () -> new FileProductRepository(file.toString()).saveAll(List.of(
                         new Controller("A1", "Pad", 50, 1, "WIRELESS"))));
 
         assertEquals("Write error: unsupported product type Controller for file '" + file + "'",
@@ -111,13 +145,13 @@ class ProductRepositoryTest {
     @Test
     void ioFailuresKeepOperationContextAndTheirTechnicalCause() {
         PersistenceException read = assertThrows(PersistenceException.class,
-                () -> new ProductRepository(directory.toString()).loadAll());
+                () -> new FileProductRepository(directory.toString()).loadAll());
         assertEquals("Read error: could not load products from file '" + directory + "'",
                 read.getMessage());
         assertInstanceOf(IOException.class, read.getCause());
         Path missingParent = directory.resolve("missing").resolve("products.txt");
         PersistenceException write = assertThrows(PersistenceException.class,
-                () -> new ProductRepository(missingParent.toString()).saveAll(List.of()));
+                () -> new FileProductRepository(missingParent.toString()).saveAll(List.of()));
         assertEquals("Write error: could not save products to file '" + missingParent + "'",
                 write.getMessage());
         assertInstanceOf(IOException.class, write.getCause());
@@ -125,7 +159,7 @@ class ProductRepositoryTest {
 
     @Test
     void aMissingFileStillLoadsAsAnEmptyCatalog() {
-        assertTrue(new ProductRepository(directory.resolve("absent.txt").toString())
+        assertTrue(new FileProductRepository(directory.resolve("absent.txt").toString())
                 .loadAll().isEmpty());
     }
 

@@ -1,6 +1,8 @@
 package com.mycompany.gamezone.model;
 
 import java.time.LocalDate;
+import com.mycompany.gamezone.ui.ReturnReceiptFormatter;
+import com.mycompany.gamezone.ui.WarrantyCertificateFormatter;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -20,13 +22,13 @@ class ChargedPriceTest {
         sale.applyPromotion("Promo20", 60);
         Return returned = new Return("R1", DATE.plusDays(1), sale,
                 List.of(console, game), "Reason", 15);
-        String originalReceipt = returned.generateReturnReceipt();
+        String originalReceipt = new ReturnReceiptFormatter().format(returned);
 
         game.setPrice(450);
         console.setPrice(800);
 
         assertEquals(255.0, returned.calculateRefundAmount(), 1e-9);
-        assertEquals(originalReceipt, returned.generateReturnReceipt());
+        assertEquals(originalReceipt, new ReturnReceiptFormatter().format(returned));
         Product otherInstance = console("C1", 999);
         Return registeredLater = new Return("R2", DATE.plusDays(1), sale,
                 List.of(otherInstance), "Reason", 15);
@@ -40,12 +42,12 @@ class ChargedPriceTest {
         Product console = console("C1", 200);
         Sale sale = saleWith(List.of(console));
         ExtendedWarranty warranty = new ExtendedWarranty("W1", console, sale, DATE);
-        String originalCertificate = warranty.generateWarrantyCertificate();
+        String originalCertificate = new WarrantyCertificateFormatter().format(warranty);
 
         console.setPrice(900);
 
         assertEquals(20.0, warranty.getAdditionalCost(), 1e-9);
-        assertEquals(originalCertificate, warranty.generateWarrantyCertificate());
+        assertEquals(originalCertificate, new WarrantyCertificateFormatter().format(warranty));
         ExtendedWarranty registeredLater = new ExtendedWarranty(
                 "W2", console("C1", 999), sale, DATE);
         assertEquals(20.0, registeredLater.getAdditionalCost(), 1e-9);

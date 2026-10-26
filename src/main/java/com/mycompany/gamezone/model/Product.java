@@ -151,4 +151,15 @@ public abstract class Product {
     public boolean matchesCategory(String category) {
         return false;
     }
+
+    /**
+     * Checks the fields that belong only to this product family. Families
+     * without extra required fields accept every value.
+     *
+     * @throws com.mycompany.gamezone.exceptions.InvalidDataException if a
+     *         field of the family is empty
+     */
+    public void validateDetails() {
+        // No family-specific fields by default.
+    }
 }

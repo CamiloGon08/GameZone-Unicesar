@@ -127,13 +127,11 @@ public class Return {
      * @return the calculated, discount-adjusted refund amount
      */
     public double calculateRefundAmount() {
-        double subtotal = originalSale.getSubtotal();
-        double discount = originalSale.getDiscountAmount();
-        double discountRatio = (subtotal > 0) ? (discount / subtotal) : 0.0;
+        double discountRatio = discountRatio();
 
         double sum = 0.0;
         for (Product product : returnedProducts) {
-            double listPrice = unitPriceOf(product);
+            double listPrice = listPriceOf(product);
             double proportionalRefund = listPrice * (1 - discountRatio);
             sum += proportionalRefund;
         }
@@ -141,8 +139,14 @@ public class Return {
         return refundAmount;
     }
 
-    /** Looks up the charged price by product ID, preserving the unmatched fallback. */
-    private double unitPriceOf(Product product) {
+    /**
+     * Returns the price charged for the given product in the original sale.
+     * If the product is not an item of the sale, its current price is used.
+     *
+     * @param product the returned product
+     * @return the charged price of the product
+     */
+    public double listPriceOf(Product product) {
         for (SaleItem item : originalSale.getItems()) {
             if (item.getProduct().getId().equals(product.getId())) {
                 return item.getUnitPrice();
@@ -152,39 +156,20 @@ public class Return {
     }
 
     /**
-     * Builds a Spanish-language receipt showing, for each returned item,
-     * the charged price, the proportional discount applied, and the actual
-     * refunded amount, followed by the refund for cancelled warranties
-     * and the total refund.
+     * Returns the part of the discount of the original sale that corresponds
+     * to the given product, in proportion to its charged price.
      *
-     * @return a formatted receipt describing this return
+     * @param product the returned product
+     * @return the proportional discount of the product
      */
-    public String generateReturnReceipt() {
+    public double proportionalDiscountOf(Product product) {
+        return listPriceOf(product) * discountRatio();
+    }
+
+    /** Proportion of the subtotal of the original sale that was discounted. */
+    private double discountRatio() {
         double subtotal = originalSale.getSubtotal();
         double discount = originalSale.getDiscountAmount();
-        double discountRatio = (subtotal > 0) ? (discount / subtotal) : 0.0;
-
-        StringBuilder receipt = new StringBuilder();
-        receipt.append("===== Recibo de Devolucion =====\n");
-        receipt.append("Identificador: ").append(id).append("\n");
-        receipt.append("Fecha: ").append(date).append("\n");
-        receipt.append("Venta original: ").append(originalSale.getId()).append("\n");
-        receipt.append("Motivo: ").append(reason).append("\n");
-        receipt.append("Productos devueltos:\n");
-        for (Product product : returnedProducts) {
-            double listPrice = unitPriceOf(product);
-            double proportionalDiscount = listPrice * discountRatio;
-            double refunded = listPrice - proportionalDiscount;
-            receipt.append("  - ").append(product.getTitle())
-                   .append(" | Precio de lista: $").append(String.format("%.2f", listPrice))
-                   .append(" | Descuento proporcional: $").append(String.format("%.2f", proportionalDiscount))
-                   .append(" | Reembolsado: $").append(String.format("%.2f", refunded))
-                   .append("\n");
-        }
-        receipt.append("Reembolso por garantias anuladas: $")
-               .append(String.format("%.2f", warrantyRefundAmount)).append("\n");
-        receipt.append("Monto total reembolsado: $").append(String.format("%.2f", refundAmount)).append("\n");
-        receipt.append("=================================");
-        return receipt.toString();
+        return (subtotal > 0) ? (discount / subtotal) : 0.0;
     }
 }

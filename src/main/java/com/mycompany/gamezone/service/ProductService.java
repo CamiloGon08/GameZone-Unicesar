@@ -20,7 +20,7 @@ import java.util.List;
  * 
  */
 
-public class ProductService {
+public class ProductService implements ProductLookup {
 
     private final ProductRepository productRepository;
     private final List<Product> products;
@@ -58,15 +58,7 @@ public class ProductService {
      */
     public void registerVideoGame(String id, String title, double price, int stock,
                                    String platform, String genre, String ageRating) {
-        ProductValidator.validateProductData(id, title, price, stock);
-        requireUniqueId(id);
-        requireNotBlank("plataforma", platform);
-        requireNotBlank("género", genre);
-        requireNotBlank("clasificación de edad", ageRating);
-
-        VideoGame videoGame = new VideoGame(id, title, price, stock, platform, genre, ageRating);
-        products.add(videoGame);
-        productRepository.saveAll(products);
+        register(new VideoGame(id, title, price, stock, platform, genre, ageRating));
     }
 
     /**
@@ -86,14 +78,30 @@ public class ProductService {
      */
     public void registerConsole(String id, String title, double price, int stock,
                                  String brand, String model, String generation) {
-        ProductValidator.validateProductData(id, title, price, stock);
-        requireUniqueId(id);
-        requireNotBlank("marca", brand);
-        requireNotBlank("modelo", model);
-        requireNotBlank("generación", generation);
+        register(new Console(id, title, price, stock, brand, model, generation));
+    }
 
-        Console console = new Console(id, title, price, stock, brand, model, generation);
-        products.add(console);
+    /**
+     * Registers a product of any family and persists the product list. The
+     * common data and the unique identifier are checked here; the fields
+     * of each family are checked by {@link Product#validateDetails()}.
+     *
+     * @param product the product to register
+     * @throws InvalidDataException if any field is empty or out of range
+     * @throws BusinessRuleException if the identifier is already registered
+     * @throws com.mycompany.gamezone.exceptions.PersistenceException if the
+     *         product list cannot be saved
+     */
+    public void register(Product product) {
+        if (product == null) {
+            throw new InvalidDataException("producto", "no puede ser nulo.");
+        }
+        ProductValidator.validateProductData(product.getId(), product.getTitle(),
+                product.getPrice(), product.getStock());
+        requireUniqueId(product.getId());
+        product.validateDetails();
+
+        products.add(product);
         productRepository.saveAll(products);
     }
 
@@ -113,6 +121,7 @@ public class ProductService {
      * @return the product, or null if the identifier is empty or no product
      *         matches
      */
+    @Override
     public Product findById(String id) {
         if (id == null || id.trim().isEmpty()) {
             return null;
