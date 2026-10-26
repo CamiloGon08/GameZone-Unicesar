@@ -61,3 +61,41 @@ Correctly applied in `SaleItem` (only keeps the product and its frozen price), `
 | Consequence | Adding a field to the sales file (for example the warranty cost) means editing the same class that handles file errors, with the risk of breaking the read/write code. The format cannot be tested without a real file. |
 | Proposed solution | Create `SaleRecordMapper` in `persistence` with `toLine(Sale)` and `toRecord(String[] data)`, keeping the same format and the same `< 6` fields rule. `SaleRepository` only opens, reads, writes and translates `IOException`, and receives the mapper in its constructor (as `AccessoryRepository` does). |
 | Other member's code | No. |
+
+## 2. Open/Closed Principle
+**Verdict:** Violation
+
+Correctly applied in `SaleService.applyBestPromotion` (lines 101-109): it calls `Promotion.calculateDiscount(sale)` polymorphically, so a new promotion type does not change `SaleService`. `SaleMenu.registerSale` line 121 asks `item.allowsExtendedWarranty()` instead of checking the product type, so a new product type does not change the menu.
+
+### V-03
+| Field | Content |
+|---|---|
+| Principle | Open/Closed |
+| Module | GRASP (Req. 7), Returns (Req. 3) |
+| Evidence | `InventoryService.decreaseStock` lines 57-65: `if (item instanceof Accessory) { accessoryService.updateStock(...); } else { productService.updateStock(...); }`. `increaseStock` lines 78-84: `if (findAnyById(itemId) instanceof Accessory) { accessoryService.restoreStock(...); } else { productService.restoreStock(...); }`. `findAnyById` lines 39-45 hardcodes the search order. |
+| Explanation | The class decides by concrete type which service owns an item. A new family of sellable items (for example gift cards with their own service) requires editing the three methods of `InventoryService`. This routing was introduced by C-27 in Requirement 7. |
+| Consequence | Every new item family modifies working code that sales and returns depend on, and the same type check is repeated in three places that can drift apart. |
+| Proposed solution | Define a `StockHandler` interface in `service` (`Product findById(String id)`, `boolean handles(Product item)`, `void decrease(String id)`, `void restore(String id, int quantity)`) with two adapters created by the Lead, `ProductStockHandler` (wraps `ProductService`) and `AccessoryStockHandler` (wraps `AccessoryService`). `InventoryService` receives a `List<StockHandler>` from `Main` and loops over it, keeping the current order (products first). A new family only adds a handler. |
+| Other member's code | No. The adapters only call public methods of `ProductService` (Developer 1) and `AccessoryService` (Developer 2). |
+
+### V-04
+| Field | Content |
+|---|---|
+| Principle | Open/Closed |
+| Module | Exceptions (Req. 6), GRASP (Req. 7) |
+| Evidence | `ConsoleIO.handleException` lines 71-85: `if (e instanceof ResourceNotFoundException) {...} else if (e instanceof BusinessRuleException) {...} else if (e instanceof InvalidDataException) {...} else if (e instanceof PersistenceException) {...} else {...}`. |
+| Explanation | The method chooses the message with a chain of type checks. A new exception type of the GameZone hierarchy requires editing this method. |
+| Consequence | Adding an exception changes the code that every menu uses to report errors; a missing branch silently falls into the generic `"Error: "` message. |
+| Proposed solution | Keep an ordered `Map<Class<? extends RuntimeException>, Function<RuntimeException, String>>` (`LinkedHashMap`, same order as today) built in the `ConsoleIO` constructor, and look up the first type that matches with `isInstance`. A new exception only adds one entry. The messages stay exactly the same. |
+| Other member's code | No. The exception classes (Developer 1) are not changed. |
+
+### V-05
+| Field | Content |
+|---|---|
+| Principle | Open/Closed |
+| Module | UI and startup (Workshop 1), Req. 1-4 integration |
+| Evidence | `ConsoleMenu.start` lines 78-95: `switch (option) { case 1 -> productMenu.registerVideoGame(); ... case 14 -> warrantyMenu.start(); ... }` and `printMainMenu` lines 100-118, which repeats the same 14 options as text. |
+| Explanation | Each option is written twice, once in the `switch` and once in the printed menu. Adding a module (as Requirements 1 to 4 did) requires editing both places in `ConsoleMenu`. |
+| Consequence | The number printed and the action executed can get out of sync, and every new module changes the class that runs the whole program loop. |
+| Proposed solution | Build an ordered list of `MenuOption` (number, label, `Runnable` action) in the constructor; `printMainMenu` prints the labels from the list and `start` runs the action of the selected number. Option 0 and the invalid-option message stay as they are, so the console output does not change. |
+| Other member's code | No. |
