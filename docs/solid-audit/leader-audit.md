@@ -1,55 +1,36 @@
-# Markdown Cheat Sheet (Example File)
+# SOLID Audit - Technical Lead
 
-This is a **generic Markdown template** showcasing essential formatting features.
+**Audited commit (develop):** `d2d7245`
+**Author:** Camilo Andres Gonzalez Garcia (Technical Lead)
 
----
+Line numbers refer to the audited commit of `develop`.
 
-## 1. Headers
-# H1 (Largest)
-## H2
-### H3
-#### H4
-##### H5
-###### H6 (Smallest)
+## Scope
 
----
+| Module (requirement) | Class | Methods audited |
+|---|---|---|
+| Sales (Workshop 1), Promotions (Req. 2), Warranties (Req. 4), GRASP (Req. 7) | `Sale` | constructor, `toItems`, `calculateTotal`, getters/setters, `getItems`, `containsProduct`, `setProducts`, `applyPromotion`, `addWarrantyCost`, `getSubtotal`, `generateReceipt`, `appendHeader`, `appendProducts`, `appendTotals`, `toString` (`canBeReturned` is audited by Developer 1) |
+| GRASP (Req. 7) | `SaleItem` | constructor, `getProduct`, `getUnitPrice` |
+| Sales (Workshop 1), GRASP (Req. 7) | `SaleRepository` | `save`, `toLine`, `loadAll`, `parseRecord`, `createRecord` |
+| GRASP (Req. 7) | `SaleRecord` | constructor and getters |
+| GRASP (Req. 7) | `SaleCatalog` | constructor, `findAll`, `findById`, `add`, `size`, `loadSales`, `toSale`, `findCustomerById`, `findSellerById` |
+| GRASP (Req. 7) | `SaleLookup` | `findById` |
+| Sales (Workshop 1), Accessories (Req. 1), Promotions (Req. 2), Warranties (Req. 4), GRASP (Req. 7) | `SaleService` | constructor, `registerSale`, `applyBestPromotion`, `viewAllSales`, `viewSalesByCustomer`, `viewSalesBySeller`, `findById` |
+| GRASP (Req. 7) | `InventoryService` | constructor, `findAnyById`, `decreaseStock`, `increaseStock` |
+| UI and startup (Workshop 1), Req. 1-4 integration, Exceptions (Req. 6), GRASP (Req. 7) | `ConsoleMenu` | constructor, `start`, `printMainMenu` |
+| GRASP (Req. 7) | `ConsoleIO` | `readLine`, `readInt`, `parseCommaSeparated`, `handleException` |
+| GRASP (Req. 7) | `ProductMenu`, `PersonMenu`, `SaleMenu`, `AccessoryMenu`, `PromotionMenu`, `ReturnMenu`, `WarrantyMenu` | constructors, `start` and every register/list/view method |
+| UI and startup (Workshop 1) | `Main` | `main` |
+| Returns (Req. 3) | `ProductService` | `restoreStock` |
 
-## 2. Text Formatting
-- **Bold** (`**text**` or `__text__`)
-- *Italic* (`*text*` or `_text_`)
-- ~~Strikethrough~~ (`~~text~~`)
-- `Inline Code` (`` `code` ``)
-- > Blockquote (prefix with `>`)
+## Summary of verdicts
 
----
-
-## 3. Lists
-### Unordered List
-- Item 1
-- Item 2
-  - Nested Item (indent with 2 spaces)
-
-### Ordered List
-1. First item
-2. Second item
-   1. Nested item (indent with 3 spaces)
-
-### Task List
-- [x] Completed task
-- [ ] Pending task (`[ ]`)
+| Principle | Verdict | Violations |
+|---|---|---|
+| Single Responsibility (SRP) | Violation | V-01, V-02 |
+| Open/Closed (OCP) | Violation | V-03, V-04, V-05 |
+| Liskov Substitution (LSP) | Correct | - |
+| Interface Segregation (ISP) | Violation | V-06 |
+| Dependency Inversion (DIP) | Violation | V-07, V-08 |
 
 ---
-
-## 4. Links
-- [Hyperlink](https://example.com) (`[text](url)`)
-
----
-
-## 5. Code Blocks
-```java
-# Syntax-highlighted block (java)
-class HelloWorld {
-    public static main(String... args) {
-        System.out.println("Hello markdown");
-    }
-}
