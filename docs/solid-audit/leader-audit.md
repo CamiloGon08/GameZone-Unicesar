@@ -123,3 +123,31 @@ Correctly applied in `SaleLookup` (one method, `findById`), which `WarrantyServi
 | Consequence | Any change to the methods of `SaleService` touches a menu that does not use them, and the return menu cannot be built without the full sale service and all its collaborators. |
 | Proposed solution | Change the field and constructor parameter of `ReturnMenu` to `SaleLookup`; `ConsoleMenu` passes the `SaleCatalog`, received from `Main`. |
 | Other member's code | Reported to the consolidation: `ReturnService` (Developer 2) has the same dependency (fields line 19, uses lines 44 and 138 only call `findById`). See "Findings reported to the consolidation". |
+
+## 5. Dependency Inversion Principle
+**Verdict:** Violation
+
+Correctly applied in `Main`, which is the composition root and the only place that creates concrete repositories and services. `WarrantyService` depends on the `SaleLookup` abstraction and `PersonService` on the `PersonRepository` interface, both wired in `Main` (lines 48-49, 53 and 59-60).
+
+### V-07
+| Field | Content |
+|---|---|
+| Principle | Dependency Inversion |
+| Module | GRASP (Req. 7) |
+| Evidence | `SaleCatalog` line 21: `private final SaleRepository repository;` and constructor line 35: `public SaleCatalog(SaleRepository repository, ...)`; `SaleRepository` is the concrete file class (line 42: `FILE_PATH = FilePath.SALES`). |
+| Explanation | `SaleCatalog` is a service-layer class (keeps and resolves the sales) and depends directly on the concrete text-file implementation. Persons already use an interface (`PersonRepository`) with a file implementation (`FilePersonRepository`). |
+| Consequence | Changing the storage (another file, a database) or testing the catalog without touching `data/sales.txt` requires editing `SaleCatalog`. |
+| Proposed solution | Extract a `SaleRepository` interface in `persistence` (`save(List<Sale>)`, `loadAll()`), rename the current class to `FileSaleRepository implements SaleRepository`, and create it in `Main`. |
+| Other member's code | No. |
+
+### V-08
+| Field | Content |
+|---|---|
+| Principle | Dependency Inversion |
+| Module | Sales (Workshop 1), GRASP (Req. 7) |
+| Evidence | `SaleService` lines 33-37: `private final SaleCatalog saleCatalog;` and the constructor line 49 receive the concrete `SaleCatalog`; `registerSale` lines 90 and 96 call `saleCatalog.size()` and `saleCatalog.add(sale)`, and the view methods call `saleCatalog.findAll()`. |
+| Explanation | `SaleService` is the high-level policy of the sales use case and depends on a concrete class that also loads and resolves records. It only needs "list, add and count sales". |
+| Consequence | `SaleService` cannot be tested or reused with another way of keeping sales without changing its code, and any change in how `SaleCatalog` loads records recompiles the sales policy. |
+| Proposed solution | Define a `SaleStore` interface in `service` (`List<Sale> findAll()`, `void add(Sale sale)`, `int size()`) extending `SaleLookup`; `SaleCatalog` implements it and `SaleService` depends on `SaleStore`. |
+| Other member's code | No. |
+
