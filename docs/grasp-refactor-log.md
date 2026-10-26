@@ -105,6 +105,14 @@ One entry per correction commit, in the order of section 6 of the consolidated a
 **Change:** `SaleService.registerSale` decided with `instanceof Accessory` whether to update stock through `AccessoryService` or `ProductService`. The new `InventoryService` (`findAnyById`, `decreaseStock`, `increaseStock`) is the only class that makes that routing decision, and `SaleService` now depends on it instead of both services (Indirection). The save order is kept: products are saved one by one and accessories once at the end. The part of Developer 2 (`ReturnService` and `ReturnRepository` using `InventoryService`) is a separate commit.
 **Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical)
 
+### C-28 — SaleItem freezes the price of each item (Technical Lead part)
+
+**Member:** Technical Lead
+**Commit:** refactor: add SaleItem to keep the unit price of each sale item (C-28)
+**Classes changed:** `SaleItem` (new), `Sale`, `SaleRepository`
+**Change:** `Sale` kept a list of `Product` and read the live `getPrice()` for its subtotal and receipt, so a later price change would alter past sales. The new `SaleItem` stores the product and the unit price charged at sale time; `Sale` now keeps a list of `SaleItem`, computes its subtotal and receipt from it, and exposes `getItems()`. `getProducts()` is kept for the classes that still need the products. `SaleRepository` writes the product ids from the items. The `sales.txt` format did not change, and loaded sales rebuild their items from the current product, so current outputs stay the same (Protected Variations). The part of Developer 1 (`Return`, `ExtendedWarranty` and `CategoryDiscount` reading the item price) is a separate commit.
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical)
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.

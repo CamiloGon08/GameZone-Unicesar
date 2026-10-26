@@ -1,6 +1,7 @@
 package com.mycompany.gamezone.model;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -15,7 +16,7 @@ public class Sale {
     private LocalDate date;
     private Seller seller;
     private Customer customer;
-    private List<Product> products;
+    private List<SaleItem> items;
     private double total;
     private String appliedPromotionName;
     private double discountAmount;
@@ -35,16 +36,24 @@ public class Sale {
     public Sale(LocalDate date, String id, List<Product> products, Seller seller, Customer customer) {
         this.date = date;
         this.id = id;
-        this.products = products;
+        this.items = toItems(products);
         this.seller = seller;
         this.customer = customer;
         this.total = calculateTotal();
     }
 
+    private static List<SaleItem> toItems(List<Product> products) {
+        List<SaleItem> saleItems = new ArrayList<>();
+        for (Product product : products) {
+            saleItems.add(new SaleItem(product));
+        }
+        return saleItems;
+    }
+
     private double calculateTotal() {
         double sum = 0;
-        for (Product product : products) {
-            sum += product.getPrice();
+        for (SaleItem item : items) {
+            sum += item.getUnitPrice();
         }
         return sum;
     }
@@ -127,7 +136,20 @@ public class Sale {
      * @return the list of products of the sale
      */
     public List<Product> getProducts() {
+        List<Product> products = new ArrayList<>();
+        for (SaleItem item : items) {
+            products.add(item.getProduct());
+        }
         return products;
+    }
+
+    /**
+     * Returns the items of the sale, each with the unit price charged.
+     *
+     * @return the list of items of the sale
+     */
+    public List<SaleItem> getItems() {
+        return items;
     }
 
     /**
@@ -137,7 +159,7 @@ public class Sale {
      * @param products the new list of products
      */
     public void setProducts(List<Product> products) {
-        this.products = products;
+        this.items = toItems(products);
         this.total = calculateTotal();
     }
 
@@ -248,9 +270,9 @@ public class Sale {
     }
 
     private void appendProducts(StringBuilder sb) {
-        for (Product product : products) {
-            sb.append("  - ").append(product.getTitle())
-            .append(": $").append(String.format("%.2f", product.getPrice()))
+        for (SaleItem item : items) {
+            sb.append("  - ").append(item.getProduct().getTitle())
+            .append(": $").append(String.format("%.2f", item.getUnitPrice()))
             .append("\n");
         }
         sb.append("---------------------------\n");
@@ -280,7 +302,7 @@ public class Sale {
         return "Sale : "+ id + " Date : "+ date +
         ",Customer : " + customer.getName()+
         ",Seller : "+ seller.getName()+
-        ",Products : "+ products.size()+
+        ",Products : "+ items.size()+
         ", Total : $"+ String.format("%.2f",total);
     }
 
