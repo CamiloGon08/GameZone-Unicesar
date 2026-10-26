@@ -39,7 +39,7 @@ public class PercentageDiscount extends Promotion {
 
     /** {@inheritDoc} */
     @Override
-    public boolean hasValidPercentage() {
+    public boolean isValid() {
         return isValidPercentage(percentage);
     }
 }

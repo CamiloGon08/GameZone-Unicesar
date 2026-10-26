@@ -56,15 +56,11 @@ public class BulkPurchaseDiscount extends Promotion {
 
     /** {@inheritDoc} */
     @Override
-    public boolean hasValidPercentage() {
+    public boolean isValid() {
         return isValidPercentage(percentage);
     }
 
-    /**
-     * Reports whether the current purchase threshold passes the registration rule.
-     *
-     * @return whether the minimum quantity is positive
-     */
+    /** Reports the separate factory rule without adding it to direct registration. */
     public boolean hasValidMinimumQuantity() {
         return minimumQuantity > 0;
     }

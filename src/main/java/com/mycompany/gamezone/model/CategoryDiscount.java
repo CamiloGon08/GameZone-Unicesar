@@ -65,15 +65,11 @@ public class CategoryDiscount extends Promotion {
 
     /** {@inheritDoc} */
     @Override
-    public boolean hasValidPercentage() {
+    public boolean isValid() {
         return isValidPercentage(percentage);
     }
 
-    /**
-     * Reports whether the target category passes the existing registration rule.
-     *
-     * @return whether the category contains text after trimming
-     */
+    /** Reports the separate factory rule without adding it to direct registration. */
     public boolean hasTargetCategory() {
         return targetCategory != null && !targetCategory.trim().isEmpty();
     }
