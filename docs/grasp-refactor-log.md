@@ -327,6 +327,26 @@ compilation is not a runtime integration check of the latest shared branch.
 **Integration status:** Full-branch verification remains pending the remaining model
 contracts and team integration/UI work recorded under C-11.
 
+### C-35 — Warranty owns its exact and case-insensitive matching queries (Developer 1 part)
+
+**Member:** Developer 1
+**Commit:** refactor: expose warranty matching queries (C-35)
+**Classes changed:** `Warranty`.
+**Change:** Added matches(productId, saleId) with exact comparisons and matchesIgnoreCase
+with case-insensitive comparisons (Information Expert). Both require the product and sale
+IDs to match. These predicates preserve the previous service's distinct rules: type checks
+ignore case, while lookup and cancellation use exact matching. Consumer implementation
+remains with Developer 2; no normalization or comparison-policy change is introduced.
+
+**Verification:** Static comparison confirmed the predicates and their current consumer
+calls. The exact Warranty source compiled with the earlier Developer 1 blocks in the isolated
+`6012971` worktree; all 59 existing cases passed. `verify-grasp.sh` against `8382d85` passed
+with all 11 console/error/data files identical. The current WarrantyService, repository,
+factory, validator, SaleLookup and IdGenerator sources also compiled separately against the
+tested model classes. These checks do not establish full runtime integration coverage.
+**Integration status:** Full-branch verification remains pending the remaining model
+contracts and team integration/UI work recorded under C-11.
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.
