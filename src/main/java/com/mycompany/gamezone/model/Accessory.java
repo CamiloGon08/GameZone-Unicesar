@@ -33,4 +33,11 @@ public abstract class Accessory extends Product {
     public boolean matchesCategory(String category) {
         return "ACCESSORY".equals(category);
     }
+
+    /**
+     * Returns the accessory type label used by the existing type filter.
+     *
+     * @return Controller, Cable or Memory for the current accessory families
+     */
+    public abstract String getTypeName();
 }

@@ -179,6 +179,22 @@ passed with all 11 console/error/data files identical.
 contracts and team integration/UI work recorded under C-11. These are isolated results,
 not a passing build of the latest integrated branch.
 
+### C-12 — Accessory variants provide their type names (Developer 1 part)
+
+**Member:** Developer 1
+**Commit:** refactor: expose accessory type names polymorphically (C-12)
+**Classes changed:** `Accessory`, `Controller`, `Cable`, `Memory`.
+**Change:** Added the abstract getTypeName contract to Accessory and implementations
+returning the existing Controller/Cable/Memory labels in each variant (Polymorphism).
+Consumers can filter through the Accessory contract without identifying concrete classes.
+No description, compatibility behavior, persisted token or consumer implementation is changed.
+
+**Verification:** The exact four source files compiled with the earlier Developer 1 blocks
+in the isolated `6012971` worktree. All 40 existing cases passed. `verify-grasp.sh` against
+`8382d85` passed with all 11 console/error/data files identical, including type-listing paths.
+**Integration status:** These are isolated results. Full-branch verification remains pending
+the remaining model contracts and team integration/UI work recorded under C-11.
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.

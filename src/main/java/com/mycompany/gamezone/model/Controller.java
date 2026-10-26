@@ -27,4 +27,10 @@ public class Controller extends Accessory {
     public void setConnectionType(String connectionType) {
         this.connectionType = connectionType;
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getTypeName() {
+        return "Controller";
+    }
 }
