@@ -97,6 +97,14 @@ One entry per correction commit, in the order of section 6 of the consolidated a
 **Change:** `SaleService` received `WarrantyService` through `setWarrantyService` after construction and skipped warranties when it was `null`. `Main` now creates `WarrantyService` first and passes it to the `SaleService` constructor; the setter and the `null` check were removed, so the collaboration is explicit and cannot be forgotten (Low Coupling).
 **Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical)
 
+### C-27 — InventoryService routes stock operations (Technical Lead part)
+
+**Member:** Technical Lead
+**Commit:** refactor: add InventoryService to route stock operations (C-27)
+**Classes changed:** `InventoryService` (new), `SaleService`, `Main`
+**Change:** `SaleService.registerSale` decided with `instanceof Accessory` whether to update stock through `AccessoryService` or `ProductService`. The new `InventoryService` (`findAnyById`, `decreaseStock`, `increaseStock`) is the only class that makes that routing decision, and `SaleService` now depends on it instead of both services (Indirection). The save order is kept: products are saved one by one and accessories once at the end. The part of Developer 2 (`ReturnService` and `ReturnRepository` using `InventoryService`) is a separate commit.
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical)
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.

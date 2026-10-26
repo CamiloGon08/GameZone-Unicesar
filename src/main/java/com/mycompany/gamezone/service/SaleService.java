@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mycompany.gamezone.model.Accessory;
 import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Product;
@@ -34,8 +33,7 @@ public class SaleService {
 
     private SaleRepository repository;
     private List<Sale> sales;
-    private ProductService productService;
-    private AccessoryService accessoryService;
+    private InventoryService inventoryService;
     private PromotionService promotionService;
     private WarrantyService warrantyService;
 
@@ -45,20 +43,17 @@ public class SaleService {
      * warranties.
      *
      * @param repository       repository used to save and load sales
-     * @param productService   service used to update product stock
-     * @param accessoryService service used to update accessory stock
+     * @param inventoryService service used to update the stock of every item
      * @param promotionService service used to find the best promotion for a sale
      * @param warrantyService  service used to assign warranties
      */
     public SaleService(SaleRepository repository,
-                       ProductService productService,
-                       AccessoryService accessoryService,
+                       InventoryService inventoryService,
                        PromotionService promotionService,
                        WarrantyService warrantyService) {
         this.repository = repository;
         this.sales = repository.load();
-        this.productService = productService;
-        this.accessoryService = accessoryService;
+        this.inventoryService = inventoryService;
         this.promotionService = promotionService;
         this.warrantyService = warrantyService;
     }
@@ -116,20 +111,7 @@ public class SaleService {
             }
         }
 
-        List<Accessory> accessoriesToPersist = null;
-        for (Product product : products) {
-            if (product instanceof Accessory) {
-                if (accessoriesToPersist == null) {
-                    accessoriesToPersist = accessoryService.listAllAccessories();
-                }
-                accessoryService.updateStock(accessoriesToPersist, product.getId(), -1);
-            } else {
-                productService.updateStock(product.getId(), -1);
-            }
-        }
-        if (accessoriesToPersist != null) {
-            accessoryService.saveAll(accessoriesToPersist);
-        }
+        inventoryService.decreaseStock(products);
 
         sales.add(sale);
         repository.save(sales);
