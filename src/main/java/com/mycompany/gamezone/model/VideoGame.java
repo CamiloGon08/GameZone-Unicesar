@@ -1,5 +1,7 @@
 package com.mycompany.gamezone.model;
 
+import com.mycompany.gamezone.validation.ProductValidator;
+
 /**
  * Represents a video game product. In addition to the attributes common to
  * every product, a video game is characterized by the platform it was
@@ -88,5 +90,18 @@ public class VideoGame extends Product {
     @Override
     public boolean matchesCategory(String category) {
         return "VIDEOGAME".equals(category);
+    }
+
+    /**
+     * Checks that the platform, genre and age rating are not empty.
+     *
+     * @throws com.mycompany.gamezone.exceptions.InvalidDataException if any
+     *         of them is empty
+     */
+    @Override
+    public void validateDetails() {
+        ProductValidator.validateRequiredField("plataforma", platform);
+        ProductValidator.validateRequiredField("género", genre);
+        ProductValidator.validateRequiredField("clasificación de edad", ageRating);
     }
 }
