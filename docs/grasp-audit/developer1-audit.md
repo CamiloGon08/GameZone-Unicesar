@@ -4,15 +4,16 @@
 **Author:** Jesus David Dominguez Theran (Developer 1, `jdaviddominguez`)
 **Product review date:** 2026-10-25
 **Accessory review date:** 2026-10-25
+**Promotion review date:** 2026-10-25
 
 ## Status
 
-The first two incremental blocks cover products and the accessory domain hierarchy.
-Promotions, returns, warranties, exceptions and validations are pending.
+The first three incremental blocks cover products, the accessory domain hierarchy and
+the promotion domain hierarchy. Returns, warranties, exceptions and validations are pending.
 The reference matches the team's existing audit templates. The Java sources were rechecked
 after synchronizing with develop at `06fd7c6` and are unchanged relative to the audited commit.
 R6 service/repository and console integration is now present; the earlier pre-integration
-product and accessory drafts are superseded by these reviews.
+product, accessory and promotion drafts are superseded by these reviews.
 
 Finding IDs are local to this individual report until the lead consolidates the findings.
 No correction is implemented by this document. Proposed changes must preserve current
@@ -31,7 +32,10 @@ inputs, outputs, messages, exception categories and persisted record formats.
 | Accessories (Req. 1) | Controller | Constructor; getDescription; connectionType getter/setter |
 | Accessories (Req. 1) | Cable | Constructor; getDescription; lengthInMeters and connectorType getters/setters |
 | Accessories (Req. 1) | Memory | Constructor; getDescription; capacityInGb and memoryType getters/setters |
-| Promotions (Req. 2) | Promotion, PercentageDiscount, CategoryDiscount, BulkPurchaseDiscount | Pending |
+| Promotions (Req. 2) | Promotion | Constructor; ID/name/startDate/endDate getters and setters; isActive; calculateDiscount declaration |
+| Promotions (Req. 2) | PercentageDiscount | Constructor; percentage getter/setter; calculateDiscount |
+| Promotions (Req. 2) | CategoryDiscount | Constructor; percentage and targetCategory getters/setters; calculateDiscount |
+| Promotions (Req. 2) | BulkPurchaseDiscount | Constructor; minimumQuantity and percentage getters/setters; calculateDiscount |
 | Returns (Req. 3) | Return, Sale.canBeReturned | Pending |
 | Warranties (Req. 4) | Warranty, BasicWarranty, ExtendedWarranty | Pending |
 | Exceptions and validations (Req. 6) | exceptions and validation packages | Pending |
@@ -48,24 +52,32 @@ The original accessory domain commits are d620e9f (Accessory), b241149 (Controll
 AccessoryRepository belong to Developer 2 and are considered only as consumers at the
 domain boundary, not added to this report's owned scope.
 
-## Summary of verdicts - products and accessory domain
+The original promotion commits are d1f9844 (Promotion), 68a2765 (PercentageDiscount),
+aab57ab (CategoryDiscount), dae0e5e (BulkPurchaseDiscount) and abcf6e4 (ACCESSORY
+category support), authored by Developer 1. PromotionService and PromotionRepository
+belong to Developer 2. TEAM.md also lists a targeted Sale promotion edit, but the current
+promotion fields/accessors and setTotal were implemented by the lead in ac40006 and are
+explicitly covered in the lead's report. Their collaboration boundary is recorded below.
 
-| Pattern | Products | Accessory domain | Local violations |
-|---|---|---|---|
-| Information Expert | Correct in the inspected product responsibilities | Correct for compatibility and subtype data | - |
-| Creator | Correct | Correct for the contained compatibility list; external use-case creation not applicable | - |
-| Controller | Correct for ProductService; not applicable to product entities | Not applicable to domain entities | - |
-| Low Coupling | Correct at the inspected layer boundary | Correct at the domain boundary | - |
-| High Cohesion | Correct for product persistence and coordination | Correct for shared compatibility and hardware attributes | - |
-| Polymorphism | Violation in record conversion; correct for descriptions | Correct for descriptions | V-01 (products) |
-| Pure Fabrication | Correct | Not applicable within these domain entities | - |
-| Indirection | Correct | Not applicable within these domain entities | - |
-| Protected Variations | Violation at the persisted-family variation point | Correct for the shared compatibility and description contracts | V-01 (products) |
+## Summary of verdicts - products, accessories and promotions
+
+| Pattern | Products | Accessory domain | Promotion domain | Local violations |
+|---|---|---|---|---|
+| Information Expert | Correct in the inspected product responsibilities | Correct for compatibility and subtype data | Correct for activity dates and calculation data; invariant proposal remains a team boundary | - |
+| Creator | Correct | Correct for the contained compatibility list; external use-case creation not applicable | Not applicable to external object creation | - |
+| Controller | Correct for ProductService; not applicable to product entities | Not applicable to domain entities | Not applicable to domain policies | - |
+| Low Coupling | Correct at the inspected layer boundary | Correct at the domain boundary | Violation at category-to-family dependencies | V-02 (promotions) |
+| High Cohesion | Correct for product persistence and coordination | Correct for shared compatibility and hardware attributes | Correct for shared activity data and individual discount policies | - |
+| Polymorphism | Violation in record conversion; correct for descriptions | Correct for descriptions | Correct for policy overrides; violation in category selection | V-01 (products), V-02 (promotions) |
+| Pure Fabrication | Correct | Not applicable within these domain entities | Not applicable within these domain policies | - |
+| Indirection | Correct | Not applicable within these domain entities | Not applicable within the owned hierarchy | - |
+| Protected Variations | Violation at the persisted-family variation point | Correct for the shared compatibility and description contracts | Correct for discount-policy callers; violation at category selection | V-01 (products), V-02 (promotions) |
 
 These are not final verdicts for all Developer 1 modules; the summary will be extended
 as each remaining module is reviewed.
 Accessory verdicts concern the responsibilities declared in these four classes. The inherited
 stock invariant and consumer-side proposals remain team boundaries, as recorded below.
+V-01 and V-02 are two local findings; their related pattern references do not increase that count.
 
 ## 1. Information Expert
 
@@ -88,6 +100,19 @@ a copy from getCompatibleConsoleIds (22-23). Callers do not need to inspect its 
 to answer the compatibility question. Each concrete getDescription uses its own hardware
 attributes: Controller.java:16-18, Cable.java:19-21 and Memory.java:18-20.
 
+**Verdict for promotions: Correct for activity dates and calculation data.**
+
+Promotion owns startDate/endDate (Promotion.java:9-10) and answers isActive from that
+state with inclusive limits (68-69). PercentageDiscount uses its percentage and Sale's
+total query (PercentageDiscount.java:36-37); BulkPurchaseDiscount uses its threshold,
+percentage and Sale queries (BulkPurchaseDiscount.java:50-54). CategoryDiscount owns
+the target and rate and computes the matching sum (CategoryDiscount.java:56-67); its
+knowledge of product families is the separate V-02 boundary below.
+
+This verdict does not claim constructors/setters enforce all date, rate or quantity
+invariants. Developer 2's V-18 already proposes changing that responsibility; preserve its
+original ID and agree on the invariant/validation boundary before implementing a correction.
+
 ## 2. Creator
 
 **Verdict for products: Correct.**
@@ -106,6 +131,14 @@ initialization through super (Controller.java:9-11, Cable.java:10-14, Memory.jav
 Choosing and creating accessories for a registration use case belongs to the consuming
 service, outside this block's owned scope; no additional factory is required here.
 
+**Verdict for promotions: Not applicable to external object creation.**
+
+The four constructors initialize their own data and delegate shared initialization through
+super (Promotion.java:20-24, PercentageDiscount.java:19-21, CategoryDiscount.java:22-26,
+BulkPurchaseDiscount.java:21-25). None creates or contains Sale/Product aggregates.
+Promotion registration and reconstruction occur in Developer 2's service/repository;
+this domain hierarchy is not responsible for selecting or creating those external objects.
+
 ## 3. Controller
 
 **Verdict for products: Correct for ProductService; not applicable to product entities.**
@@ -121,6 +154,12 @@ These four classes represent products and receive no system events or console in
 Controller (Controller.java:4) represents a physical game controller; its name does not
 make it a GRASP application controller. Moving menu coordination into it would mix
 responsibilities rather than satisfy this pattern.
+
+**Verdict for promotions: Not applicable.**
+
+isActive and calculateDiscount answer domain questions. These classes neither receive
+system events nor read console input, coordinate registration or persist promotions.
+No application controller is needed inside a discount policy.
 
 ## 4. Low Coupling
 
@@ -138,6 +177,14 @@ Accessory extends Product and uses only List/ArrayList (Accessory.java:3-8).
 Controller, Cable and Memory extend Accessory and use the inherited product API for
 their descriptions. None imports services, repositories or UI classes. The compatibility
 getter returns a copy (Accessory.java:22-23), keeping callers from mutating the stored list.
+
+**Verdict for promotions: Violation at the category-to-family dependency, V-02.**
+
+The hierarchy has no repository/service/UI dependency, and PercentageDiscount and
+BulkPurchaseDiscount query Sale through its public API. CategoryDiscount, however,
+also names VideoGame, Console and Accessory to decide eligibility (59-64). A new
+independently categorized family requires changing an existing discount implementation.
+V-02 records that coupling and its extension consequence once, under Polymorphism.
 
 ## 5. High Cohesion
 
@@ -157,6 +204,13 @@ Controller holds connectionType (6); Cable holds lengthInMeters and connectorTyp
 Memory holds capacityInGb and memoryType (6-7). Their constructors, accessors and
 descriptions use those attributes. No file persistence, registration workflow or menu
 coordination is mixed into these entities.
+
+**Verdict for promotions: Correct.**
+
+Promotion holds shared identity, validity dates and the calculation contract. Each subclass
+holds one discount policy's parameters and implements its formula. No persistence,
+registration validation workflow or console coordination is added to these classes.
+The category extension problem is V-02, not a second cohesion finding for the same code.
 
 ## 6. Polymorphism
 
@@ -197,6 +251,41 @@ Moving the same growing type switch unchanged into another class would isolate i
 but would not, by itself, resolve the proposed polymorphism finding. The correction design
 must address both read and write dispatch without adding file access to model classes.
 
+**Verdict for promotions: Correct for policy overrides; violation in category selection.**
+
+Promotion.calculateDiscount (72) is overridden by PercentageDiscount (36-37),
+CategoryDiscount (56-67) and BulkPurchaseDiscount (50-54). Existing consumers invoke
+the contract without selecting a formula by concrete promotion type
+(PromotionService.java:211-213; SaleService.java:106-108).
+
+Inside CategoryDiscount, eligibility is still selected with a growing family-type chain.
+The existing abcf6e4 commit demonstrates the extension consequence: adding ACCESSORY
+support required a new branch in this method. A new subtype of an existing family already
+matches through inheritance; the finding concerns a new independently categorized family,
+not every subclass addition.
+
+### V-02 - Product-category selection inside a discount policy
+
+| Field | Content |
+|---|---|
+| Pattern | Polymorphism, related to Low Coupling and Protected Variations |
+| Module | Promotions (Req. 2): CategoryDiscount; Product family collaboration boundary |
+| Evidence | CategoryDiscount.calculateDiscount:56-67; family checks at 59/61/63; historical extension in abcf6e4 |
+| Code fragment | `"VIDEOGAME".equals(targetCategory) && product instanceof VideoGame`; corresponding CONSOLE/Console and ACCESSORY/Accessory branches |
+| Explanation | The discount policy identifies each product family itself rather than querying a stable domain category contract |
+| Consequence | Supporting a new independently categorized family requires editing the existing discount's selection logic; category knowledge is tied to Java family types |
+| Proposed solution | Introduce a domain category-matching query on Product, implemented at VideoGame, Console and Accessory family roots; have CategoryDiscount query that contract and retain the existing sum/rate calculation |
+| Pattern applied | Polymorphism plus Protected Variations, reducing direct family dependencies in the discount policy |
+| Other member's code | These model classes belong to Developer 1. Coordinate the contract with the lead's proposed SaleItem boundary (lead V-09) and Developer 2's service/category validation before assigning the final correction |
+| Responsible original code | Developer 1; final correction assignment remains subject to consolidation |
+| Status | Proposed finding; no method, interface, category enum or behavior change is implemented |
+
+Keep the current exact category strings and case sensitivity, all Accessory subtypes
+matching ACCESSORY, and zero contribution from null/unmatched product entries or an
+unknown/null target. A default false category match for unclassified Product families is
+one possible compatibility rule. Moving the same type chain into a helper would not, by
+itself, establish polymorphic behavior. Final method naming and design require consolidation.
+
 ## 7. Pure Fabrication
 
 **Verdict for products: Correct.**
@@ -213,6 +302,13 @@ file handling or another technical responsibility that needs a fabricated collab
 The existing external AccessoryRepository is outside this block's owned scope. No helper
 class is proposed solely to make this pattern appear in the model hierarchy.
 
+**Verdict for promotions: Not applicable within these domain policies.**
+
+Promotion and its three variants represent domain discount policies. They do not perform
+technical file handling or another responsibility requiring a fabricated infrastructure
+class. The external PromotionRepository and Developer 2's proposed PromotionValidator
+are separate scope; V-02 does not require adding persistence or a technical mapper here.
+
 ## 8. Indirection
 
 **Verdict for products: Correct.**
@@ -228,6 +324,13 @@ Compatibility operations use the contained list directly (Accessory.java:16-28),
 subtype descriptions use the inherited product accessors. No direct infrastructure
 interaction or service-to-service coordination appears here that would justify an
 additional mediator. Consumer-side coordination remains outside the owned model scope.
+
+**Verdict for promotions: Not applicable within the owned hierarchy.**
+
+Calculations query the supplied Sale and its Product data directly. No service-to-service
+or infrastructure interaction here justifies an additional mediator. Consumer calls through
+Promotion's abstract contract are recorded under Polymorphism and Protected Variations;
+that contract alone is not used to assert a separate indirection responsibility.
 
 ## 9. Protected Variations
 
@@ -246,6 +349,15 @@ each subtype. Adding a description implementation does not require editing those
 compatibility methods. These local contracts do not establish that every external
 consumer is protected against new types; Developer 2's proposals at that boundary are
 listed below and remain subject to consolidation.
+
+**Verdict for promotions: Correct for discount-policy callers; violation in category
+selection, V-02.**
+
+Promotion.calculateDiscount allows an existing consumer to invoke different formulas
+through one contract. It does not protect CategoryDiscount from new independently
+categorized Product families: calculateDiscount:59-64 still names their Java types.
+V-02 proposes a domain category query at that variation point. Service registration and
+repository conversion are Developer 2's separate findings, not duplicate local findings.
 
 ---
 
@@ -280,5 +392,24 @@ listed below and remain subject to consolidation.
   methods do not validate blank/null IDs; consuming service/repository helpers filter them.
   This observation does not justify silently changing validation or normalization during
   the audit. No additional local GRASP violation is asserted for these four classes.
+- **Promotion category boundary:** local V-02 belongs to Developer 1's CategoryDiscount
+  and Product families. Developer 2's V-15 concerns PromotionRepository conversion and
+  V-19 concerns service registration; do not merge these different variation points into
+  one implementation merely because they all mention promotion types.
+- **Promotion invariants / Sale boundary:** Developer 2's V-18 proposes constructor
+  invariants; the lead's V-01 proposes changing Sale total management and mentions
+  PercentageDiscount/BulkPurchaseDiscount as affected callers. The lead's V-09 proposes
+  SaleItem and affects CategoryDiscount's product iteration. Retain the original IDs and
+  coordinate those contracts before assigning any correction. In particular, replacing
+  getTotal with getSubtotal requires verifying the new Sale contract and all call sites;
+  it is not applied as an unconditional change in this audit.
+- **Promotion behavior preserved:** isActive uses the supplied date and includes both
+  endpoints (Promotion:68-69). PercentageDiscount uses sale.getTotal; BulkPurchaseDiscount
+  compares the number of list entries with minimumQuantity using >= and then uses that
+  same total. CategoryDiscount sums the current prices of matching entries. The formulas
+  use existing double arithmetic with no new rounding, and calculateDiscount does not
+  itself check activity dates. Adding invariant checks, normalizing category strings,
+  changing quantities or replacing prices with sale snapshots would require coordinated
+  decisions and behavior verification, not an undocumented audit edit.
 - Shared guiding answers, consolidated findings, diagrams and team verification retain
   their assigned authors/coordination. No shared file is modified by this individual report.
