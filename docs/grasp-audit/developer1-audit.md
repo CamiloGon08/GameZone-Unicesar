@@ -7,20 +7,7 @@
 **Promotion review date:** 2026-10-25
 **Return review date:** 2026-10-25
 **Warranty review date:** 2026-10-25
-
-## Status
-
-The first five incremental audit blocks cover products, the accessory and promotion
-domain hierarchies, Return, Sale.canBeReturned and the warranty domain hierarchy.
-The exceptions and validations block is pending.
-The reference matches the team's existing audit templates. The Java sources were rechecked
-after synchronizing with develop at `06fd7c6` and are unchanged relative to the audited commit.
-R6 service/repository and console integration is now present; the earlier pre-integration
-product, accessory, promotion, return and warranty drafts are superseded by these reviews.
-
-Finding IDs are local to this individual report until the lead consolidates the findings.
-No correction is implemented by this document. Proposed changes must preserve current
-inputs, outputs, messages, exception categories and persisted record formats.
+**Exception/validator review date:** 2026-10-25
 
 ## Scope
 
@@ -44,7 +31,14 @@ inputs, outputs, messages, exception categories and persisted record formats.
 | Warranties (Req. 4) | Warranty | Constructor; duration/type/cost declarations; ID/product/sale/startDate/endDate getters; isActive; generateWarrantyCertificate |
 | Warranties (Req. 4) | BasicWarranty | Constructor; getDurationInMonths; getWarrantyType; getAdditionalCost |
 | Warranties (Req. 4) | ExtendedWarranty | Constructor; getDurationInMonths; getWarrantyType; getAdditionalCost |
-| Exceptions and validations (Req. 6) | exceptions and validation packages | Pending |
+| Exceptions and validations (Req. 6) | GameZoneException | Both constructors; getErrorCode |
+| Exceptions and validations (Req. 6) | ResourceNotFoundException | Constructor and resource-context message/code |
+| Exceptions and validations (Req. 6) | BusinessRuleException | Constructor and business-rule message/code |
+| Exceptions and validations (Req. 6) | InvalidDataException | Constructor and field-context message/code |
+| Exceptions and validations (Req. 6) | PersistenceException | Constructor and cause initialization |
+| Exceptions and validations (Req. 6) | ProductValidator | Private constructor; validateProductData; validateStockAvailability; validateProductExists |
+| Exceptions and validations (Req. 6) | PersonValidator | Private constructor; validatePersonData; validatePersonExists; validateUniquePerson; private requireText helper |
+| Exceptions and validations (Req. 6) | SaleValidator | Private constructor; validateSaleData; validateSaleExists |
 
 Ownership follows TEAM.md and history, not a file-level author tag alone. Original product
 work is recorded in 634a85b, 50827ee, 174ec1d, 2e9dc6a, d5c0216 and 2b3ae2d.
@@ -76,6 +70,27 @@ The warranty domain commits are cb42205 (Warranty), e52533e (BasicWarranty),
 9f11b04 (ExtendedWarranty) and 5303cde (English certificate/type wording), authored by
 Developer 1. WarrantyService and WarrantyRepository belong to Developer 2; their type,
 matching and price-query contracts are inspected only as collaboration boundaries.
+
+Developer 1's R6 commits are 40836e5 (exception root), 5870ca2 (resource/business
+exceptions), df0f3b7 (invalid-data/persistence exceptions), 5a97f68 (ProductValidator),
+0891d82 (PersonValidator) and 86a8842 (SaleValidator). Their service/repository callers
+belong to Developer 2 or the lead; UI handling belongs to the lead. A validation-package
+location alone does not assign every proposed new validator to Developer 1.
+
+## Status
+
+Individual code-audit coverage is prepared for all six assigned blocks: products, the
+accessory and promotion domain hierarchies, Return and Sale.canBeReturned, warranties,
+and the R6 exception/validator classes. Publication/review of the remaining documentation,
+assigned shared guiding answers and team consolidation are separate completion steps.
+The reference matches the team's existing audit templates. The Java sources were rechecked
+after synchronizing with develop at `06fd7c6` and are unchanged relative to the audited commit.
+R6 service/repository and console integration is now present; the earlier pre-integration
+module drafts are superseded by these reviews.
+
+Finding IDs are local to this individual report until the lead consolidates the findings.
+No correction is implemented by this document. Proposed changes must preserve current
+inputs, outputs, messages, exception categories and persisted record formats.
 
 ## Summary of verdicts - reviewed modules
 
@@ -119,8 +134,22 @@ matching and price-query contracts are inspected only as collaboration boundarie
 | Indirection | Not applicable within the owned hierarchy | Abstract dispatch is recorded under Polymorphism/Protected Variations |
 | Protected Variations | Correct for existing behavior dispatch; shared historical-price violation remains | Lead V-09 affects ExtendedWarranty; Developer 2 V-26/V-27 propose consumer/model contracts |
 
-These are not final verdicts for all Developer 1 modules; the summary will be extended
-as each remaining module is reviewed.
+### R6 exception hierarchy and validators
+
+| Pattern | Verdict | Reference |
+|---|---|---|
+| Information Expert | Correct for supplied validation data and failure context | ProductValidator:20-63; PersonValidator:21-67; SaleValidator:23-51 |
+| Creator | Correct for contextual failure objects | Validators select exception types from the failed check and pass field/resource context |
+| Controller | Not applicable within these helpers/error objects | No system-event or operation coordination |
+| Low Coupling | Correct at the inspected validation/error boundary | Uses supplied values, models, collections and exception types, without services or IO |
+| High Cohesion | Correct for module checks and failure categories | Stateless validators grouped by product/person/sale; exceptions carry their own failure context |
+| Polymorphism | Not applicable to varying validation/error operations | Static validators and no subtype-specific overridden exception operation; common typed handling remains available |
+| Pure Fabrication | Correct for dedicated validation helpers | Non-domain checking responsibility stays outside workflow coordination and file access |
+| Indirection | Correct for service-to-validation delegation | ProductService:61/89/162/165; PersonService:48/105/183; SaleService:97/100 |
+| Protected Variations | Correct at the exposed typed-failure boundary | Common unchecked root, stable String codes and preserved cause; consumer adoption is a separate boundary |
+
+These verdicts cover all six Developer 1 code-audit blocks in the recorded reference.
+Findings remain proposals until the lead validates evidence and consolidates ownership.
 Accessory verdicts concern the responsibilities declared in these four classes. The inherited
 stock invariant and consumer-side proposals remain team boundaries, as recorded below.
 V-01 and V-02 are two local findings; their related pattern references do not increase that count.
@@ -129,6 +158,8 @@ evidence below extends that shared finding and must be consolidated once, not co
 as a new local violation.
 The warranty block adds no new local finding. The lead's existing V-09 and Developer 2's
 V-26/V-27 retain their original report IDs and require coordinated correction assignments.
+The exception/validator block adds no new local finding. Developer 2 V-32 may affect
+PersonValidator; V-29/V-30/V-31 concern the consumers or proposed additional validators.
 
 ## 1. Information Expert
 
@@ -183,6 +214,19 @@ rate and queries its associated Product's price (7, 35-36). The lead's V-09 sepa
 questions that live price as a historical monetary basis. Developer 2's V-27 concerns
 external matching queries, not a new local finding or an implemented model method.
 
+**Verdict for exceptions and validators: Correct for supplied data and failure context.**
+
+ProductValidator receives product fields or an existing Product and checks them without
+loading or changing inventory (20-63). PersonValidator receives the exact list to inspect
+for uniqueness and uses the model's actual getiD accessor (49-60). SaleValidator checks
+the supplied participants/list or a supplied lookup result (23-51). The caller remains the
+expert for selecting/loading that data. The error objects store supplied failure context;
+PersistenceException retains its supplied cause (9-11), rather than attempting recovery.
+
+This does not claim that the mutable model enforces every invariant. Existing proposals
+to change model invariants or PersonValidator's seller/name/phone responsibilities remain
+team boundaries, including Developer 2 V-09/V-32, not duplicate local findings.
+
 ## 2. Creator
 
 **Verdict for products: Correct.**
@@ -225,6 +269,15 @@ It derives the contained end-date value with plusMonths (Warranty.java:30), but 
 calculation alone is not treated as responsibility for selecting/creating another domain
 aggregate. Warranty selection, registration and reconstruction occur in Developer 2's service.
 
+**Verdict for exceptions and validators: Correct for contextual failure objects.**
+
+Validators know the failed field, resource or business condition and create the matching
+InvalidDataException, ResourceNotFoundException or BusinessRuleException at that check
+(ProductValidator:21-61; PersonValidator:26-66; SaleValidator:24-50). Their constructors
+assemble the message and category from that context. PersistenceException initializes
+the provided technical cause but performs no file operation. No additional exception
+factory is needed for this small, explicit construction responsibility.
+
 ## 3. Controller
 
 **Verdict for products: Correct for ProductService; not applicable to product entities.**
@@ -260,6 +313,13 @@ The owned hierarchy answers coverage/type/cost queries and returns a certificate
 It receives no system events, reads no console input and coordinates no registration,
 warranty cancellation or file operations. The consuming UI prints the returned certificate;
 that application interaction remains outside these model classes.
+
+**Verdict for exceptions and validators: Not applicable.**
+
+Validators are stateless helpers invoked by application services; exception objects carry
+failure information. Neither receives system events, coordinates a sale/registration,
+restores stock, catches errors for display or controls a menu. Those responsibilities remain
+with services and the UI, outside this owned block.
 
 ## 4. Low Coupling
 
@@ -300,6 +360,14 @@ repositories or UI classes (Warranty.java:3, 9-12). ExtendedWarranty queries get
 price rather than identifying a concrete product family (35-36). This does not establish
 historical-price stability or approve the external service/repository dependencies reported
 by Developer 2; those are different boundaries.
+
+**Verdict for exceptions and validators: Correct at the inspected boundary.**
+
+The exception hierarchy depends on RuntimeException/Throwable and message data.
+Validators depend on model queries, typed exceptions and List where needed, without
+service/repository/UI imports. All data is supplied by callers; no hidden file access or
+global service lookup is introduced. Static helper calls are sufficient for the current fixed
+checks; constructor injection or a validator interface is not required solely to show this pattern.
 
 ## 5. High Cohesion
 
@@ -344,6 +412,16 @@ generateWarrantyCertificate (Warranty.java:73-76) describes that warranty and re
 text without IO. No registration, cancellation, identifier generation or persistence workflow
 is mixed into the hierarchy. No separate cohesion violation is asserted solely for returning
 a formatted certificate about the same domain object.
+
+**Verdict for exceptions and validators: Correct.**
+
+ProductValidator groups common product/stock/existence checks; PersonValidator groups
+the required person fields, existence and caller-supplied uniqueness; SaleValidator groups
+sale input/existence checks. Private constructors prevent helper instances, and requireText
+remains internal to the person checks. Exception subclasses hold one failure category and
+its context, without logging, recovery or UI formatting logic. Developer 2 V-32 concerns
+the division of additional person rules between consumer helpers and PersonValidator;
+it is coordinated below rather than counted again as an independent owned-code finding.
 
 ## 6. Polymorphism
 
@@ -437,6 +515,16 @@ constructor and certificate invoke those contracts without subtype-selection cha
 (SaleService.java:125; WarrantyService.java:275). External persistence/reconstruction
 type selection is Developer 2's V-26, not a duplicate violation in these overrides.
 
+**Verdict for exceptions and validators: Not applicable to varying operations here.**
+
+The three validators expose static checks and have no demonstrated family of interchangeable
+validation algorithms. The exception subclasses set contextual messages/codes but override
+no operation with subtype-specific behavior; GameZoneException supplies getErrorCode
+(22-23) for all of them. Subtyping allows common unchecked failure handling, but inheritance
+alone is not counted as an additional GRASP behavior-dispatch responsibility. UI type
+selection is the lead's scope; no artificial validator hierarchy or exception display method
+is introduced by this audit.
+
 ## 7. Pure Fabrication
 
 **Verdict for products: Correct.**
@@ -473,6 +561,14 @@ These classes represent domain warranties and contain no file access or other te
 coordination requiring a fabricated collaborator. Developer 2's V-28 proposes a shared
 ID generator for services; warranty ID generation is not implemented by these model
 classes. No technical helper is added just to make the pattern appear here.
+
+**Verdict for exceptions and validators: Correct for dedicated validation helpers.**
+
+ProductValidator, PersonValidator and SaleValidator are non-domain helper classes that
+collect checking responsibilities without performing persistence or coordinating workflows.
+They provide a reusable validation boundary instead of placing IO or menu logic in models.
+The exception hierarchy supplies the technical failure contract. This separation does not
+decide every model-invariant responsibility; those shared proposals require consolidation.
 
 ## 8. Indirection
 
@@ -511,6 +607,15 @@ service-to-service or infrastructure coordination here demonstrates a need for a
 mediator. The abstract Warranty contract supports polymorphic dispatch, as recorded
 under Polymorphism and Protected Variations, rather than establishing a separate
 indirection responsibility by itself.
+
+**Verdict for exceptions and validators: Correct for validation delegation.**
+
+ProductService delegates product input and stock checks (61/89/162/165), PersonService
+delegates common person/existence/uniqueness checks (48/105/183), and SaleService
+delegates sale/stock input checks (97/100). Dedicated validation APIs sit between operation
+coordination and the checks, without reaching back into services. Lookup-result validators
+classify supplied results; they do not perform lookups or promise that every consumer
+currently invokes every available helper.
 
 ## 9. Protected Variations
 
@@ -582,6 +687,16 @@ price on every call (35-36). A product-price change therefore changes its comput
 certificate amount and cancellation-refund query. The lead already names ExtendedWarranty
 in V-09 and proposes sale-time item data; retain that shared finding and agree on the
 historical monetary contract before changing this formula or persistence.
+
+**Verdict for exceptions and validators: Correct at the exposed typed-failure boundary.**
+
+GameZoneException provides a common unchecked root, message constructors and a String
+errorCode query (4-23). The default GAMEZONE_ERROR and existing RESOURCE_NOT_FOUND,
+BUSINESS_RULE, INVALID_DATA and PERSISTENCE_ERROR codes distinguish failure categories
+without requiring callers to parse Spanish messages. PersistenceException preserves its
+provided cause (9-11). This protocol is available to consumers; it does not establish that
+all extended modules adopt it. Developer 2 V-29/V-30 report those separate service/repository
+boundaries, while the UI's current type-based presentation remains the lead's scope.
 
 ---
 
@@ -681,5 +796,31 @@ historical monetary contract before changing this formula or persistence.
   Preserve certificate wording, leading/trailing literal quotation marks, platform %n
   newlines, default-locale %.2f formatting and subtype display labels during any later
   behavior-preserving extraction. These are static observations, not new runtime-test results.
+- **Person validation boundary:** Developer 2 V-32 proposes seller/name/phone checks in
+  PersonValidator. Its current R6 validatePersonData contract requires ID, name, email and
+  phone text; validateUniquePerson uses exact equality against the supplied list only
+  (PersonValidator:21-28, 49-67). PersonService supplies numeric phone text for customers
+  and applies additional checks, while seller validation follows different fields (48-79).
+  Coordinate any extra methods/rule transfer with Developer 2, preserving current caller
+  behavior and error wording. Do not impose customer email requirements on sellers or
+  change case sensitivity/list scope as an incidental refactor.
+- **Exception adoption / additional validators:** Developer 2 V-29/V-30 concern generic
+  errors in extended services/repositories; V-31 proposes ReturnValidator/WarrantyValidator.
+  These are consumer-side correction proposals, not missing implementations to add to
+  Developer 1's R6 delivery merely because they use the validation package. Preserve the
+  consolidated assignment, typed categories, cause and existing messages when coordinating.
+- **Validator behavior preserved:** product data requires nonblank ID/title, positive finite
+  price and nonnegative stock; stock availability requires a nonnull Product and positive
+  quantity, with insufficient stock classified as BusinessRuleException. A null lookup
+  result uses ResourceNotFoundException in the corresponding existence helper instead.
+  Person email retains the required at-sign/dot checks; uniqueness does not load hidden
+  data. Sale input distinguishes null participants/list/items from an empty product list.
+  No normalization, stronger email/phone policy, model mutation or new inventory check
+  is introduced in this documentation review.
+- **Existing R6 verification evidence:** ValidatorTest's recorded baseline run reports 20
+  cases, zero failures/errors/skips, including exception codes/cause, input boundaries and
+  nonmutation checks. The report was inspected, not rerun for this documentation block.
+  Java sources remain identical to the audited reference; these tests do not constitute
+  full behavioral verification of every proposed GRASP correction.
 - Shared guiding answers, consolidated findings, diagrams and team verification retain
   their assigned authors/coordination. No shared file is modified by this individual report.
