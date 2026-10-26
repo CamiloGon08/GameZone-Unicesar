@@ -434,6 +434,14 @@ team integration, full non-regression, final documentation and PR completion rem
 **Change:** `registerSale` built the identifier, applied the promotion, chose warranties with `instanceof Console`, updated stock and saved. It now validates and delegates: `IdGenerator` builds the identifier keeping the `SALE-n` sequence (C-36), the promotion is applied in a private method, `WarrantyService.assignWarrantiesFor` assigns the warranties using `Product.requiresBasicWarranty` / `allowsExtendedWarranty` and returns the extended cost for `Sale.addWarrantyCost` (C-26), `InventoryService` updates stock and `SaleCatalog` saves (High Cohesion).
 **Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
 
+### C-01, C-03, C-08, C-29, C-31, C-33 — Main wires the new constructors (Technical Lead part)
+
+**Member:** Technical Lead
+**Commit:** refactor: wire the new repositories and services in Main (C-01, C-03, C-08, C-29, C-31, C-33)
+**Classes changed:** `Main`
+**Change:** `Main` creates `FilePersonRepository` behind the `PersonRepository` interface and injects it into `PersonService` (C-03, C-08), creates the repositories with their record mappers, creates `ReturnRepository` without services (C-29), creates `SaleCatalog` before `WarrantyService` and `SaleService` (C-33), shares one `IdGenerator`, and creates `MonthlyBalanceReport` (C-31) for the console menu.
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.
