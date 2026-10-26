@@ -3,7 +3,7 @@
 **Audited commit (develop):** `d2d7245`
 **Author:** Jesus David Dominguez Theran (Developer 1, GitHub `jdaviddominguez`)
 **Phase:** Requirement 8, Phase 1 - Audit
-**Progress:** 1 of five principle sections recorded; remaining sections follow in separate commits.
+**Progress:** 2 of five principle sections recorded; remaining sections follow in separate commits.
 
 Evidence and line numbers refer to the audited commit of develop. The leader's
 `r8-jesus.zip` supplies candidate findings to verify against that commit. The audit is
@@ -49,7 +49,7 @@ their implementations remain under the corresponding member's audit responsibili
 | Principle | Verdict | Findings |
 |---|---|---|
 | Single Responsibility (SRP) | Violation | V-01, V-02 |
-| Open/Closed (OCP) | Pending | - |
+| Open/Closed (OCP) | Violation | V-03, V-04 |
 | Liskov Substitution (LSP) | Pending | - |
 | Interface Segregation (ISP) | Pending | - |
 | Dependency Inversion (DIP) | Pending | - |
@@ -110,3 +110,48 @@ repair the shared-list/cached-refund defect already recorded in Requirement 7.
 Preserve the current literal surrounding quotation marks, English labels, `%n` line
 separators, default locale and `%.2f` formatting. `BasicWarranty` and `ExtendedWarranty`
 continue to supply their existing duration, type token and additional-cost policies.
+
+## 2. Open/Closed Principle
+
+**Verdict:** Violation (V-03 and V-04).
+
+Promotion calculations already vary through `Promotion.calculateDiscount`; selection can
+use the base contract. Product warranty/category queries and `Accessory.getTypeName`
+allow family-specific behavior without adding type checks at their consumers. Warranty
+duration, cost and storage type code also vary polymorphically. The converter dispatch
+introduced in C-10 is an extension point, but its construction remains closed internally.
+
+### V-03 - Product registration is enumerated in the service
+
+| Field | Content |
+|---|---|
+| Principle | Open/Closed |
+| Module | Products (Workshop 1), Exceptions (Req. 6) |
+| Evidence | `service/ProductService.java`:59-70 (`registerVideoGame`) and 87-98 (`registerConsole`) each validate common input, check uniqueness, validate family fields, construct a concrete family, append it and call `saveAll`. |
+| Explanation | The generic product service also defines a separate creation path for each concrete family. Supporting another family requires modifying the service and repeating the common sequence. |
+| Consequence | Family extensions repeatedly modify working registration code, and duplicated checks, persistence or error ordering can diverge. |
+| Proposed solution | Separate family construction/validation behind a factory or domain hook and introduce a shared product-registration path for common checks, uniqueness and saving. Keep the current public registration methods as compatibility adapters while coordinating the extension contract. |
+| Other member's code | The Technical Lead's `ui/ProductMenu.java`:47,71 uses the current methods. Keeping those adapters avoids an immediate menu change; removing signatures requires coordination. New helper ownership is agreed in consolidation. |
+
+Preserve common-field validation before duplicate-ID rejection, and duplicate-ID rejection
+before family-field errors. Keep the existing Spanish fields/messages, identifier matching,
+save behavior and permissive loading/constructors. Simply moving all family checks into
+constructors, or validating a new object before uniqueness, would change current behavior;
+that is not a behavior-preserving solution to this finding.
+
+### V-04 - Repository hard-codes the converter registry
+
+| Field | Content |
+|---|---|
+| Principle | Open/Closed |
+| Module | Products (Workshop 1), GRASP (Req. 7) |
+| Evidence | `persistence/ProductRepository.java`:31-32 initializes `List.of(new VideoGameLineConverter(), new ConsoleLineConverter())`. `toLine` and `toProduct` (lines 125-163) already dispatch through the converter contract. |
+| Explanation | Another family can implement `ProductLineConverter`, but its converter cannot be supplied without editing the repository's internal registry. |
+| Consequence | A family extension still changes the file repository despite the existing polymorphic conversion boundary. |
+| Proposed solution | Accept a defensively copied ordered converter collection in an additional constructor. Keep a compatibility constructor with the current two converters; custom composition can supply new families without modifying repository dispatch. Coordinate this with V-06. |
+| Other member's code | The Technical Lead's `Main` needs changes when explicitly supplying the registry. Existing callers can retain the compatibility constructor. |
+
+Preserve converter order and first-match dispatch, eight-field records, common parsing
+before type dispatch, `split(",")`/trim behavior, case-sensitive type tokens, platform
+line separators, and the exact contextual `PersistenceException` messages and causes.
+Moving registration to composition does not justify changing malformed-record handling.
