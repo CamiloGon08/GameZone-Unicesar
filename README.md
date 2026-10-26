@@ -121,6 +121,21 @@ The `validation` package contains `ProductValidator`, `PersonValidator` and `Sal
 
 Products, people and sales already use the new hierarchy. Accessories, promotions, returns and warranties still throw `IllegalArgumentException`; the console menu keeps handling it until those modules are migrated. No menu option was added or changed: the behaviour of the 14 existing options is the same.
 
+### GRASP audit and correction (Requirement 7)
+
+The code was audited against the nine GRASP patterns and the findings were corrected without changing what the user sees.
+
+- **Phase 1, audit.** Each member audited the code they wrote (`docs/grasp-audit/`). The Technical Lead consolidated the three reports into `docs/grasp-audit/consolidated-audit.md`, with 37 final violations (C-01 to C-37), the member responsible for each one, the boundary findings and the out-of-scope functional defects. The answers to the guiding questions are in `docs/grasp-analysis.md`.
+- **Phase 2, correction.** Each violation was corrected by its owner and recorded in `docs/grasp-refactor-log.md`. The main design changes are:
+  - `Sale` computes its own total (`applyPromotion`, `addWarrantyCost`) and keeps `SaleItem` objects with the price charged at sale time.
+  - `InventoryService` is the single place that routes stock operations between products and accessories.
+  - `SaleCatalog` keeps the sales and resolves the raw `SaleRecord` objects loaded by `SaleRepository`, so persistence no longer depends on services. It is also the `SaleLookup` used by `WarrantyService`.
+  - `IdGenerator` builds the `SALE-n`, `RETURN-n` and `WAR-n` identifiers.
+  - Services own their lists and save them inside each operation; repositories use record mappers and factories (`PersonFactory`, `PromotionFactory`, `WarrantyFactory`) instead of `instanceof` chains.
+  - `MonthlyBalanceReport` computes the monthly balance.
+  - `ConsoleMenu` only shows the main menu and delegates each option to `ProductMenu`, `PersonMenu`, `SaleMenu`, `AccessoryMenu`, `PromotionMenu`, `ReturnMenu` and `WarrantyMenu`, which share `ConsoleIO`. Texts and option numbers did not change.
+- **Non-regression.** `scripts/verify-grasp.sh` runs the same menu script on the build before Phase 2 and on the current build, and compares the console output and the seven data files byte for byte. The before and after class diagrams are in `docs/grasp-class-diagram.md`.
+
 ## Project layout
 
 GameZoneUnicesar/
@@ -168,6 +183,10 @@ Design documentation lives under `docs/`:
 - [Return Analysis](docs/return-analysis.md)
 - [Warranty Analysis](docs/warranty-analysis.md)
 - [Exception Class Diagram](docs/exception-class-diagram.md)
+- [GRASP Analysis](docs/grasp-analysis.md)
+- [GRASP Consolidated Audit](docs/grasp-audit/consolidated-audit.md)
+- [GRASP Class Diagram](docs/grasp-class-diagram.md)
+- [GRASP Refactor Log](docs/grasp-refactor-log.md)
 
 ## Team
 

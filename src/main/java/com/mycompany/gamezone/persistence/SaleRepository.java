@@ -13,14 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.mycompany.gamezone.exceptions.PersistenceException;
-import com.mycompany.gamezone.model.Customer;
-import com.mycompany.gamezone.model.Person;
-import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.SaleItem;
-import com.mycompany.gamezone.model.Seller;
-import com.mycompany.gamezone.service.PersonService;
-import com.mycompany.gamezone.service.ProductService;
 
 import utilities.FilePath;
 
@@ -31,10 +25,9 @@ import utilities.FilePath;
  * the date, the customer ID, the seller ID, the product IDs, the total
  * amount, the applied promotion name and the discount amount.
  *
- * To reconstruct a Sale from disk, this repository depends on
- * ProductService and PersonService so it can resolve the references to
- * products, customers and sellers by their identifiers. This is a
- * documented layering exception.
+ * Loading returns raw {@link SaleRecord} objects with the identifiers
+ * stored in the file; the service layer resolves the references to
+ * products, customers and sellers.
  *
  * Any {@link IOException} raised while accessing the file is caught here and
  * rethrown as a {@link PersistenceException} that identifies the file and the
@@ -48,22 +41,6 @@ public class SaleRepository {
 
     private static final String FILE_PATH = FilePath.SALES;
     private static final String SEPARATOR = "\\|";
-
-    private final ProductService productService;
-    private final PersonService personService;
-
-    /**
-     * Creates a SaleRepository with the services required to resolve
-     * references to products, customers and sellers when loading sales.
-     *
-     * @param productService service used to look up products by ID
-     * @param personService  service used to look up people by ID
-     */
-    public SaleRepository(ProductService productService,
-                          PersonService personService) {
-        this.productService = productService;
-        this.personService = personService;
-    }
 
     private String toLine(Sale sale) {
         StringBuilder productIds = new StringBuilder();
@@ -106,19 +83,18 @@ public class SaleRepository {
     }
 
     /**
-     * Loads the sales stored in the sales file and reconstructs each sale
-     * by resolving the references to products, customers and sellers.
+     * Loads the sale records stored in the sales file.
      *
-     * @return list of sales recovered from the file, or an empty list
+     * @return list of records recovered from the file, or an empty list
      *         if the file does not exist or contains no data
      * @throws PersistenceException if the file cannot be read or contains a
      *         malformed record
      */
-    public List<Sale> load() {
-        List<Sale> sales = new ArrayList<>();
+    public List<SaleRecord> loadAll() {
+        List<SaleRecord> records = new ArrayList<>();
 
         if (!Files.exists(Paths.get(FILE_PATH))) {
-            return sales;
+            return records;
         }
 
         try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH))) {
@@ -130,31 +106,31 @@ public class SaleRepository {
                     continue;
                 }
                 String[] data = line.split(SEPARATOR, -1);
-                Sale sale = parseRecord(data, lineNumber);
-                if (sale != null) {
-                    sales.add(sale);
+                SaleRecord record = parseRecord(data, lineNumber);
+                if (record != null) {
+                    records.add(record);
                 }
             }
         } catch (IOException e) {
             throw new PersistenceException(
                     "Read error: could not load sales from file '" + FILE_PATH + "'", e);
         }
-        return sales;
+        return records;
     }
 
     /**
-     * Converts one record of the sales file into a sale, translating any
+     * Converts one line of the sales file into a record, translating any
      * format problem into a {@link PersistenceException} that identifies the
      * file and the offending line.
      *
      * @param data       the fields of the record
      * @param lineNumber the 1-based number of the line in the file
-     * @return the reconstructed sale, or null if its references cannot be resolved
+     * @return the record, or null if the line has too few fields
      * @throws PersistenceException if the record is malformed
      */
-    private Sale parseRecord(String[] data, int lineNumber) {
+    private SaleRecord parseRecord(String[] data, int lineNumber) {
         try {
-            return createSale(data);
+            return createRecord(data);
         } catch (DateTimeParseException e) {
             throw new PersistenceException(
                     "Read error: malformed sale record at line " + lineNumber
@@ -162,7 +138,7 @@ public class SaleRepository {
         }
     }
 
-    private Sale createSale(String[] data) {
+    private SaleRecord createRecord(String[] data) {
         if (data.length < 6) {
             return null;
         }
@@ -173,78 +149,25 @@ public class SaleRepository {
         String sellerId = data[3];
         String productIdsRaw = data[4];
 
-        Customer customer = findCustomerById(customerId);
-        Seller seller = findSellerById(sellerId);
-        if (customer == null || seller == null) {
-            return null;
-        }
-
-        List<Product> products = new ArrayList<>();
+        List<String> productIds = new ArrayList<>();
         if (!productIdsRaw.trim().isEmpty()) {
             for (String productId : productIdsRaw.split(";")) {
-                Product product = productService.findById(productId);
-                if (product != null) {
-                    products.add(product);
-                }
+                productIds.add(productId);
             }
         }
-        if (products.isEmpty()) {
-            return null;
-        }
 
-        Sale sale = new Sale(date, id, products, seller, customer);
-
+        String promotionName = null;
+        Double discountAmount = null;
         if (data.length >= 8) {
-            String promotionName = data[6];
-            String discountRaw = data[7];
-
-            if (promotionName != null && !promotionName.isEmpty()) {
-                sale.setAppliedPromotionName(promotionName);
-            }
+            promotionName = data[6];
             try {
-                double discount = Double.parseDouble(discountRaw);
-                sale.setDiscountAmount(discount);
+                discountAmount = Double.parseDouble(data[7]);
             } catch (NumberFormatException ignored) {
                 // ignore malformed numeric value
             }
         }
 
-        return sale;
-    }
-    
-    /**
-     * * Finds a sale by its identifier. * * @param id sale identifier * @return
-     * matching sale, or null if no sale with the given identifier * exists
-     * @param id
-     * @return 
-     */
-    
-    public Sale findById(String id) {
-        for (Sale sale : load()) {
-            if (sale.getId().equals(id)) {
-                return sale;
-            }
-        }
-        return null;
-    }
-
-    private Customer findCustomerById(String id) {
-        for (Person person : personService.listPersons()) {
-            if (person instanceof Customer customer
-                    && customer.getiD().equals(id)) {
-                return customer;
-            }
-        }
-        return null;
-    }
-
-    private Seller findSellerById(String id) {
-        for (Person person : personService.listPersons()) {
-            if (person instanceof Seller seller
-                    && seller.getiD().equals(id)) {
-                return seller;
-            }
-        }
-        return null;
+        return new SaleRecord(id, date, customerId, sellerId, productIds,
+                promotionName, discountAmount);
     }
 }

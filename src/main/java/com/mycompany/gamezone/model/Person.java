@@ -112,12 +112,4 @@ public abstract class Person {
      */
     public abstract void updateFrom(Person changes);
 
-    /**
-     * Returns the object's information formatted as a tab-separated string for
-     * file persistence.
-     *
-     * @return a tab-separated string containing the object's information
-     */
-    public abstract String textFormat();
-
 }

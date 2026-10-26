@@ -4,14 +4,11 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Promotion;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.Seller;
-import com.mycompany.gamezone.model.Warranty;
-import com.mycompany.gamezone.persistence.SaleRepository;
 import com.mycompany.gamezone.validation.ProductValidator;
 import com.mycompany.gamezone.validation.SaleValidator;
 
@@ -31,36 +28,39 @@ import com.mycompany.gamezone.validation.SaleValidator;
 
 public class SaleService {
 
-    private SaleRepository repository;
-    private List<Sale> sales;
-    private InventoryService inventoryService;
-    private PromotionService promotionService;
-    private WarrantyService warrantyService;
+    private static final String SALE_PREFIX = "SALE";
+
+    private final SaleCatalog saleCatalog;
+    private final InventoryService inventoryService;
+    private final PromotionService promotionService;
+    private final WarrantyService warrantyService;
+    private final IdGenerator idGenerator;
 
     /**
-     * Creates a SaleService with the repositories and services required
-     * to register sales, update inventory, apply promotions and assign
-     * warranties.
+     * Creates a SaleService with the collaborators required to register
+     * sales, update inventory, apply promotions and assign warranties.
      *
-     * @param repository       repository used to save and load sales
+     * @param saleCatalog      catalog that keeps and saves the sales
      * @param inventoryService service used to update the stock of every item
      * @param promotionService service used to find the best promotion for a sale
      * @param warrantyService  service used to assign warranties
+     * @param idGenerator      generator of sale identifiers
      */
-    public SaleService(SaleRepository repository,
+    public SaleService(SaleCatalog saleCatalog,
                        InventoryService inventoryService,
                        PromotionService promotionService,
-                       WarrantyService warrantyService) {
-        this.repository = repository;
-        this.sales = repository.load();
+                       WarrantyService warrantyService,
+                       IdGenerator idGenerator) {
+        this.saleCatalog = saleCatalog;
         this.inventoryService = inventoryService;
         this.promotionService = promotionService;
         this.warrantyService = warrantyService;
+        this.idGenerator = idGenerator;
     }
 
     /**
      * Registers a new sale for the given customer and seller with the
-     * list of items provided. Products that are consoles automatically
+     * list of items provided. Products that require it automatically
      * receive a basic warranty, and products listed in the extended
      * warranty list receive an extended warranty whose additional cost
      * is added to the total of the sale.
@@ -87,9 +87,18 @@ public class SaleService {
             ProductValidator.validateStockAvailability(product, 1);
         }
 
-        String saleId = "SALE-" + (sales.size() + 1);
+        String saleId = idGenerator.nextId(SALE_PREFIX, saleCatalog.size(), id -> false);
         Sale sale = new Sale(LocalDate.now(), saleId, products, seller, customer);
 
+        applyBestPromotion(sale);
+        sale.addWarrantyCost(warrantyService.assignWarrantiesFor(sale, productIdsWithExtendedWarranty));
+        inventoryService.decreaseStock(products);
+        saleCatalog.add(sale);
+
+        return sale;
+    }
+
+    private void applyBestPromotion(Sale sale) {
         Promotion bestPromotion = promotionService.findBestPromotionFor(sale);
         if (bestPromotion != null) {
             double discount = bestPromotion.calculateDiscount(sale);
@@ -97,26 +106,6 @@ public class SaleService {
                 sale.applyPromotion(bestPromotion.getName(), discount);
             }
         }
-
-        for (Product product : products) {
-            if (product instanceof Console) {
-                warrantyService.assignBasicWarranty(product, sale);
-            }
-            if (productIdsWithExtendedWarranty != null
-                    && productIdsWithExtendedWarranty.contains(product.getId())) {
-                Warranty extended = warrantyService.assignExtendedWarranty(product, sale);
-                if (extended != null) {
-                    sale.addWarrantyCost(extended.getAdditionalCost());
-                }
-            }
-        }
-
-        inventoryService.decreaseStock(products);
-
-        sales.add(sale);
-        repository.save(sales);
-
-        return sale;
     }
 
     /**
@@ -125,7 +114,7 @@ public class SaleService {
      * @return list containing every sale
      */
     public List<Sale> viewAllSales() {
-        return sales;
+        return saleCatalog.findAll();
     }
 
     /**
@@ -136,7 +125,7 @@ public class SaleService {
      */
     public List<Sale> viewSalesByCustomer(Customer customer) {
         List<Sale> result = new ArrayList<>();
-        for (Sale sale : sales) {
+        for (Sale sale : saleCatalog.findAll()) {
             if (sale.getCustomer().equals(customer)) {
                 result.add(sale);
             }
@@ -151,12 +140,7 @@ public class SaleService {
      * @return the Sale with the specified ID, or null if it does not exist
      */
     public Sale findById(String id) {
-        for (Sale sale : sales) {
-            if (sale.getId().equals(id)) {
-                return sale;
-            }
-        }
-        return null;
+        return saleCatalog.findById(id);
     }
 
     /**
@@ -167,7 +151,7 @@ public class SaleService {
      */
     public List<Sale> viewSalesBySeller(Seller seller) {
         List<Sale> result = new ArrayList<>();
-        for (Sale sale : sales) {
+        for (Sale sale : saleCatalog.findAll()) {
             if (sale.getSeller().equals(seller)) {
                 result.add(sale);
             }

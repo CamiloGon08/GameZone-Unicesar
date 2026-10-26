@@ -1,17 +1,28 @@
 package com.mycompany.gamezone;
 
+import com.mycompany.gamezone.factory.PersonFactory;
+import com.mycompany.gamezone.factory.PromotionFactory;
+import com.mycompany.gamezone.factory.WarrantyFactory;
+import com.mycompany.gamezone.persistence.AccessoryRecordMapper;
 import com.mycompany.gamezone.persistence.AccessoryRepository;
+import com.mycompany.gamezone.persistence.FilePersonRepository;
+import com.mycompany.gamezone.persistence.PersonRecordMapper;
+import com.mycompany.gamezone.persistence.PersonRepository;
 import com.mycompany.gamezone.persistence.ProductRepository;
+import com.mycompany.gamezone.persistence.PromotionRecordMapper;
 import com.mycompany.gamezone.persistence.PromotionRepository;
 import com.mycompany.gamezone.persistence.ReturnRepository;
 import com.mycompany.gamezone.persistence.SaleRepository;
 import com.mycompany.gamezone.persistence.WarrantyRepository;
 import com.mycompany.gamezone.service.AccessoryService;
+import com.mycompany.gamezone.service.IdGenerator;
 import com.mycompany.gamezone.service.InventoryService;
+import com.mycompany.gamezone.service.MonthlyBalanceReport;
 import com.mycompany.gamezone.service.PersonService;
 import com.mycompany.gamezone.service.ProductService;
 import com.mycompany.gamezone.service.PromotionService;
 import com.mycompany.gamezone.service.ReturnService;
+import com.mycompany.gamezone.service.SaleCatalog;
 import com.mycompany.gamezone.service.SaleService;
 import com.mycompany.gamezone.service.WarrantyService;
 import com.mycompany.gamezone.ui.ConsoleMenu;
@@ -32,31 +43,31 @@ public class Main {
      */
     public static void main(String[] args) {
         ProductRepository productRepository = new ProductRepository(FilePath.PRODUCTS);
-        AccessoryRepository accessoryRepository = new AccessoryRepository();
-        PromotionRepository promotionRepository = new PromotionRepository();
+        AccessoryRepository accessoryRepository = new AccessoryRepository(new AccessoryRecordMapper());
+        PromotionRepository promotionRepository = new PromotionRepository(new PromotionRecordMapper());
+        PersonRepository personRepository = new FilePersonRepository(
+                new PersonRecordMapper(new PersonFactory()));
 
         ProductService productService = new ProductService(productRepository);
         AccessoryService accessoryService = new AccessoryService(accessoryRepository);
-        PersonService personService = new PersonService();
+        PersonService personService = new PersonService(personRepository);
         PromotionService promotionService = new PromotionService(promotionRepository);
-
-        SaleRepository saleRepository = new SaleRepository(productService, personService);
-
-        WarrantyRepository warrantyRepository = new WarrantyRepository();
-
-        WarrantyService warrantyService = new WarrantyService(warrantyRepository,
-                                                            saleRepository,
-                                                            productService);
         InventoryService inventoryService = new InventoryService(productService, accessoryService);
-        SaleService saleService = new SaleService(saleRepository, inventoryService,
-                promotionService, warrantyService);
+        IdGenerator idGenerator = new IdGenerator();
 
-        ReturnRepository returnRepository = new ReturnRepository(FilePath.RETURNS, saleService, productService, accessoryService);
-        ReturnService returnService = new ReturnService(returnRepository, saleService, productService, accessoryService, warrantyService);
-        
+        SaleCatalog saleCatalog = new SaleCatalog(new SaleRepository(), productService, personService);
+        WarrantyService warrantyService = new WarrantyService(new WarrantyRepository(), saleCatalog,
+                productService, new WarrantyFactory(), idGenerator);
+        SaleService saleService = new SaleService(saleCatalog, inventoryService,
+                promotionService, warrantyService, idGenerator);
+
+        ReturnService returnService = new ReturnService(new ReturnRepository(FilePath.RETURNS),
+                saleService, inventoryService, warrantyService, idGenerator);
+        MonthlyBalanceReport monthlyBalanceReport = new MonthlyBalanceReport(saleService, returnService);
 
         ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService,
-                accessoryService, promotionService, returnService, warrantyService);
+                accessoryService, promotionService, returnService, warrantyService,
+                monthlyBalanceReport, new PersonFactory(), new PromotionFactory());
         menu.start();
     }
 }

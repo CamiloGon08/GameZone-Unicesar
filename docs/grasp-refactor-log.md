@@ -402,6 +402,61 @@ The complete compiler output is preserved outside the repository in the phase-2 
 **Integration status:** All 13 assigned Developer 1 code blocks are now prepared, with this
 block awaiting the user's commit/push. The latest shared branch is not a passing build;
 team integration, full non-regression, final documentation and PR completion remain pending.
+### C-30 — Sale answers whether it contains a product (Technical Lead part)
+
+**Member:** Technical Lead
+**Commit:** refactor: add Sale.containsProduct for return checks (C-30)
+**Classes changed:** `Sale`
+**Change:** `ReturnService` walked `sale.getProducts()` to check whether a returned product belongs to the sale. `Sale` now answers it with `containsProduct(productId)`, using the same exact identifier comparison, and `ReturnValidator` (Developer 2) calls it (Information Expert).
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
+
+### C-27 — InventoryService adapted to the accessory service of Developer 2
+
+**Member:** Technical Lead
+**Commit:** refactor: adapt InventoryService to the accessory stock operations (C-27)
+**Classes changed:** `InventoryService`
+**Change:** `AccessoryService` now owns its list and saves inside `updateStock(id, quantity)` (C-01, Developer 2), so `decreaseStock` calls it once per accessory instead of loading and saving the whole list. `increaseStock` now receives the item identifier, as `ReturnService` uses it, and routes with the same rule as `findAnyById`. The routing decision stays only in `InventoryService` (Indirection).
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
+
+### C-23, C-33 — SaleCatalog resolves raw sale records and is the SaleLookup (Technical Lead part)
+
+**Member:** Technical Lead
+**Commit:** refactor: load raw SaleRecord objects and resolve them in SaleCatalog (C-23, C-33)
+**Classes changed:** `SaleRecord` (new), `SaleCatalog` (new), `SaleRepository`, `SaleService`
+**Change:** `SaleRepository` depended on `ProductService` and `PersonService` to rebuild sales. It now returns `SaleRecord` objects with the stored identifiers and has no service dependency (Low Coupling). The new `SaleCatalog` keeps the list of sales, resolves the records with the same rules as before (products only through `ProductService`, missing customer or seller skips the sale) and saves after each new sale. `SaleCatalog` implements `SaleLookup`, which `WarrantyService` uses instead of `SaleRepository` (C-33). The consolidated audit asked for `SaleService` to implement `SaleLookup`, but with C-22 that creates a constructor cycle (`SaleService` needs `WarrantyService`, which needs the lookup); moving the list to `SaleCatalog` removes the cycle without a setter.
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
+
+### C-24, C-26, C-36 — registerSale delegates every step (Technical Lead part)
+
+**Member:** Technical Lead
+**Commit:** refactor: simplify registerSale with IdGenerator and assignWarrantiesFor (C-24, C-26, C-36)
+**Classes changed:** `SaleService`
+**Change:** `registerSale` built the identifier, applied the promotion, chose warranties with `instanceof Console`, updated stock and saved. It now validates and delegates: `IdGenerator` builds the identifier keeping the `SALE-n` sequence (C-36), the promotion is applied in a private method, `WarrantyService.assignWarrantiesFor` assigns the warranties using `Product.requiresBasicWarranty` / `allowsExtendedWarranty` and returns the extended cost for `Sale.addWarrantyCost` (C-26), `InventoryService` updates stock and `SaleCatalog` saves (High Cohesion).
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
+
+### C-01, C-03, C-08, C-29, C-31, C-33 — Main wires the new constructors (Technical Lead part)
+
+**Member:** Technical Lead
+**Commit:** refactor: wire the new repositories and services in Main (C-01, C-03, C-08, C-29, C-31, C-33)
+**Classes changed:** `Main`
+**Change:** `Main` creates `FilePersonRepository` behind the `PersonRepository` interface and injects it into `PersonService` (C-03, C-08), creates the repositories with their record mappers, creates `ReturnRepository` without services (C-29), creates `SaleCatalog` before `WarrantyService` and `SaleService` (C-33), shares one `IdGenerator`, and creates `MonthlyBalanceReport` (C-31) for the console menu.
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
+
+### C-01, C-06, C-20, C-26, C-31 — ConsoleMenu only forwards input (Technical Lead part)
+
+**Member:** Technical Lead
+**Commit:** refactor: let ConsoleMenu forward input to the owning services (C-01, C-06, C-20, C-26, C-31)
+**Classes changed:** `ConsoleMenu`
+**Change:** `ConsoleMenu` loaded the lists of persons, accessories and promotions, passed them to the services and saved them. It now calls `personService.register(personFactory.createCustomer(...))` (C-06), the accessory register methods without lists, `promotionService.register(promotionFactory.create...(...))` (C-20), reads customers and sellers with `listCustomers()` / `listSellers()` (C-01), asks `allowsExtendedWarranty()` instead of `instanceof Console` (C-26) and uses `MonthlyBalanceReport` for the balance (C-31) (Controller).
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
+
+### C-25 — ConsoleMenu split into one menu class per module
+
+**Member:** Technical Lead
+**Commit:** refactor: split ConsoleMenu into one menu class per module (C-25)
+**Classes changed:** `ConsoleMenu`, `ConsoleIO` (new), `ProductMenu` (new), `PersonMenu` (new), `SaleMenu` (new), `AccessoryMenu` (new), `PromotionMenu` (new), `ReturnMenu` (new), `WarrantyMenu` (new)
+**Change:** `ConsoleMenu` had about 970 lines with every option of every module. It now only shows the main menu and delegates each option to the menu class of its module. `ConsoleIO` keeps the shared input reading, the comma-separated parsing and `handleException`, so they are not repeated (High Cohesion). Texts, prompts and option numbers did not change.
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
 
 ## Final verification
 

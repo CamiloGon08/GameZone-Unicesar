@@ -156,6 +156,21 @@ public class Sale {
     }
 
     /**
+     * Checks whether a product with the given identifier was sold in this sale.
+     *
+     * @param productId identifier of the product
+     * @return true if one of the items of the sale is that product, false otherwise
+     */
+    public boolean containsProduct(String productId) {
+        for (SaleItem item : items) {
+            if (item.getProduct().getId().equals(productId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Sets a new list of products for the sale and recalculates the
      * total amount based on the new list.
      *
