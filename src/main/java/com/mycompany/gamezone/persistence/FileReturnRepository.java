@@ -12,6 +12,9 @@ import java.util.List;
 /**
  * Text-file implementation of {@link ReturnRepository}. It only opens, reads
  * and writes the file; the line format belongs to {@link ReturnRecordMapper}.
+ * 
+ * @author EstefaniaMarquez
+ * 
  */
 public class FileReturnRepository implements ReturnRepository {
 
