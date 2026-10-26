@@ -7,6 +7,7 @@ import com.mycompany.gamezone.persistence.ReturnRepository;
 import com.mycompany.gamezone.persistence.SaleRepository;
 import com.mycompany.gamezone.persistence.WarrantyRepository;
 import com.mycompany.gamezone.service.AccessoryService;
+import com.mycompany.gamezone.service.InventoryService;
 import com.mycompany.gamezone.service.PersonService;
 import com.mycompany.gamezone.service.ProductService;
 import com.mycompany.gamezone.service.PromotionService;
@@ -40,14 +41,15 @@ public class Main {
         PromotionService promotionService = new PromotionService(promotionRepository);
 
         SaleRepository saleRepository = new SaleRepository(productService, personService);
-        SaleService saleService = new SaleService(saleRepository, productService, accessoryService, promotionService);
 
         WarrantyRepository warrantyRepository = new WarrantyRepository();
 
         WarrantyService warrantyService = new WarrantyService(warrantyRepository,
                                                             saleRepository,
                                                             productService);
-        saleService.setWarrantyService(warrantyService);
+        InventoryService inventoryService = new InventoryService(productService, accessoryService);
+        SaleService saleService = new SaleService(saleRepository, inventoryService,
+                promotionService, warrantyService);
 
         ReturnRepository returnRepository = new ReturnRepository(FilePath.RETURNS, saleService, productService, accessoryService);
         ReturnService returnService = new ReturnService(returnRepository, saleService, productService, accessoryService, warrantyService);

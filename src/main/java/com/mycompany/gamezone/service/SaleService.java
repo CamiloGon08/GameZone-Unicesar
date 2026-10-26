@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mycompany.gamezone.model.Accessory;
 import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Product;
@@ -34,40 +33,28 @@ public class SaleService {
 
     private SaleRepository repository;
     private List<Sale> sales;
-    private ProductService productService;
-    private AccessoryService accessoryService;
+    private InventoryService inventoryService;
     private PromotionService promotionService;
     private WarrantyService warrantyService;
 
     /**
      * Creates a SaleService with the repositories and services required
-     * to register sales, update inventory and apply promotions. The
-     * warranty service is set later to break the circular dependency
-     * between SaleService and WarrantyRepository.
+     * to register sales, update inventory, apply promotions and assign
+     * warranties.
      *
      * @param repository       repository used to save and load sales
-     * @param productService   service used to update product stock
-     * @param accessoryService service used to update accessory stock
+     * @param inventoryService service used to update the stock of every item
      * @param promotionService service used to find the best promotion for a sale
+     * @param warrantyService  service used to assign warranties
      */
     public SaleService(SaleRepository repository,
-                       ProductService productService,
-                       AccessoryService accessoryService,
-                       PromotionService promotionService) {
+                       InventoryService inventoryService,
+                       PromotionService promotionService,
+                       WarrantyService warrantyService) {
         this.repository = repository;
         this.sales = repository.load();
-        this.productService = productService;
-        this.accessoryService = accessoryService;
+        this.inventoryService = inventoryService;
         this.promotionService = promotionService;
-    }
-
-    /**
-     * Sets the warranty service after construction to break the circular
-     * dependency between SaleService and WarrantyRepository.
-     *
-     * @param warrantyService service used to assign warranties
-     */
-    public void setWarrantyService(WarrantyService warrantyService) {
         this.warrantyService = warrantyService;
     }
 
@@ -107,41 +94,24 @@ public class SaleService {
         if (bestPromotion != null) {
             double discount = bestPromotion.calculateDiscount(sale);
             if (discount > 0) {
-                sale.setAppliedPromotionName(bestPromotion.getName());
-                sale.setDiscountAmount(discount);
-                sale.setTotal(sale.getTotal() - discount);
+                sale.applyPromotion(bestPromotion.getName(), discount);
             }
         }
 
-        if (warrantyService != null) {
-            for (Product product : products) {
-                if (product instanceof Console) {
-                    warrantyService.assignBasicWarranty(product, sale);
-                }
-                if (productIdsWithExtendedWarranty != null
-                        && productIdsWithExtendedWarranty.contains(product.getId())) {
-                    Warranty extended = warrantyService.assignExtendedWarranty(product, sale);
-                    if (extended != null) {
-                        sale.setTotal(sale.getTotal() + extended.getAdditionalCost());
-                    }
-                }
-            }
-        }
-
-        List<Accessory> accessoriesToPersist = null;
         for (Product product : products) {
-            if (product instanceof Accessory) {
-                if (accessoriesToPersist == null) {
-                    accessoriesToPersist = accessoryService.listAllAccessories();
+            if (product instanceof Console) {
+                warrantyService.assignBasicWarranty(product, sale);
+            }
+            if (productIdsWithExtendedWarranty != null
+                    && productIdsWithExtendedWarranty.contains(product.getId())) {
+                Warranty extended = warrantyService.assignExtendedWarranty(product, sale);
+                if (extended != null) {
+                    sale.addWarrantyCost(extended.getAdditionalCost());
                 }
-                accessoryService.updateStock(accessoriesToPersist, product.getId(), -1);
-            } else {
-                productService.updateStock(product.getId(), -1);
             }
         }
-        if (accessoriesToPersist != null) {
-            accessoryService.saveAll(accessoriesToPersist);
-        }
+
+        inventoryService.decreaseStock(products);
 
         sales.add(sale);
         repository.save(sales);

@@ -17,6 +17,7 @@ import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Person;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Sale;
+import com.mycompany.gamezone.model.SaleItem;
 import com.mycompany.gamezone.model.Seller;
 import com.mycompany.gamezone.service.PersonService;
 import com.mycompany.gamezone.service.ProductService;
@@ -66,12 +67,12 @@ public class SaleRepository {
 
     private String toLine(Sale sale) {
         StringBuilder productIds = new StringBuilder();
-        List<Product> products = sale.getProducts();
-        for (int i = 0; i < products.size(); i++) {
+        List<SaleItem> items = sale.getItems();
+        for (int i = 0; i < items.size(); i++) {
             if (i > 0) {
                 productIds.append(";");
             }
-            productIds.append(products.get(i).getId());
+            productIds.append(items.get(i).getProduct().getId());
         }
 
         String promotionName = sale.getAppliedPromotionName() == null
