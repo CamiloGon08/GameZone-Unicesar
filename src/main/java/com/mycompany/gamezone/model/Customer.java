@@ -1,6 +1,6 @@
 package com.mycompany.gamezone.model;
-
-import java.util.ArrayList;
+import com.mycompany.gamezone.validation.PersonValidator;
+import java.util.List;
 
 /**
  * Concret class for every Customer in GameZone Unicesar
@@ -12,7 +12,6 @@ import java.util.ArrayList;
 public class Customer extends Person{
     
     private String eMail;
-    private ArrayList<Sale> purchases;
     
     public Customer() {
     }
@@ -29,7 +28,6 @@ public class Customer extends Person{
     public Customer(String eMail, String name, String iD, long contactNumber) {
         super(name, iD, contactNumber);
         this.eMail = eMail;
-        this.purchases = new ArrayList<>();
     }
     
     /**
@@ -50,36 +48,30 @@ public class Customer extends Person{
         this.eMail = eMail;
     }
 
-    /**
-     * * Adds a purchase to the customer's purchase history. * * @param sale the
-     * sale to be added
-     * @param purchase
-     */
-    public void addPurchase(Sale purchase) {
-        if (purchase != null) {
-            purchases.add(purchase);
-        }
-    }
-
-    /**
-     * * Gets the customer's purchase history. * * @return a copy of the
-     * customer's purchases
-     * @return 
-     */
-    public ArrayList<Sale> getPurchases() {
-        return new ArrayList<>(purchases);
-    }
-
-    /**
-     * Returns a String containing the object's data in the order and format
-     * required for persistence.
-     *
-     * @return a String with the object's data formatted for persistence.
-     */
     @Override
+    public String getKey() {
+        return getiD();
+    }
 
-    public String textFormat() {
-        return "CUSTOMER|" + getiD() + "|" + getName() + "|" + eMail + "|" + getContactNumber();
+    @Override
+    public void validate() {
+        PersonValidator.validatePersonData(
+                getiD(), getName(), eMail, String.valueOf(getContactNumber()));
+        PersonValidator.validateNameWithoutDigits(getName());
+        PersonValidator.validatePositiveContactNumber(getContactNumber());
+    }
+
+    @Override
+    public void requireUniqueAmong(List<Person> personsOfSameType) {
+        PersonValidator.validateUniquePerson(personsOfSameType, getiD());
+    }
+
+    @Override
+    public void updateFrom(Person changes) {
+        Customer other = (Customer) changes;
+        seteMail(other.geteMail());
+        setName(other.getName());
+        setContactNumber(other.getContactNumber());
     }
 
 }
