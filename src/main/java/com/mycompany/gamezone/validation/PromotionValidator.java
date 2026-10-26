@@ -44,7 +44,7 @@ public final class PromotionValidator {
 
     /** The promotion decides if its percentage is valid; this only reports it. */
     public static void validatePercentage(Promotion promotion) {
-        if (!promotion.hasValidPercentage()) {
+        if (!promotion.isValid()) {
             throw new IllegalArgumentException(
                     "Percentage must be greater than 0 and cannot exceed 100.");
         }

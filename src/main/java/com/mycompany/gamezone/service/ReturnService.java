@@ -4,44 +4,56 @@ import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Return;
 import com.mycompany.gamezone.model.Sale;
-import com.mycompany.gamezone.persistence.ReturnData;
-import com.mycompany.gamezone.persistence.ReturnRepository;
 import com.mycompany.gamezone.validation.ReturnValidator;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Registers returns and answers the queries over them. Loading and saving the
+ * returns belongs to {@link ReturnCatalog}.
+ * 
+ * @author EstefaniaMarquez
+ * 
+ */
 public class ReturnService {
 
     private static final String RETURN_PREFIX = "RETURN";
 
-    private final ReturnRepository repository;
-    private final SaleService saleService;
+    private final ReturnCatalog returnCatalog;
+    private final SaleLookup saleLookup;
     private final InventoryService inventoryService;
     private final WarrantyService warrantyService;
     private final IdGenerator idGenerator;
-    private final List<Return> returns;
 
+    /**
+     * Creates the service with its collaborators.
+     *
+     * @param returnCatalog catalog that keeps and saves the returns
+     * @param saleLookup lookup used to find the original sale
+     * @param inventoryService service used to find items and restore stock
+     * @param warrantyService service used to cancel warranties
+     * @param idGenerator generator of return identifiers
+     */
     public ReturnService(
-            ReturnRepository repository,
-            SaleService saleService,
+            ReturnCatalog returnCatalog,
+            SaleLookup saleLookup,
             InventoryService inventoryService,
             WarrantyService warrantyService,
             IdGenerator idGenerator) {
 
-        this.repository = repository;
-        this.saleService = saleService;
+        this.returnCatalog = returnCatalog;
+        this.saleLookup = saleLookup;
         this.inventoryService = inventoryService;
         this.warrantyService = warrantyService;
         this.idGenerator = idGenerator;
-        this.returns = loadReturns();
     }
 
     public Return registerReturn(String saleId, List<String> productIds, String reason) {
 
         ReturnValidator.validateReturnRequest(saleId, productIds, reason);
 
-        Sale sale = saleService.findById(saleId);
+        Sale sale = saleLookup.findById(saleId);
         ReturnValidator.validateSaleExists(sale);
 
         LocalDate currentDate = LocalDate.now();
@@ -70,26 +82,25 @@ public class ReturnService {
         }
 
         String returnId = idGenerator.nextId(
-                RETURN_PREFIX, returns.size(), this::containsReturnId);
+                RETURN_PREFIX, returnCatalog.size(), returnCatalog::containsId);
 
         Return returnRecord = new Return(
                 returnId, currentDate, sale, returnedProducts,
                 reason, warrantyRefundAmount);
 
-        returns.add(returnRecord);
-        repository.saveAll(returns);
+        returnCatalog.add(returnRecord);
 
         return returnRecord;
     }
 
     public List<Return> viewAllReturns() {
-        return returns;
+        return returnCatalog.findAll();
     }
 
     public List<Return> viewReturnsByCustomer(Customer customer) {
         List<Return> result = new ArrayList<>();
 
-        for (Return returnRecord : returns) {
+        for (Return returnRecord : returnCatalog.findAll()) {
             if (returnRecord.belongsTo(customer)) {
                 result.add(returnRecord);
             }
@@ -101,62 +112,12 @@ public class ReturnService {
     public List<Return> viewReturnsBySale(String saleId) {
         List<Return> result = new ArrayList<>();
 
-        for (Return returnRecord : returns) {
+        for (Return returnRecord : returnCatalog.findAll()) {
             if (returnRecord.getOriginalSale().getId().equals(saleId)) {
                 result.add(returnRecord);
             }
         }
 
         return result;
-    }
-
-    private boolean containsReturnId(String id) {
-        for (Return returnRecord : returns) {
-            if (returnRecord.getId().equals(id)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** Resolves the raw records into domain objects. Records whose sale no longer exists are skipped. */
-    private List<Return> loadReturns() {
-        List<Return> loaded = new ArrayList<>();
-
-        for (ReturnData data : repository.loadAll()) {
-            Return returnRecord = toReturn(data);
-
-            if (returnRecord != null) {
-                loaded.add(returnRecord);
-            }
-        }
-
-        return loaded;
-    }
-
-    private Return toReturn(ReturnData data) {
-        Sale originalSale = saleService.findById(data.getSaleId());
-
-        if (originalSale == null) {
-            return null;
-        }
-
-        List<Product> returnedProducts = new ArrayList<>();
-
-        for (String productId : data.getProductIds()) {
-            Product product = inventoryService.findAnyById(productId);
-
-            if (product != null) {
-                returnedProducts.add(product);
-            }
-        }
-
-        Return returnRecord = new Return(
-                data.getId(), data.getDate(), originalSale, returnedProducts,
-                data.getReason(), data.getWarrantyRefundAmount());
-
-        returnRecord.setRefundAmount(data.getRefundAmount());
-
-        return returnRecord;
     }
 }

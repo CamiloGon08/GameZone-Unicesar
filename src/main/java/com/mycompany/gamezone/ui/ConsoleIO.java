@@ -1,8 +1,11 @@
 package com.mycompany.gamezone.ui;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.function.Function;
 
 import com.mycompany.gamezone.exceptions.BusinessRuleException;
 import com.mycompany.gamezone.exceptions.InvalidDataException;
@@ -17,12 +20,25 @@ import com.mycompany.gamezone.exceptions.ResourceNotFoundException;
 class ConsoleIO {
 
     private final Scanner scanner;
+    private final Map<Class<? extends RuntimeException>, Function<RuntimeException, String>> messages =
+            new LinkedHashMap<>();
 
     /**
-     * Creates the helper reading from the standard input.
+     * Creates the helper reading from the standard input and registers the
+     * message of each type of failure. A new exception type only adds one
+     * entry here.
      */
     ConsoleIO() {
         this.scanner = new Scanner(System.in);
+        messages.put(ResourceNotFoundException.class,
+                e -> "No se encontró el recurso solicitado: " + e.getMessage());
+        messages.put(BusinessRuleException.class,
+                e -> "No se puede completar la operación: " + e.getMessage());
+        messages.put(InvalidDataException.class,
+                e -> "Los datos ingresados no son válidos: " + e.getMessage());
+        messages.put(PersistenceException.class,
+                e -> "Ocurrió un problema al acceder a los datos del sistema. "
+                        + "Contacte al administrador.");
     }
 
     /**
@@ -67,20 +83,21 @@ class ConsoleIO {
         return result;
     }
 
-    /** Prints a Spanish message according to the type of failure. */
+    /**
+     * Prints a Spanish message according to the type of failure. The first
+     * registered type that matches the exception decides the message.
+     *
+     * @param e the failure to report
+     */
     void handleException(RuntimeException e) {
-        if (e instanceof ResourceNotFoundException) {
-            System.out.println("No se encontró el recurso solicitado: " + e.getMessage());
-        } else if (e instanceof BusinessRuleException) {
-            System.out.println("No se puede completar la operación: " + e.getMessage());
-        } else if (e instanceof InvalidDataException) {
-            System.out.println("Los datos ingresados no son válidos: " + e.getMessage());
-        } else if (e instanceof PersistenceException) {
-            System.out.println("Ocurrió un problema al acceder a los datos del sistema. "
-                    + "Contacte al administrador.");
-        } else {
-            // Modules not yet migrated still throw IllegalArgumentException
-            System.out.println("Error: " + e.getMessage());
+        for (Map.Entry<Class<? extends RuntimeException>, Function<RuntimeException, String>> entry
+                : messages.entrySet()) {
+            if (entry.getKey().isInstance(e)) {
+                System.out.println(entry.getValue().apply(e));
+                return;
+            }
         }
+        // Modules not yet migrated still throw IllegalArgumentException
+        System.out.println("Error: " + e.getMessage());
     }
 }

@@ -67,12 +67,13 @@ public class Customer extends Person{
     }
 
     @Override
-    public void updateFrom(Person changes) {
+    protected void copyFrom(Person changes) {
         Customer other = (Customer) changes;
         seteMail(other.geteMail());
         setName(other.getName());
         setContactNumber(other.getContactNumber());
     }
+
 
 }
 

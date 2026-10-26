@@ -16,7 +16,7 @@ import com.mycompany.gamezone.persistence.SaleRepository;
  * and products, and saves the list after every new sale. It is the
  * {@link SaleLookup} used by the classes that only need to find a sale.
  */
-public class SaleCatalog implements SaleLookup {
+public class SaleCatalog implements SaleStore {
 
     private final SaleRepository repository;
     private final ProductService productService;
@@ -45,6 +45,7 @@ public class SaleCatalog implements SaleLookup {
      *
      * @return list containing every sale
      */
+    @Override
     public List<Sale> findAll() {
         return sales;
     }
@@ -72,6 +73,7 @@ public class SaleCatalog implements SaleLookup {
      * @throws com.mycompany.gamezone.exceptions.PersistenceException if the
      *         sales cannot be saved
      */
+    @Override
     public void add(Sale sale) {
         sales.add(sale);
         repository.save(sales);
@@ -82,6 +84,7 @@ public class SaleCatalog implements SaleLookup {
      *
      * @return the number of sales
      */
+    @Override
     public int size() {
         return sales.size();
     }
