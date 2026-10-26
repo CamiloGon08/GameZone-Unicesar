@@ -69,6 +69,16 @@ public class Return {
         return originalSale;
     }
 
+    /**
+     * Checks ownership using the original sale customer's existing equality rule.
+     *
+     * @param customer the customer to compare with the original sale's customer
+     * @return whether the original sale's customer equals the supplied customer
+     */
+    public boolean belongsTo(Customer customer) {
+        return originalSale.getCustomer().equals(customer);
+    }
+
     public List<Product> getReturnedProducts() {
         return returnedProducts;
     }

@@ -266,6 +266,26 @@ rebuilds those items from the current catalog rather than restoring a separately
 **Integration status:** These are isolated results. Full-branch verification remains pending
 the remaining model contracts and team integration/UI work recorded under C-11.
 
+### C-30 — Return reports customer ownership (Developer 1 part)
+
+**Member:** Developer 1
+**Commit:** refactor: expose return customer ownership query (C-30)
+**Classes changed:** `Return`.
+**Change:** Added belongsTo(Customer), delegating to the original sale customer's existing
+equals comparison (Information Expert). The expression matches the previous service check.
+Customer/Person currently inherit Object.equals, so identity-based behavior is preserved;
+the separate equality defect remains outside this correction. Consumer changes and the
+Sale.containsProduct contract retain their assigned owners.
+
+**Verification:** Static comparison confirmed the exact predicate previously used by
+ReturnService at `6012971` and the call expected by the current shared service. The exact
+Return source compiled with the earlier Developer 1 blocks in the isolated `6012971`
+worktree; all 50 existing cases passed. `verify-grasp.sh` against `8382d85` passed with
+all 11 console/error/data files identical. These existing tests and the menu comparison
+check the isolated build; they do not establish current-service integration coverage.
+**Integration status:** Full-branch verification remains pending the remaining model
+contracts and team integration/UI work recorded under C-11.
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.
