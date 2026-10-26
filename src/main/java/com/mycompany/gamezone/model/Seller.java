@@ -1,6 +1,7 @@
 package com.mycompany.gamezone.model;
-
-import java.util.ArrayList;
+import com.mycompany.gamezone.exceptions.BusinessRuleException;
+import com.mycompany.gamezone.validation.PersonValidator;
+import java.util.List;
 
 /**
  * Concret Class for every Seller in GameZone Unicesar
@@ -12,7 +13,6 @@ import java.util.ArrayList;
 public class Seller extends Person{
     private String employeeCode;
     private String shift;
-    private ArrayList<Sale> sales;
     
     public Seller() {
     }
@@ -31,7 +31,6 @@ public class Seller extends Person{
         super(name, iD, contactNumber);
         this.employeeCode = employeeCode;
         this.shift = shift;
-        this.sales = new ArrayList<>();
     }
 
     /**
@@ -69,34 +68,34 @@ public class Seller extends Person{
         this.shift = shift;
     }
 
-    /**
-     * * Adds a sale to the seller's sales history. * * @param sale the sale to
-     * be added
-     * @param sale
-     */
-    public void addSale(Sale sale) {
-        if (sale != null) {
-            sales.add(sale);
+    @Override
+    public String getKey() {
+        return employeeCode;
+    }
+
+    @Override
+    public void validate() {
+        PersonValidator.validateSeller(
+                employeeCode, shift, getName(), getiD(), getContactNumber());
+    }
+
+    @Override
+    public void requireUniqueAmong(List<Person> personsOfSameType) {
+        for (Person person : personsOfSameType) {
+            if (person.getKey().equals(employeeCode)) {
+                throw new BusinessRuleException(
+                        "Ya existe un vendedor con el código de empleado "
+                        + employeeCode.trim() + ".");
+            }
         }
     }
 
-    /**
-     * * Gets the seller's sales history. * * @return a copy of the seller's
-     * sales
-     * @return 
-     */
-    public ArrayList<Sale> getSales() {
-        return new ArrayList<>(sales);
-    }
-
-    /**
-     * Returns a String containing the object's data in the order and format
-     * required for persistence.
-     *
-     * @return a String with the object's data formatted for persistence.
-     */
     @Override
-    public String textFormat(){
-        return "SELLER|" + getiD() + "|" + getName() + "|" + getContactNumber() + "|" + employeeCode + "|" + shift;
+    public void updateFrom(Person changes) {
+        Seller other = (Seller) changes;
+        setShift(other.getShift());
+        setName(other.getName());
+        setiD(other.getiD());
+        setContactNumber(other.getContactNumber());
     }
 }
