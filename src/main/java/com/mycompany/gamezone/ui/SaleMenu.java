@@ -24,6 +24,7 @@ class SaleMenu {
     private final SaleService saleService;
     private final AccessoryService accessoryService;
     private final ConsoleIO io;
+    private final SaleReceiptFormatter receiptFormatter = new SaleReceiptFormatter();
 
     /**
      * Creates the menu with the collaborators it needs.
@@ -132,7 +133,7 @@ class SaleMenu {
             Sale sale = saleService.registerSale(selectedCustomer, selectedSeller, selectedItems,
                     productIdsWithExtendedWarranty);
             System.out.println("¡Venta registrada exitosamente!");
-            System.out.println(sale.generateReceipt());
+            System.out.println(receiptFormatter.format(sale));
         } catch (GameZoneException | IllegalArgumentException e) {
             io.handleException(e);
         }
