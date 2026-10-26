@@ -97,11 +97,4 @@ public abstract class Warranty {
     public boolean isActive(LocalDate date) {
         return !date.isBefore(startDate) && !date.isAfter(endDate);
     }
-
-    
-    public String generateWarrantyCertificate() {
-        return String.format(
-                "\"Warranty Certificate%nType: %s%nProduct: %s%nStart Date: %s%nExpiration Date: %s%nAdditional Cost: $%.2f\"",
-                getWarrantyType(), product.getTitle(), startDate, endDate, getAdditionalCost());
-    }
 }
