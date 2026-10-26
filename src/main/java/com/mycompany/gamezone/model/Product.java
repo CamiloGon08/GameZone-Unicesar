@@ -103,8 +103,23 @@ public abstract class Product {
      *
      * @param amount the quantity to add to the current stock; negative
      *               values decrease it
+     * @throws IllegalArgumentException if the change would make stock negative
      */
     public void adjustStock(int amount) {
+        if (!canAdjustStock(amount)) {
+            throw new IllegalArgumentException("Stock cannot be negative.");
+        }
         this.stock += amount;
+    }
+
+    /**
+     * Checks whether a stock adjustment has a nonnegative mathematical result
+     * without modifying the product.
+     *
+     * @param amount the proposed stock change
+     * @return true if current stock plus the amount is nonnegative
+     */
+    public boolean canAdjustStock(int amount) {
+        return (long) stock + amount >= 0;
     }
 }

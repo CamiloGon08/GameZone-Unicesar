@@ -113,6 +113,30 @@ One entry per correction commit, in the order of section 6 of the consolidated a
 **Change:** `Sale` kept a list of `Product` and read the live `getPrice()` for its subtotal and receipt, so a later price change would alter past sales. The new `SaleItem` stores the product and the unit price charged at sale time; `Sale` now keeps a list of `SaleItem`, computes its subtotal and receipt from it, and exposes `getItems()`. `getProducts()` is kept for the classes that still need the products. `SaleRepository` writes the product ids from the items. The `sales.txt` format did not change, and loaded sales rebuild their items from the current product, so current outputs stay the same (Protected Variations). The part of Developer 1 (`Return`, `ExtendedWarranty` and `CategoryDiscount` reading the item price) is a separate commit.
 **Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical)
 
+### C-11 — Product guards stock adjustments (Developer 1 part)
+
+**Member:** Developer 1
+**Commit:** refactor: guard product stock adjustments (C-11)
+**Classes changed:** `Product`; verification added in `ProductStockTest`.
+**Change:** Added the side-effect-free `canAdjustStock(int)` query using a widened sum.
+`adjustStock` checks it before mutation and retains the agreed
+`IllegalArgumentException("Stock cannot be negative.")` failure. This assigns the guarded
+operation to the stock owner (Information Expert). No service, UI, persistence format or
+unrelated model rule is changed. The corresponding consumer changes belong to Developer 2.
+
+**Verification:** 28 tests passed (20 existing validator cases plus 8 stock cases) in an
+isolated worktree at `6012971`, with this exact Product change and ProductStockTest.
+Product's unmodified source is identical between `6012971` and the current `d3c9744`
+integration base. Cases cover depletion to zero, restocking, no-op, rejected withdrawals,
+unchanged stock after rejection and a nonmutating query. `verify-grasp.sh` compared that
+candidate with reference `8382d85`: PASS, 11 of 11 console/error/data files identical.
+
+**Integration status:** Before this change, the downloaded `d3c9744` already failed Maven
+compilation: consumer code refers to pending Developer 1 model APIs and the UI still
+calls service signatures that have changed. Full-branch compilation/non-regression remains
+pending completion of those model contracts and the lead's UI/integration work. The isolated
+results above are not presented as a successful build of the current integration branch.
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.
