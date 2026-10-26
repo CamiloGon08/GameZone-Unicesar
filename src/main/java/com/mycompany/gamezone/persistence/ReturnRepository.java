@@ -2,11 +2,6 @@ package com.mycompany.gamezone.persistence;
 
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Return;
-import com.mycompany.gamezone.model.Sale;
-import com.mycompany.gamezone.service.AccessoryService;
-import com.mycompany.gamezone.service.ProductService;
-import com.mycompany.gamezone.service.SaleService;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
@@ -14,61 +9,19 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-/**
- * Repository responsible for the persistence of Return objects.
- *
- * Returns are stored in the data/returns.txt file. Since a Return contains
- * references to a Sale and to the items being returned, this repository uses
- * SaleService, ProductService and AccessoryService to resolve those references
- * when loading the records. Returned items may be products or accessories.
- *
- * @author EstefaniaMarquez
- */
 public class ReturnRepository {
 
     private final String filePath;
-    private final SaleService saleService;
-    private final ProductService productService;
-    private final AccessoryService accessoryService;
 
-    /**
-     * Creates a ReturnRepository with the services required to resolve
-     * references to sales, products and accessories.
-     *
-     * @param filePath path of the file used to persist returns
-     * @param saleService service used to find the original sales
-     * @param productService service used to find the returned products
-     * @param accessoryService service used to find the returned accessories
-     */
-    public ReturnRepository(
-            String filePath,
-            SaleService saleService,
-            ProductService productService,
-            AccessoryService accessoryService) {
-
+    public ReturnRepository(String filePath) {
         this.filePath = filePath;
-        this.saleService = saleService;
-        this.productService = productService;
-        this.accessoryService = accessoryService;
     }
 
-    /**
-     * Saves the complete list of returns to the persistence file.
-     *
-     * Existing content is replaced by the records contained in the provided
-     * list.
-     *
-     * Each record stores the return identifier, date, original sale ID,
-     * returned product IDs, reason and refund amount.
-     *
-     * @param returns list of returns to persist
-     */
     public void saveAll(List<Return> returns) {
-
-        try (BufferedWriter writer = new BufferedWriter(
-                new FileWriter(filePath))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
 
             for (Return returnRecord : returns) {
                 writer.write(toLine(returnRecord));
@@ -76,40 +29,23 @@ public class ReturnRepository {
             }
 
         } catch (IOException e) {
-            throw new RuntimeException(
-                    "Could not save returns to " + filePath, e);
+            throw new RuntimeException("Could not save returns to " + filePath, e);
         }
     }
 
-    /**
-     * Loads all returns stored in the persistence file.
-     *
-     * The original Sale and returned Products are reconstructed by resolving
-     * their identifiers through SaleService and ProductService.
-     *
-     * @return list of stored returns, or an empty list if the file does not
-     * exist
-     */
-    public List<Return> loadAll() {
+    public List<ReturnData> loadAll() {
+        List<ReturnData> returns = new ArrayList<>();
 
-        List<Return> returns = new ArrayList<>();
-
-        try (BufferedReader reader = new BufferedReader(
-                new FileReader(filePath))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
 
             String line;
 
             while ((line = reader.readLine()) != null) {
-
                 if (line.trim().isEmpty()) {
                     continue;
                 }
 
-                Return returnRecord = toReturn(line);
-
-                if (returnRecord != null) {
-                    returns.add(returnRecord);
-                }
+                returns.add(toReturnData(line));
             }
 
         } catch (IOException e) {
@@ -119,28 +55,10 @@ public class ReturnRepository {
         return returns;
     }
 
-    /**
-     * Converts a Return object into the CSV representation used for
-     * persistence.
-     *
-     * The product identifiers are stored as a semicolon-separated list inside
-     * one field.
-     *
-     * Format:
-     *
-     * returnId,date,saleId,productId1;productId2,reason,refundAmount,warrantyRefundAmount
-     *
-     * @param returnRecord return to convert
-     * @return CSV representation of the return
-     */
     private String toLine(Return returnRecord) {
-
         StringBuilder productIds = new StringBuilder();
 
-        for (int i = 0;
-                i < returnRecord.getReturnedProducts().size();
-                i++) {
-
+        for (int i = 0; i < returnRecord.getReturnedProducts().size(); i++) {
             Product product = returnRecord.getReturnedProducts().get(i);
 
             if (i > 0) {
@@ -159,74 +77,31 @@ public class ReturnRepository {
                 + returnRecord.getWarrantyRefundAmount();
     }
 
-    /**
-     * Converts a persisted CSV record into a Return object.
-     *
-     * The original Sale is resolved through SaleService and each returned item
-     * is resolved through ProductService or AccessoryService. Records written
-     * before the warranty refund field existed are still accepted and load with
-     * a warranty refund of zero.
-     *
-     * @param line CSV record representing a return
-     * @return reconstructed Return object, or null if the original sale cannot
-     * be resolved
-     */
-    private Return toReturn(String line) {
-
+    private ReturnData toReturnData(String line) {
         String[] fields = line.split(",", -1);
 
         for (int i = 0; i < fields.length; i++) {
             fields[i] = fields[i].trim();
         }
 
-        String id = fields[0];
-        LocalDate date = LocalDate.parse(fields[1]);
-        String saleId = fields[2];
         String productIdsField = fields[3];
-        String reason = fields[4];
-        double refundAmount = Double.parseDouble(fields[5]);
         double warrantyRefundAmount = 0.0;
 
         if (fields.length > 6 && !fields[6].isEmpty()) {
             warrantyRefundAmount = Double.parseDouble(fields[6]);
         }
 
-        Sale originalSale = saleService.findById(saleId);
+        List<String> productIds = productIdsField.isEmpty()
+                ? new ArrayList<>()
+                : Arrays.asList(productIdsField.split(";"));
 
-        if (originalSale == null) {
-            return null;
-        }
-
-        List<Product> returnedProducts = new ArrayList<>();
-
-        if (!productIdsField.isEmpty()) {
-
-            String[] productIds = productIdsField.split(";");
-
-            for (String productId : productIds) {
-
-                Product product = productService.findById(productId);
-
-                if (product == null) {
-                    product = accessoryService.findById(productId);
-                }
-
-                if (product != null) {
-                    returnedProducts.add(product);
-                }
-            }
-        }
-
-        Return returnRecord = new Return(
-                id,
-                date,
-                originalSale,
-                returnedProducts,
-                reason,
+        return new ReturnData(
+                fields[0],
+                LocalDate.parse(fields[1]),
+                fields[2],
+                productIds,
+                fields[4],
+                Double.parseDouble(fields[5]),
                 warrantyRefundAmount);
-
-        returnRecord.setRefundAmount(refundAmount);
-
-        return returnRecord;
     }
 }
