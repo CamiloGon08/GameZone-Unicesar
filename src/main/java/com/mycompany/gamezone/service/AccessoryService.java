@@ -118,9 +118,10 @@ public class AccessoryService {
 
         Accessory accessory = requireById(accessoryId);
 
-        if (!accessory.tryAdjustStock(quantity)) {
+        if (!accessory.canAdjustStock(quantity)) {
             throw new IllegalArgumentException("Stock cannot be negative.");
         }
+        accessory.adjustStock(quantity);
 
         saveAll();
     }
@@ -131,9 +132,10 @@ public class AccessoryService {
 
         Accessory accessory = requireById(accessoryId);
 
-        if (!accessory.tryAdjustStock(quantity)) {
+        if (!accessory.canAdjustStock(quantity)) {
             throw new IllegalArgumentException("Stock cannot be negative.");
         }
+        accessory.adjustStock(quantity);
 
         saveAll();
     }
