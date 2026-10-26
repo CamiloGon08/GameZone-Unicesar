@@ -140,3 +140,13 @@ Correctly applied in `PersonService` (depends on the `PersonRepository` interfac
 | Other member's code | Yes: `Main` (Technical Lead) creates the concrete repositories. |
 
 ---
+
+## Findings reported to the consolidation
+
+### Boundary findings
+- V-06 is the service side of leader-audit V-06 (`ReturnMenu` -> `SaleLookup`) and V-08 (`SaleStore`); it should be one consolidated violation with parts for the Technical Lead and Developer 2, plus `ProductLookup` for Developer 1.
+- V-05 of developer1-audit (`Promotion.isValid`) requires changing `PromotionValidator.validatePercentage` here.
+- V-01, V-02, V-03, V-04 and V-07 need the Technical Lead to update `Main` (and `AccessoryMenu` only if the old methods are removed).
+
+### Out-of-scope findings (functional defects, not fixed)
+- No new defects. The validators still throw `IllegalArgumentException` and the accessory and promotion repositories still print their own error message; both are already registered as out of scope in Requirement 7 (D2-V13, D2-V17, D2-V29, D2-V30) and are not registered again.
