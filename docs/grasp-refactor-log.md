@@ -219,6 +219,26 @@ all 11 console/error/data files identical.
 **Integration status:** These are isolated results. Full-branch verification remains pending
 the remaining model contracts and team integration/UI work recorded under C-11.
 
+### C-21 — Calculate percentage and bulk discounts from the sale subtotal (Developer 1 part)
+
+**Member:** Developer 1
+**Commit:** refactor: calculate discounts from sale subtotal (C-21)
+**Classes changed:** `PercentageDiscount`, `BulkPurchaseDiscount`;
+verification added in `DiscountSubtotalTest`.
+**Change:** Both discount calculations now ask Sale for getSubtotal instead of getTotal
+(Information Expert), using the lead's merged Sale contract. The percentage arithmetic and
+bulk threshold based on the number of purchased entries are preserved. The discount basis
+is independent of promotion deductions and warranty charges already reflected in the total.
+
+**Verification:** The exact sources and new test compiled with the earlier Developer 1
+blocks in the isolated `6012971` worktree; all 43 cases passed. The three new cases verify
+stable discount amounts before/after promotion and warranty changes, repeated queries
+without sale mutation, and the bulk quantity boundary with repeated product entries.
+The tested Sale/SaleItem implementations match the merged prerequisite. `verify-grasp.sh`
+against `8382d85` passed with all 11 console/error/data files identical.
+**Integration status:** These are isolated results. Full-branch verification remains pending
+the remaining model contracts and team integration/UI work recorded under C-11.
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.

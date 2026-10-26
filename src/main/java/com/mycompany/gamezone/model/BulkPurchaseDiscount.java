@@ -49,7 +49,7 @@ public class BulkPurchaseDiscount extends Promotion {
     @Override
     public double calculateDiscount(Sale sale) {
         if (sale.getProducts().size() >= minimumQuantity) {
-            return sale.getTotal() * percentage / 100;
+            return sale.getSubtotal() * percentage / 100;
         }
         return 0.0;
     }
