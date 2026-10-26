@@ -347,6 +347,30 @@ tested model classes. These checks do not establish full runtime integration cov
 **Integration status:** Full-branch verification remains pending the remaining model
 contracts and team integration/UI work recorded under C-11.
 
+### C-09 — Centralize seller, name and contact-number validation (Developer 1 part)
+
+**Member:** Developer 1
+**Commit:** refactor: centralize seller name and phone validation (C-09)
+**Classes changed:** `PersonValidator`; verification added in `PersonValidationTest`.
+**Change:** Added validateSellerData, validateNameWithoutDigits and
+validatePositiveContactNumber, preserving the original PersonService checks, their order,
+typed exceptions and exact Spanish field labels/messages (High Cohesion). Seller blanks
+use a separate trim-based helper; the existing R6 isBlank checks remain unchanged.
+The original name regex and positive-long rule are preserved without strengthening them.
+A thin validateSeller adapter delegates to validateSellerData because the already integrated
+Seller.validate consumer uses that name; the assigned API and current consumer both work
+without duplicate validation rules or edits to another member's class.
+
+**Verification:** The checks were compared with PersonService at `6012971` and current
+consumer references. The exact source/test compiled with the earlier Developer 1 blocks in
+the isolated `6012971` worktree; all 75 cases passed. Sixteen new cases cover first-error
+order/messages/codes for both seller entry points, nonpositive and positive long boundaries,
+numeric names, the existing trim/isBlank distinction and existing regex line-break behavior.
+`verify-grasp.sh` against `8382d85` passed with all 11 console/error/data files identical.
+**Integration status:** These are isolated results. Current Person/Customer/Seller integration
+and the full branch still require the remaining correction and team work recorded under C-11;
+the isolated results are not presented as a passing build of those current consumers.
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.
