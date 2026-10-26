@@ -402,6 +402,13 @@ The complete compiler output is preserved outside the repository in the phase-2 
 **Integration status:** All 13 assigned Developer 1 code blocks are now prepared, with this
 block awaiting the user's commit/push. The latest shared branch is not a passing build;
 team integration, full non-regression, final documentation and PR completion remain pending.
+### C-30 — Sale answers whether it contains a product (Technical Lead part)
+
+**Member:** Technical Lead
+**Commit:** refactor: add Sale.containsProduct for return checks (C-30)
+**Classes changed:** `Sale`
+**Change:** `ReturnService` walked `sale.getProducts()` to check whether a returned product belongs to the sale. `Sale` now answers it with `containsProduct(productId)`, using the same exact identifier comparison, and `ReturnValidator` (Developer 2) calls it (Information Expert).
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
 
 ## Final verification
 
