@@ -220,3 +220,22 @@ The AI drafted the consolidation: coverage table, team verdict per pattern, 37 f
 
 **Commit related:**
 docs: add consolidated GRASP audit
+
+## Requirement 8 - Phase 1 (Audit)
+
+### Entry R8-1
+
+**Date:** 2026-10-26
+**Tool used:** Claude
+
+**Reason for use:**
+Review my own code (Sale, SaleItem, SaleRepository, SaleRecord, SaleCatalog, SaleLookup, SaleService, InventoryService, ConsoleMenu, ConsoleIO, the module menus, Main and ProductService.restoreStock) against the five SOLID principles, as allowed by the professor's update to the Phase 1 AI policy.
+
+**Problem faced:**
+After the GRASP correction my classes changed a lot, and I needed to check which of the new classes (InventoryService, SaleCatalog, the module menus) introduced new SOLID problems and which ones already comply.
+
+**Prompt used:**
+"Revisa mi código del líder frente a SOLID y arma un borrador de leader-audit.md con el mismo formato del R8."
+
+**Solution obtained and decision taken:**
+The AI proposed a draft with 8 violations (SRP: receipt text in Sale, record format in SaleRepository; OCP: instanceof routing in InventoryService, exception chain in ConsoleIO, duplicated options in ConsoleMenu; ISP: ReturnMenu using the full SaleService; DIP: SaleCatalog and SaleService depending on concrete classes) and LSP as correct. I checked each line number against develop, kept the findings I can explain, and moved the ReturnService and MonthlyBalanceReport dependencies to the boundary findings because that code belongs to Developer 2.
