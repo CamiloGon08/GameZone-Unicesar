@@ -13,6 +13,7 @@ import com.mycompany.gamezone.service.WarrantyService;
 class WarrantyMenu {
 
     private final WarrantyService warrantyService;
+    private final WarrantyCertificateFormatter certificateFormatter = new WarrantyCertificateFormatter();
     private final ConsoleIO io;
 
     /**
@@ -67,7 +68,7 @@ class WarrantyMenu {
             System.out.println("No se encontró una garantía para ese producto en esa venta.");
             return;
         }
-        System.out.println(warranty.generateWarrantyCertificate());
+        System.out.println(certificateFormatter.format(warranty));
     }
 
     private void viewAllWarranties() {
@@ -78,7 +79,7 @@ class WarrantyMenu {
         }
         System.out.println("--- Todas las garantías ---");
         for (Warranty warranty : warranties) {
-            System.out.println(warranty.generateWarrantyCertificate());
+            System.out.println(certificateFormatter.format(warranty));
             System.out.println("---------------------------");
         }
     }
@@ -91,7 +92,7 @@ class WarrantyMenu {
         }
         System.out.println("--- Garantías vigentes ---");
         for (Warranty warranty : warranties) {
-            System.out.println(warranty.generateWarrantyCertificate());
+            System.out.println(certificateFormatter.format(warranty));
             System.out.println("---------------------------");
         }
     }
@@ -104,7 +105,7 @@ class WarrantyMenu {
         }
         System.out.println("--- Garantías próximas a vencer (30 días) ---");
         for (Warranty warranty : warranties) {
-            System.out.println(warranty.generateWarrantyCertificate());
+            System.out.println(certificateFormatter.format(warranty));
             System.out.println("---------------------------");
         }
     }
