@@ -151,3 +151,13 @@ Correctly applied in `Main`, which is the composition root and the only place th
 | Proposed solution | Define a `SaleStore` interface in `service` (`List<Sale> findAll()`, `void add(Sale sale)`, `int size()`) extending `SaleLookup`; `SaleCatalog` implements it and `SaleService` depends on `SaleStore`. |
 | Other member's code | No. |
 
+---
+
+## Findings reported to the consolidation
+
+### Boundary findings
+- `ReturnService` (Developer 2) depends on the concrete `SaleService` but only calls `findById` (lines 44 and 138). It is the same problem as V-06 from the service side; the Lead proposes one consolidated violation where Developer 2 changes `ReturnService` to `SaleLookup` and the Lead changes `ReturnMenu` and the wiring in `Main`.
+- `MonthlyBalanceReport` (Developer 2) depends on the concrete `SaleService` and only calls `viewAllSales` (line 24). After V-08 it could depend on `SaleStore`; to be confirmed with Developer 2's report.
+
+### Out-of-scope findings (functional defects, not fixed)
+- `SaleCatalog.findAll` (lines 48-50) returns the internal list, so any caller can add or remove sales without saving them. Not visible in the menu today; recorded for a later requirement. (Defects 1-9 of the Requirement 7 audit are not registered again.)
