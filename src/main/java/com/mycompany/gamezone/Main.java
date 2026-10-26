@@ -40,14 +40,14 @@ public class Main {
         PromotionService promotionService = new PromotionService(promotionRepository);
 
         SaleRepository saleRepository = new SaleRepository(productService, personService);
-        SaleService saleService = new SaleService(saleRepository, productService, accessoryService, promotionService);
 
         WarrantyRepository warrantyRepository = new WarrantyRepository();
 
         WarrantyService warrantyService = new WarrantyService(warrantyRepository,
                                                             saleRepository,
                                                             productService);
-        saleService.setWarrantyService(warrantyService);
+        SaleService saleService = new SaleService(saleRepository, productService, accessoryService,
+                promotionService, warrantyService);
 
         ReturnRepository returnRepository = new ReturnRepository(FilePath.RETURNS, saleService, productService, accessoryService);
         ReturnService returnService = new ReturnService(returnRepository, saleService, productService, accessoryService, warrantyService);

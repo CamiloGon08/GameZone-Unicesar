@@ -41,33 +41,25 @@ public class SaleService {
 
     /**
      * Creates a SaleService with the repositories and services required
-     * to register sales, update inventory and apply promotions. The
-     * warranty service is set later to break the circular dependency
-     * between SaleService and WarrantyRepository.
+     * to register sales, update inventory, apply promotions and assign
+     * warranties.
      *
      * @param repository       repository used to save and load sales
      * @param productService   service used to update product stock
      * @param accessoryService service used to update accessory stock
      * @param promotionService service used to find the best promotion for a sale
+     * @param warrantyService  service used to assign warranties
      */
     public SaleService(SaleRepository repository,
                        ProductService productService,
                        AccessoryService accessoryService,
-                       PromotionService promotionService) {
+                       PromotionService promotionService,
+                       WarrantyService warrantyService) {
         this.repository = repository;
         this.sales = repository.load();
         this.productService = productService;
         this.accessoryService = accessoryService;
         this.promotionService = promotionService;
-    }
-
-    /**
-     * Sets the warranty service after construction to break the circular
-     * dependency between SaleService and WarrantyRepository.
-     *
-     * @param warrantyService service used to assign warranties
-     */
-    public void setWarrantyService(WarrantyService warrantyService) {
         this.warrantyService = warrantyService;
     }
 
@@ -111,17 +103,15 @@ public class SaleService {
             }
         }
 
-        if (warrantyService != null) {
-            for (Product product : products) {
-                if (product instanceof Console) {
-                    warrantyService.assignBasicWarranty(product, sale);
-                }
-                if (productIdsWithExtendedWarranty != null
-                        && productIdsWithExtendedWarranty.contains(product.getId())) {
-                    Warranty extended = warrantyService.assignExtendedWarranty(product, sale);
-                    if (extended != null) {
-                        sale.addWarrantyCost(extended.getAdditionalCost());
-                    }
+        for (Product product : products) {
+            if (product instanceof Console) {
+                warrantyService.assignBasicWarranty(product, sale);
+            }
+            if (productIdsWithExtendedWarranty != null
+                    && productIdsWithExtendedWarranty.contains(product.getId())) {
+                Warranty extended = warrantyService.assignExtendedWarranty(product, sale);
+                if (extended != null) {
+                    sale.addWarrantyCost(extended.getAdditionalCost());
                 }
             }
         }

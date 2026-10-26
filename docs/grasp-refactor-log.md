@@ -89,6 +89,14 @@ One entry per correction commit, in the order of section 6 of the consolidated a
 **Change:** `SaleService.registerSale` no longer computes the total with `sale.setTotal(sale.getTotal() - discount)` and `sale.setTotal(sale.getTotal() + cost)`. `Sale` now has `applyPromotion(name, amount)` and `addWarrantyCost(amount)`, and the public `setTotal` was removed, so only `Sale` changes its total (Information Expert). `warrantyCost` is still not assigned, because filling it would add a new line to the receipt (out-of-scope defect 2). The part of Developer 1 (`PercentageDiscount` and `BulkPurchaseDiscount` reading `getSubtotal()`) is a separate commit.
 **Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical)
 
+### C-22 — WarrantyService injected through the constructor
+
+**Member:** Technical Lead
+**Commit:** refactor: inject WarrantyService into SaleService constructor (C-22)
+**Classes changed:** `SaleService`, `Main`
+**Change:** `SaleService` received `WarrantyService` through `setWarrantyService` after construction and skipped warranties when it was `null`. `Main` now creates `WarrantyService` first and passes it to the `SaleService` constructor; the setter and the `null` check were removed, so the collaboration is explicit and cannot be forgotten (Low Coupling).
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical)
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.
