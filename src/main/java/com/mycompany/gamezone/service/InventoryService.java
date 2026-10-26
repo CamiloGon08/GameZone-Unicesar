@@ -45,8 +45,8 @@ public class InventoryService {
     }
 
     /**
-     * Removes one unit of stock for each item of the list. Products are
-     * saved one by one, and accessories are saved together at the end.
+     * Removes one unit of stock for each item of the list, saving the
+     * inventory of each item after the change.
      *
      * @param items items whose stock will be decreased
      * @throws com.mycompany.gamezone.exceptions.ResourceNotFoundException if an
@@ -55,37 +55,31 @@ public class InventoryService {
      *         inventory cannot be saved
      */
     public void decreaseStock(List<Product> items) {
-        List<Accessory> accessoriesToPersist = null;
         for (Product item : items) {
             if (item instanceof Accessory) {
-                if (accessoriesToPersist == null) {
-                    accessoriesToPersist = accessoryService.listAllAccessories();
-                }
-                accessoryService.updateStock(accessoriesToPersist, item.getId(), -1);
+                accessoryService.updateStock(item.getId(), -1);
             } else {
                 productService.updateStock(item.getId(), -1);
             }
         }
-        if (accessoriesToPersist != null) {
-            accessoryService.saveAll(accessoriesToPersist);
-        }
     }
 
     /**
-     * Restores the given quantity of stock for an item.
+     * Restores the given quantity of stock for the item with the given
+     * identifier.
      *
-     * @param item     item whose stock will be restored
+     * @param itemId   identifier of the item whose stock will be restored
      * @param quantity quantity of stock to restore
      * @throws com.mycompany.gamezone.exceptions.ResourceNotFoundException if
      *         the item no longer exists
      * @throws com.mycompany.gamezone.exceptions.PersistenceException if the
      *         inventory cannot be saved
      */
-    public void increaseStock(Product item, int quantity) {
-        if (item instanceof Accessory) {
-            accessoryService.restoreStock(item.getId(), quantity);
+    public void increaseStock(String itemId, int quantity) {
+        if (findAnyById(itemId) instanceof Accessory) {
+            accessoryService.restoreStock(itemId, quantity);
         } else {
-            productService.restoreStock(item.getId(), quantity);
+            productService.restoreStock(itemId, quantity);
         }
     }
 }

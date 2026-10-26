@@ -410,6 +410,14 @@ team integration, full non-regression, final documentation and PR completion rem
 **Change:** `ReturnService` walked `sale.getProducts()` to check whether a returned product belongs to the sale. `Sale` now answers it with `containsProduct(productId)`, using the same exact identifier comparison, and `ReturnValidator` (Developer 2) calls it (Information Expert).
 **Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
 
+### C-27 — InventoryService adapted to the accessory service of Developer 2
+
+**Member:** Technical Lead
+**Commit:** refactor: adapt InventoryService to the accessory stock operations (C-27)
+**Classes changed:** `InventoryService`
+**Change:** `AccessoryService` now owns its list and saves inside `updateStock(id, quantity)` (C-01, Developer 2), so `decreaseStock` calls it once per accessory instead of loading and saving the whole list. `increaseStock` now receives the item identifier, as `ReturnService` uses it, and routes with the same rule as `findAnyById`. The routing decision stays only in `InventoryService` (Indirection).
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.
