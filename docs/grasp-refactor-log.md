@@ -418,6 +418,14 @@ team integration, full non-regression, final documentation and PR completion rem
 **Change:** `AccessoryService` now owns its list and saves inside `updateStock(id, quantity)` (C-01, Developer 2), so `decreaseStock` calls it once per accessory instead of loading and saving the whole list. `increaseStock` now receives the item identifier, as `ReturnService` uses it, and routes with the same rule as `findAnyById`. The routing decision stays only in `InventoryService` (Indirection).
 **Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
 
+### C-23, C-33 — SaleCatalog resolves raw sale records and is the SaleLookup (Technical Lead part)
+
+**Member:** Technical Lead
+**Commit:** refactor: load raw SaleRecord objects and resolve them in SaleCatalog (C-23, C-33)
+**Classes changed:** `SaleRecord` (new), `SaleCatalog` (new), `SaleRepository`, `SaleService`
+**Change:** `SaleRepository` depended on `ProductService` and `PersonService` to rebuild sales. It now returns `SaleRecord` objects with the stored identifiers and has no service dependency (Low Coupling). The new `SaleCatalog` keeps the list of sales, resolves the records with the same rules as before (products only through `ProductService`, missing customer or seller skips the sale) and saves after each new sale. `SaleCatalog` implements `SaleLookup`, which `WarrantyService` uses instead of `SaleRepository` (C-33). The consolidated audit asked for `SaleService` to implement `SaleLookup`, but with C-22 that creates a constructor cycle (`SaleService` needs `WarrantyService`, which needs the lookup); moving the list to `SaleCatalog` removes the cycle without a setter.
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.

@@ -11,7 +11,6 @@ import com.mycompany.gamezone.model.Promotion;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.Seller;
 import com.mycompany.gamezone.model.Warranty;
-import com.mycompany.gamezone.persistence.SaleRepository;
 import com.mycompany.gamezone.validation.ProductValidator;
 import com.mycompany.gamezone.validation.SaleValidator;
 
@@ -31,28 +30,25 @@ import com.mycompany.gamezone.validation.SaleValidator;
 
 public class SaleService {
 
-    private SaleRepository repository;
-    private List<Sale> sales;
-    private InventoryService inventoryService;
-    private PromotionService promotionService;
-    private WarrantyService warrantyService;
+    private final SaleCatalog saleCatalog;
+    private final InventoryService inventoryService;
+    private final PromotionService promotionService;
+    private final WarrantyService warrantyService;
 
     /**
-     * Creates a SaleService with the repositories and services required
-     * to register sales, update inventory, apply promotions and assign
-     * warranties.
+     * Creates a SaleService with the collaborators required to register
+     * sales, update inventory, apply promotions and assign warranties.
      *
-     * @param repository       repository used to save and load sales
+     * @param saleCatalog      catalog that keeps and saves the sales
      * @param inventoryService service used to update the stock of every item
      * @param promotionService service used to find the best promotion for a sale
      * @param warrantyService  service used to assign warranties
      */
-    public SaleService(SaleRepository repository,
+    public SaleService(SaleCatalog saleCatalog,
                        InventoryService inventoryService,
                        PromotionService promotionService,
                        WarrantyService warrantyService) {
-        this.repository = repository;
-        this.sales = repository.load();
+        this.saleCatalog = saleCatalog;
         this.inventoryService = inventoryService;
         this.promotionService = promotionService;
         this.warrantyService = warrantyService;
@@ -87,7 +83,7 @@ public class SaleService {
             ProductValidator.validateStockAvailability(product, 1);
         }
 
-        String saleId = "SALE-" + (sales.size() + 1);
+        String saleId = "SALE-" + (saleCatalog.size() + 1);
         Sale sale = new Sale(LocalDate.now(), saleId, products, seller, customer);
 
         Promotion bestPromotion = promotionService.findBestPromotionFor(sale);
@@ -112,9 +108,7 @@ public class SaleService {
         }
 
         inventoryService.decreaseStock(products);
-
-        sales.add(sale);
-        repository.save(sales);
+        saleCatalog.add(sale);
 
         return sale;
     }
@@ -125,7 +119,7 @@ public class SaleService {
      * @return list containing every sale
      */
     public List<Sale> viewAllSales() {
-        return sales;
+        return saleCatalog.findAll();
     }
 
     /**
@@ -136,7 +130,7 @@ public class SaleService {
      */
     public List<Sale> viewSalesByCustomer(Customer customer) {
         List<Sale> result = new ArrayList<>();
-        for (Sale sale : sales) {
+        for (Sale sale : saleCatalog.findAll()) {
             if (sale.getCustomer().equals(customer)) {
                 result.add(sale);
             }
@@ -151,12 +145,7 @@ public class SaleService {
      * @return the Sale with the specified ID, or null if it does not exist
      */
     public Sale findById(String id) {
-        for (Sale sale : sales) {
-            if (sale.getId().equals(id)) {
-                return sale;
-            }
-        }
-        return null;
+        return saleCatalog.findById(id);
     }
 
     /**
@@ -167,7 +156,7 @@ public class SaleService {
      */
     public List<Sale> viewSalesBySeller(Seller seller) {
         List<Sale> result = new ArrayList<>();
-        for (Sale sale : sales) {
+        for (Sale sale : saleCatalog.findAll()) {
             if (sale.getSeller().equals(seller)) {
                 result.add(sale);
             }
