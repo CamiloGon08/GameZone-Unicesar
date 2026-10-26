@@ -426,6 +426,14 @@ team integration, full non-regression, final documentation and PR completion rem
 **Change:** `SaleRepository` depended on `ProductService` and `PersonService` to rebuild sales. It now returns `SaleRecord` objects with the stored identifiers and has no service dependency (Low Coupling). The new `SaleCatalog` keeps the list of sales, resolves the records with the same rules as before (products only through `ProductService`, missing customer or seller skips the sale) and saves after each new sale. `SaleCatalog` implements `SaleLookup`, which `WarrantyService` uses instead of `SaleRepository` (C-33). The consolidated audit asked for `SaleService` to implement `SaleLookup`, but with C-22 that creates a constructor cycle (`SaleService` needs `WarrantyService`, which needs the lookup); moving the list to `SaleCatalog` removes the cycle without a setter.
 **Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
 
+### C-24, C-26, C-36 — registerSale delegates every step (Technical Lead part)
+
+**Member:** Technical Lead
+**Commit:** refactor: simplify registerSale with IdGenerator and assignWarrantiesFor (C-24, C-26, C-36)
+**Classes changed:** `SaleService`
+**Change:** `registerSale` built the identifier, applied the promotion, chose warranties with `instanceof Console`, updated stock and saved. It now validates and delegates: `IdGenerator` builds the identifier keeping the `SALE-n` sequence (C-36), the promotion is applied in a private method, `WarrantyService.assignWarrantiesFor` assigns the warranties using `Product.requiresBasicWarranty` / `allowsExtendedWarranty` and returns the extended cost for `Sale.addWarrantyCost` (C-26), `InventoryService` updates stock and `SaleCatalog` saves (High Cohesion).
+**Verification:** `mvn compile` OK · `mvn test` 20/20 · `verify-grasp.sh` PASS (11 of 11 files identical), run with the Developer 1 methods agreed in the consolidated audit (`develop` does not compile until they are merged)
+
 ## Final verification
 
 To be completed when every correction is merged into `develop`.

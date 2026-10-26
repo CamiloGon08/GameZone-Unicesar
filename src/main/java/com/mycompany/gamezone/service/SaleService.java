@@ -4,13 +4,11 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mycompany.gamezone.model.Console;
 import com.mycompany.gamezone.model.Customer;
 import com.mycompany.gamezone.model.Product;
 import com.mycompany.gamezone.model.Promotion;
 import com.mycompany.gamezone.model.Sale;
 import com.mycompany.gamezone.model.Seller;
-import com.mycompany.gamezone.model.Warranty;
 import com.mycompany.gamezone.validation.ProductValidator;
 import com.mycompany.gamezone.validation.SaleValidator;
 
@@ -30,10 +28,13 @@ import com.mycompany.gamezone.validation.SaleValidator;
 
 public class SaleService {
 
+    private static final String SALE_PREFIX = "SALE";
+
     private final SaleCatalog saleCatalog;
     private final InventoryService inventoryService;
     private final PromotionService promotionService;
     private final WarrantyService warrantyService;
+    private final IdGenerator idGenerator;
 
     /**
      * Creates a SaleService with the collaborators required to register
@@ -43,20 +44,23 @@ public class SaleService {
      * @param inventoryService service used to update the stock of every item
      * @param promotionService service used to find the best promotion for a sale
      * @param warrantyService  service used to assign warranties
+     * @param idGenerator      generator of sale identifiers
      */
     public SaleService(SaleCatalog saleCatalog,
                        InventoryService inventoryService,
                        PromotionService promotionService,
-                       WarrantyService warrantyService) {
+                       WarrantyService warrantyService,
+                       IdGenerator idGenerator) {
         this.saleCatalog = saleCatalog;
         this.inventoryService = inventoryService;
         this.promotionService = promotionService;
         this.warrantyService = warrantyService;
+        this.idGenerator = idGenerator;
     }
 
     /**
      * Registers a new sale for the given customer and seller with the
-     * list of items provided. Products that are consoles automatically
+     * list of items provided. Products that require it automatically
      * receive a basic warranty, and products listed in the extended
      * warranty list receive an extended warranty whose additional cost
      * is added to the total of the sale.
@@ -83,9 +87,18 @@ public class SaleService {
             ProductValidator.validateStockAvailability(product, 1);
         }
 
-        String saleId = "SALE-" + (saleCatalog.size() + 1);
+        String saleId = idGenerator.nextId(SALE_PREFIX, saleCatalog.size(), id -> false);
         Sale sale = new Sale(LocalDate.now(), saleId, products, seller, customer);
 
+        applyBestPromotion(sale);
+        sale.addWarrantyCost(warrantyService.assignWarrantiesFor(sale, productIdsWithExtendedWarranty));
+        inventoryService.decreaseStock(products);
+        saleCatalog.add(sale);
+
+        return sale;
+    }
+
+    private void applyBestPromotion(Sale sale) {
         Promotion bestPromotion = promotionService.findBestPromotionFor(sale);
         if (bestPromotion != null) {
             double discount = bestPromotion.calculateDiscount(sale);
@@ -93,24 +106,6 @@ public class SaleService {
                 sale.applyPromotion(bestPromotion.getName(), discount);
             }
         }
-
-        for (Product product : products) {
-            if (product instanceof Console) {
-                warrantyService.assignBasicWarranty(product, sale);
-            }
-            if (productIdsWithExtendedWarranty != null
-                    && productIdsWithExtendedWarranty.contains(product.getId())) {
-                Warranty extended = warrantyService.assignExtendedWarranty(product, sale);
-                if (extended != null) {
-                    sale.addWarrantyCost(extended.getAdditionalCost());
-                }
-            }
-        }
-
-        inventoryService.decreaseStock(products);
-        saleCatalog.add(sale);
-
-        return sale;
     }
 
     /**
