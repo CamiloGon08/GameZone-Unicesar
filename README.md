@@ -136,6 +136,19 @@ The code was audited against the nine GRASP patterns and the findings were corre
   - `ConsoleMenu` only shows the main menu and delegates each option to `ProductMenu`, `PersonMenu`, `SaleMenu`, `AccessoryMenu`, `PromotionMenu`, `ReturnMenu` and `WarrantyMenu`, which share `ConsoleIO`. Texts and option numbers did not change.
 - **Non-regression.** `scripts/verify-grasp.sh` runs the same menu script on the build before Phase 2 and on the current build, and compares the console output and the seven data files byte for byte. The before and after class diagrams are in `docs/grasp-class-diagram.md`.
 
+### SOLID audit and correction (Requirement 8)
+
+The code was audited against the five SOLID principles and the findings were corrected without changing what the user sees.
+
+- **Phase 1, audit.** Each member audited the code they wrote (`docs/solid-audit/`). The Technical Lead consolidated the three reports into `docs/solid-audit/consolidated-audit.md`: coverage table, team verdict per principle, 20 final violations (V-01 to V-20) with their owner, the boundary findings and the out-of-scope defects. The answers to the guiding questions are in `docs/solid-analysis.md`.
+- **Phase 2, correction.** Each violation was corrected by its owner and recorded in `docs/solid-refactor-log.md`. The main design changes are:
+  - **SRP:** receipts and certificates moved out of the model to UI formatters (`SaleReceiptFormatter`, `ReturnReceiptFormatter`, `WarrantyCertificateFormatter`); record mappers separate the line format from file access for sales, returns and warranties; `ReturnCatalog` and `WarrantyCatalog` load and save records so the services keep only the rules.
+  - **OCP:** `InventoryService` uses `StockHandler` implementations instead of `instanceof`; `ConsoleIO` maps exceptions to messages; `ConsoleMenu` builds its options as `MenuOption` objects; `ProductService.register(Product)` and `AccessoryService.register(Accessory, ...)` with `AccessoryFactory` accept new types without new methods; `FileProductRepository` receives its converters.
+  - **LSP:** `Person.updateFrom` checks the type and delegates to `copyFrom`, so subclasses no longer cast.
+  - **ISP:** clients depend on small interfaces (`SaleLookup`, `SaleStore`, `ProductLookup`); `Promotion.isValid()` replaces the percentage-only query.
+  - **DIP:** every repository (`SaleRepository`, `ProductRepository`, `AccessoryRepository`, `PromotionRepository`, `ReturnRepository`, `WarrantyRepository`) is an interface with a `File...` implementation built in `Main`.
+- **Non-regression.** `scripts/verify-grasp.sh` compared the console output and the seven data files with the build before the requirement: 11/11 identical, and 127 tests pass. The before and after class diagrams are in `docs/solid-class-diagram.md`.
+
 ## Project layout
 
 GameZoneUnicesar/
@@ -187,6 +200,10 @@ Design documentation lives under `docs/`:
 - [GRASP Consolidated Audit](docs/grasp-audit/consolidated-audit.md)
 - [GRASP Class Diagram](docs/grasp-class-diagram.md)
 - [GRASP Refactor Log](docs/grasp-refactor-log.md)
+- [SOLID Analysis](docs/solid-analysis.md)
+- [SOLID Consolidated Audit](docs/solid-audit/consolidated-audit.md)
+- [SOLID Class Diagram](docs/solid-class-diagram.md)
+- [SOLID Refactor Log](docs/solid-refactor-log.md)
 
 ## Team
 

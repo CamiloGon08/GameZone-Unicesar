@@ -239,3 +239,39 @@ After the GRASP correction my classes changed a lot, and I needed to check which
 
 **Solution obtained and decision taken:**
 The AI proposed a draft with 8 violations (SRP: receipt text in Sale, record format in SaleRepository; OCP: instanceof routing in InventoryService, exception chain in ConsoleIO, duplicated options in ConsoleMenu; ISP: ReturnMenu using the full SaleService; DIP: SaleCatalog and SaleService depending on concrete classes) and LSP as correct. I checked each line number against develop, kept the findings I can explain, and moved the ReturnService and MonthlyBalanceReport dependencies to the boundary findings because that code belongs to Developer 2.
+
+## Requirement 8 - Phase 2 (Correction)
+
+### Entry R8-2
+
+**Date:** 2026-10-26
+**Tool used:** Claude
+
+**Reason for use:**
+Review my design for the eight violations assigned to me in the consolidated audit and get reference code to compare with my own changes.
+
+**Problem faced:**
+My corrections touch `Main` and the menus, which also had to wire the new classes of Developer 1 and Developer 2, so the order of the commits and the wiring had to be right for the project to compile.
+
+**Prompt used:**
+"Dame el código de referencia de mis correcciones SOLID y verifica que no cambie el comportamiento."
+
+**Solution obtained and decision taken:**
+The AI proposed `SaleReceiptFormatter`, `SaleRecordMapper` with `FileSaleRepository`, the `SaleStore` interface, `StockHandler` implementations, the exception map in `ConsoleIO` and `MenuOption`. I reviewed each change, applied them as one commit per violation, and checked that the receipt text, messages and data files did not change. Final evidence: 127 tests passing and `verify-grasp.sh` 11/11 SAME on develop.
+
+### Entry R8-3
+
+**Date:** 2026-10-26
+**Tool used:** Claude
+
+**Reason for use:**
+Help with the consolidation, the guiding questions, the before/after diagram and the README, as allowed by the professor's update to the AI policy.
+
+**Problem faced:**
+The three reports used local IDs and some findings were the same problem seen from two sides, so I needed one final list with owners.
+
+**Prompt used:**
+"Arma la auditoría consolidada, solid-analysis, el diagrama antes/después, el log y el README con lo que ya está en develop."
+
+**Solution obtained and decision taken:**
+The AI drafted the documents. I checked the coverage table against `TEAM.md`, merged leader V-06 and developer 2 V-06 into one boundary violation (V-16), confirmed that the 20 final violations appear in the refactor log with their commits, and reviewed the answers before committing.
